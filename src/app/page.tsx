@@ -99,7 +99,6 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [swipeStartX, setSwipeStartX] = useState(0);
-  const [swipeEndX, setSwipeEndX] = useState(0);
   const [swipeStartY, setSwipeStartY] = useState(0);
   const nextTrackRef = useRef<Track[]>(currentTracks);
 
@@ -111,9 +110,9 @@ export default function Home() {
     document.body.style.overflow = panelOpen ? "hidden" : "";
   }, [panelOpen]);
 
- // useEffect(() => {
- //   setCurrentTracks(projects[projectIdx].tracks);
- // }, [projectIdx]);
+  useEffect(() => {
+    setCurrentTracks(projects[projectIdx].tracks);
+  }, [projectIdx]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -170,14 +169,16 @@ export default function Home() {
       actuallySwitchProject(-1);
     }
   }
+  // *** CRITICAL: use updater function so projectIdx is always fresh ***
   function actuallySwitchProject(dir: 1 | -1) {
-  const nextIdx = (projectIdx + dir + projects.length) % projects.length;
-  setProjectIdx(nextIdx);
-  setCurrentTracks(projects[nextIdx].tracks); // <-- make sure playlist resets for new card!
-  setPanel("listen");
-  setPanelOpen(false);
-}
-
+    setProjectIdx(prevIdx => {
+      const nextIdx = (prevIdx + dir + projects.length) % projects.length;
+      setCurrentTracks(projects[nextIdx].tracks);
+      setPanel("listen");
+      setPanelOpen(false);
+      return nextIdx;
+    });
+  }
 
   // --- Panel and section logic ---
   function handleSectionArrow(dir: 1 | -1) {
@@ -220,19 +221,16 @@ export default function Home() {
   }
 
   // --- Swiping logic ---
+  // Only store swipeStartX, swipeStartY; use event values for dx/dy
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
       setSwipeStartX(e.touches[0].clientX);
       setSwipeStartY(e.touches[0].clientY);
-      setSwipeEndX(e.touches[0].clientX);
     }
-  };
-  const onCardTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    if (panel === "listen" && !panelOpen) setSwipeEndX(e.touches[0].clientX);
   };
   const onCardTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
-      const dx = swipeEndX - swipeStartX;
+      const dx = e.changedTouches[0].clientX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
       if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) handleSectionArrow(1);
@@ -244,13 +242,9 @@ export default function Home() {
   const onPanelTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     setSwipeStartX(e.touches[0].clientX);
     setSwipeStartY(e.touches[0].clientY);
-    setSwipeEndX(e.touches[0].clientX);
-  };
-  const onPanelTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    setSwipeEndX(e.touches[0].clientX);
   };
   const onPanelTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    const dx = swipeEndX - swipeStartX;
+    const dx = e.changedTouches[0].clientX - swipeStartX;
     const dy = e.changedTouches[0].clientY - swipeStartY;
     if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
       if (dx < 0) handleSectionArrow(1);
@@ -376,7 +370,6 @@ export default function Home() {
             animate={centerCard}
             transition={cardTransition}
             onTouchStart={onCardTouchStart}
-            onTouchMove={onCardTouchMove}
             onTouchEnd={onCardTouchEnd}
             key={currentProject.id}
           >
@@ -393,7 +386,7 @@ export default function Home() {
               setTheme={setTheme}
               selectPanel={selectPanel}
               onCardTouchStart={onCardTouchStart}
-              onCardTouchMove={onCardTouchMove}
+              onCardTouchMove={() => {}}
               onCardTouchEnd={onCardTouchEnd}
               audioRef={audioRef}
             />
@@ -409,7 +402,6 @@ export default function Home() {
                   className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
                   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
                   onTouchStart={onPanelTouchStart}
-                  onTouchMove={onPanelTouchMove}
                   onTouchEnd={onPanelTouchEnd}
                   tabIndex={0}
                   aria-modal="true"
@@ -601,7 +593,6 @@ function Card({
         minHeight: 320,
       }}
       onTouchStart={onCardTouchStart}
-      onTouchMove={onCardTouchMove}
       onTouchEnd={onCardTouchEnd}
     >
       {/* Top nav bar */}
