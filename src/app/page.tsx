@@ -87,7 +87,7 @@ function fadeAudioIn(audio: HTMLAudioElement) {
 
 export default function Home() {
   const [projectIdx, setProjectIdx] = useState(0)
-  const [direction, setDirection] = useState(0)
+  ///// const [direction, setDirection] = useState(0)
   const currentProject = projects[projectIdx]
   const [currentTracks, setCurrentTracks] = useState<Track[]>(currentProject.tracks)
   const [panel, setPanel] = useState<Panel>("listen")
@@ -155,7 +155,7 @@ export default function Home() {
     }
   }
   function actuallySwitchProject(dir: 1 | -1) {
-    setDirection(dir)
+    //setDirection(dir)
     setProjectIdx(i => (i + dir + projects.length) % projects.length)
     setPanel("listen")
     setPanelOpen(false)
