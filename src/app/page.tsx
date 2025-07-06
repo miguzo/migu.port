@@ -52,6 +52,39 @@ const projects: Project[] = [
 
 type Panel = "listen" | "read" | "about" | "journal"
 
+function fadeAudioOut(audio: HTMLAudioElement, onDone: ()=>void) {
+  if (!audio) return onDone()
+  let fading = true
+  const fade = setInterval(() => {
+    if (!fading) return clearInterval(fade)
+    if (audio.volume > 0.08) {
+      audio.volume = Math.max(0, audio.volume - 0.08)
+    } else {
+      audio.volume = 0
+      clearInterval(fade)
+      fading = false
+      onDone()
+    }
+  }, 25)
+  return () => { fading = false; clearInterval(fade) }
+}
+function fadeAudioIn(audio: HTMLAudioElement) {
+  if (!audio) return
+  let v = 0
+  audio.volume = 0
+  const fade = setInterval(() => {
+    if (!audio) return clearInterval(fade)
+    if (v < 0.94) {
+      v += 0.08
+      audio.volume = Math.min(1, v)
+    } else {
+      audio.volume = 1
+      clearInterval(fade)
+    }
+  }, 25)
+  return () => clearInterval(fade)
+}
+
 export default function Home() {
   const [projectIdx, setProjectIdx] = useState(0)
   const [direction, setDirection] = useState(0)
@@ -59,12 +92,13 @@ export default function Home() {
   const [currentTracks, setCurrentTracks] = useState<Track[]>(currentProject.tracks)
   const [panel, setPanel] = useState<Panel>("listen")
   const [panelOpen, setPanelOpen] = useState(false)
-  const [theme, setTheme] = useState<"light"|"dark">("light")
+  const [theme, setTheme] = useState<"light"|"dark">("dark") // start in dark mode
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [swipeStartX, setSwipeStartX] = useState(0)
   const [swipeEndX, setSwipeEndX] = useState(0)
   const [swipeStartY, setSwipeStartY] = useState(0)
+  const nextTrackRef = useRef<Track[]>(currentTracks)
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")
@@ -74,11 +108,15 @@ export default function Home() {
   useEffect(() => {
     const a = audioRef.current
     if (!a) return
+    let fadeInCleaner: any
+    a.volume = 0
     a.pause()
     a.currentTime = 0
     a.src = currentTracks[0]?.src ?? ""
     a.load()
     a.play().catch(() => {})
+    fadeInCleaner = fadeAudioIn(a)
+    return () => { if (fadeInCleaner) fadeInCleaner() }
   }, [currentTracks])
   useEffect(() => {
     const a = audioRef.current
@@ -93,16 +131,32 @@ export default function Home() {
     }
   }, [])
 
-  // --- Carousel Logic: Looping!
+  // --- Carousel Logic: Looping, with audio fade-out on change ---
   function nextProject() {
-    setDirection(1)
-    setProjectIdx((i) => (i + 1) % projects.length)
-    setPanel("listen")
-    setPanelOpen(false)
+    const a = audioRef.current
+    if (a && !a.paused && a.volume > 0) {
+      fadeAudioOut(a, () => {
+        a.pause(); a.volume = 1
+        actuallySwitchProject(1)
+      })
+    } else {
+      actuallySwitchProject(1)
+    }
   }
   function prevProject() {
-    setDirection(-1)
-    setProjectIdx((i) => (i - 1 + projects.length) % projects.length)
+    const a = audioRef.current
+    if (a && !a.paused && a.volume > 0) {
+      fadeAudioOut(a, () => {
+        a.pause(); a.volume = 1
+        actuallySwitchProject(-1)
+      })
+    } else {
+      actuallySwitchProject(-1)
+    }
+  }
+  function actuallySwitchProject(dir: 1 | -1) {
+    setDirection(dir)
+    setProjectIdx(i => (i + dir + projects.length) % projects.length)
     setPanel("listen")
     setPanelOpen(false)
   }
@@ -125,7 +179,16 @@ export default function Home() {
   }
   function playTrack(_proj: Project, t: Track) {
     if (currentTracks[0]?.src === t.src) return
-    setCurrentTracks([t, ...currentProject.tracks.filter(x => x.src !== t.src)])
+    const a = audioRef.current
+    nextTrackRef.current = [t, ...currentProject.tracks.filter(x => x.src !== t.src)]
+    if (a && !a.paused && a.volume > 0) {
+      fadeAudioOut(a, () => {
+        a.pause(); a.volume = 1
+        setCurrentTracks(nextTrackRef.current)
+      })
+    } else {
+      setCurrentTracks([t, ...currentProject.tracks.filter(x => x.src !== t.src)])
+    }
   }
   function togglePlayPause() {
     const a = audioRef.current
