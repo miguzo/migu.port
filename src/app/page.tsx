@@ -111,9 +111,9 @@ export default function Home() {
     document.body.style.overflow = panelOpen ? "hidden" : "";
   }, [panelOpen]);
 
-  useEffect(() => {
-    setCurrentTracks(projects[projectIdx].tracks);
-  }, [projectIdx]);
+ // useEffect(() => {
+ //   setCurrentTracks(projects[projectIdx].tracks);
+ // }, [projectIdx]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -171,10 +171,13 @@ export default function Home() {
     }
   }
   function actuallySwitchProject(dir: 1 | -1) {
-    setProjectIdx((i) => (i + dir + projects.length) % projects.length);
-    setPanel("listen");
-    setPanelOpen(false);
-  }
+  const nextIdx = (projectIdx + dir + projects.length) % projects.length;
+  setProjectIdx(nextIdx);
+  setCurrentTracks(projects[nextIdx].tracks); // <-- make sure playlist resets for new card!
+  setPanel("listen");
+  setPanelOpen(false);
+}
+
 
   // --- Panel and section logic ---
   function handleSectionArrow(dir: 1 | -1) {
