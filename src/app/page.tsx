@@ -19,7 +19,7 @@ const projects: Project[] = [
   {
     id: "Les Fragments (2025)",
     title: "Les Fragments (2025)",
-    image: "/images/fragments.jpg",
+    image: "/next/image/fragments.jpg",
     readContent: `Fragments project description…`,
     tracks: [
       { src: "/music/Fragments.mp3", title: "Les Fragments – Lidge" },
@@ -30,7 +30,7 @@ const projects: Project[] = [
   {
     id: "Decarbonation (2025)",
     title: "Decarbonation (2025)",
-    image: "/images/decarbonation.jpg",
+    image: "/next/image/Card2.png",
     readContent: `Decarbonation project description…`,
     tracks: [
       { src: "/music/track4.mp3", title: "City Loop" },
@@ -41,7 +41,7 @@ const projects: Project[] = [
   {
     id: "Aggragate (2024)",
     title: "Aggragate (2024)",
-    image: "/images/aggragate.jpg",
+    image: "/next/image/Card3.png",
     readContent: `Aggragate project description…`,
     tracks: [
       { src: "/music/track7.mp3", title: "Melted Reel" },
