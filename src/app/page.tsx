@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image"; // For Next.js image optimization
 
 // --- Types and data ---
 type Track = { src: string; title: string };
@@ -114,16 +115,15 @@ export default function Home() {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    let fadeInCleaner: (() => void) | undefined;
     a.volume = 0;
     a.pause();
     a.currentTime = 0;
     a.src = currentTracks[0]?.src ?? "";
     a.load();
     a.play().catch(() => {});
-    fadeInCleaner = fadeAudioIn(a);
+    const fadeInCleaner = fadeAudioIn(a); // Use const, not let
     return () => {
-      if (fadeInCleaner) fadeInCleaner();
+      fadeInCleaner?.(); // This is a call, so ESLint is happy
     };
   }, [currentTracks]);
   useEffect(() => {
@@ -664,11 +664,14 @@ function Card({
       >
         {project.image && (
           <div className="relative w-full flex items-center justify-center">
-            <img
+            <Image
               src={project.image}
               alt={project.title}
+              width={170}
+              height={170}
               className="w-[60%] max-w-[170px] aspect-square object-cover rounded-xl shadow"
               style={{ marginTop: 6, marginBottom: 6 }}
+              priority
             />
           </div>
         )}

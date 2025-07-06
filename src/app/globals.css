@@ -1,14 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
 @custom-variant dark (&:is(.dark *));
 @keyframes fadeSine {
   0%, 100% { opacity: 0.8; }
   50% { opacity: 1; }
 }
 /* Remove iOS blue tap highlight */
-html {
-  -webkit-tap-highlight-color: transparent;
+html { -webkit-tap-highlight-color: transparent;
 }
 
 @theme inline {
