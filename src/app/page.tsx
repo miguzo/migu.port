@@ -122,8 +122,10 @@ export default function Home() {
     a.load();
     a.play().catch(() => {});
     const fadeInCleaner = fadeAudioIn(a); // Use const, not let
-    return () => {
-      fadeInCleaner?.(); // This is a call, so ESLint is happy
+   return () => {
+  if (fadeInCleaner) fadeInCleaner();
+};
+// This is a call, so ESLint is happy
     };
   }, [currentTracks]);
   useEffect(() => {
