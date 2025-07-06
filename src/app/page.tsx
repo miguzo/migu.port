@@ -112,21 +112,21 @@ export default function Home() {
   useEffect(() => {
     setCurrentTracks(projects[projectIdx].tracks);
   }, [projectIdx]);
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.volume = 0;
-    a.pause();
-    a.currentTime = 0;
-    a.src = currentTracks[0]?.src ?? "";
-    a.load();
-    a.play().catch(() => {});
-    const fadeInCleaner = fadeAudioIn(a); // Use const, not let
-   return () => {
-  if (fadeInCleaner) fadeInCleaner();
-};
+useEffect(() => {
+  const a = audioRef.current;
+  if (!a) return;
+  a.volume = 0;
+  a.pause();
+  a.currentTime = 0;
+  a.src = currentTracks[0]?.src ?? "";
+  a.load();
+  a.play().catch(() => {});
+  const fadeInCleaner = fadeAudioIn(a); // Use const, not let
+  return () => {
+    if (fadeInCleaner) fadeInCleaner();
+  };
+}, [currentTracks]);
 
-  }, [currentTracks]);
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
