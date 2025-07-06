@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image"; // For Next.js image optimization
+import Image from "next/image";
 
 // --- Types and data ---
 type Track = { src: string; title: string };
@@ -95,7 +95,7 @@ export default function Home() {
   const [currentTracks, setCurrentTracks] = useState<Track[]>(currentProject.tracks);
   const [panel, setPanel] = useState<Panel>("listen");
   const [panelOpen, setPanelOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark"); // start in dark mode
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [swipeStartX, setSwipeStartX] = useState(0);
@@ -106,26 +106,31 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
+
   useEffect(() => {
     document.body.style.overflow = panelOpen ? "hidden" : "";
   }, [panelOpen]);
+
   useEffect(() => {
     setCurrentTracks(projects[projectIdx].tracks);
   }, [projectIdx]);
-useEffect(() => {
-  const a = audioRef.current;
-  if (!a) return;
-  a.volume = 0;
-  a.pause();
-  a.currentTime = 0;
-  a.src = currentTracks[0]?.src ?? "";
-  a.load();
-  a.play().catch(() => {});
-  const fadeInCleaner = fadeAudioIn(a); // Use const, not let
-  return () => {
-    if (fadeInCleaner) fadeInCleaner();
-  };
-}, [currentTracks]);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.volume = 0;
+    a.pause();
+    a.currentTime = 0;
+    a.src = currentTracks[0]?.src ?? "";
+    a.load();
+    a.play().catch(() => {});
+    const fadeInCleaner = fadeAudioIn(a);
+    return () => {
+      if (fadeInCleaner) {
+        fadeInCleaner();
+      }
+    };
+  }, [currentTracks]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -204,7 +209,11 @@ useEffect(() => {
   function togglePlayPause() {
     const a = audioRef.current;
     if (!a) return;
-    a.paused ? a.play().catch(() => {}) : a.pause();
+    if (a.paused) {
+      a.play().catch(() => {});
+    } else {
+      a.pause();
+    }
   }
 
   // --- Swiping logic ---
