@@ -19,7 +19,7 @@ const projects: Project[] = [
   {
     id: "Les Fragments (2025)",
     title: "Les Fragments (2025)",
-    image: "/next/image/Fragments.jpg",
+    image: "/next/image/Fragments.png",
     readContent: `Fragments project description…`,
     tracks: [
       { src: "/music/Fragments.mp3", title: "Les Fragments – Lidge" },
