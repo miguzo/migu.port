@@ -125,8 +125,7 @@ export default function Home() {
    return () => {
   if (fadeInCleaner) fadeInCleaner();
 };
-// This is a call, so ESLint is happy
-    };
+
   }, [currentTracks]);
   useEffect(() => {
     const a = audioRef.current;
