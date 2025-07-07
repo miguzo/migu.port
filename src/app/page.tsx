@@ -210,7 +210,7 @@ export default function Home() {
     }
   }
 
-  // --- Swiping logic (for card/project only) ---
+  // --- Swiping logic (for card/project only, no panels) ---
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
       setSwipeStartX(e.touches[0].clientX);
@@ -229,6 +229,7 @@ export default function Home() {
         if (dx < 0) nextProject();
         else prevProject();
       }
+      // Always reset swipe state after end (prevents stuck on mobile)
       setSwipeStartX(0);
       setSwipeEndX(0);
       setSwipeStartY(0);
@@ -381,7 +382,7 @@ export default function Home() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
+                  transition={{ duration: 0.16 }}
                   className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
                   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
                   tabIndex={-1}
@@ -473,7 +474,7 @@ export default function Home() {
                       </a>
                     </div>
                   )}
-                  {/* Close handle (swipe or click) */}
+                  {/* Close handle */}
                   <div
                     className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
                     onClick={() => setPanelOpen(false)}
@@ -519,7 +520,7 @@ export default function Home() {
   );
 }
 
-// --- Card component (reusable for side/center) ---
+// --- Card component ---
 function Card({
   project,
   isActive,
