@@ -98,7 +98,10 @@ export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Swipe state for card/project change
   const [swipeStartX, setSwipeStartX] = useState(0);
+  const [swipeEndX, setSwipeEndX] = useState(0);
   const [swipeStartY, setSwipeStartY] = useState(0);
   const nextTrackRef = useRef<Track[]>(currentTracks);
 
@@ -125,9 +128,7 @@ export default function Home() {
     a.play().catch(() => {});
     const fadeInCleaner = fadeAudioIn(a);
     return () => {
-      if (fadeInCleaner) {
-        fadeInCleaner();
-      }
+      if (fadeInCleaner) fadeInCleaner();
     };
   }, [currentTracks]);
 
@@ -144,7 +145,7 @@ export default function Home() {
     };
   }, []);
 
-  // --- Carousel Logic: Looping, with audio fade-out on change ---
+  // --- Card/project carousel logic ---
   function nextProject() {
     const a = audioRef.current;
     if (a && !a.paused && a.volume > 0) {
@@ -169,24 +170,13 @@ export default function Home() {
       actuallySwitchProject(-1);
     }
   }
-  // *** CRITICAL: use updater function so projectIdx is always fresh ***
   function actuallySwitchProject(dir: 1 | -1) {
-    setProjectIdx(prevIdx => {
-      const nextIdx = (prevIdx + dir + projects.length) % projects.length;
-      setCurrentTracks(projects[nextIdx].tracks);
-      setPanel("listen");
-      setPanelOpen(false);
-      return nextIdx;
-    });
+    setProjectIdx((i) => (i + dir + projects.length) % projects.length);
+    setPanel("listen");
+    setPanelOpen(false);
   }
 
   // --- Panel and section logic ---
-  function handleSectionArrow(dir: 1 | -1) {
-    const tabs: Panel[] = ["listen", "read", "about", "journal"];
-    const idx = tabs.indexOf(panel);
-    const next = tabs[(idx + dir + tabs.length) % tabs.length];
-    selectPanel(next);
-  }
   function selectPanel(next: Panel) {
     if (next === "listen") {
       setPanel("listen");
@@ -220,37 +210,28 @@ export default function Home() {
     }
   }
 
-  // --- Swiping logic ---
-  // Only store swipeStartX, swipeStartY; use event values for dx/dy
+  // --- Swiping logic (for card/project only) ---
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
       setSwipeStartX(e.touches[0].clientX);
       setSwipeStartY(e.touches[0].clientY);
+      setSwipeEndX(e.touches[0].clientX);
     }
+  };
+  const onCardTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (panel === "listen" && !panelOpen) setSwipeEndX(e.touches[0].clientX);
   };
   const onCardTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
-      const dx = e.changedTouches[0].clientX - swipeStartX;
+      const dx = swipeEndX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
       if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) handleSectionArrow(1);
-        else handleSectionArrow(-1);
+        if (dx < 0) nextProject();
+        else prevProject();
       }
-    }
-  };
-  // Swiping for panel (for left/right navigation while open)
-  const onPanelTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    setSwipeStartX(e.touches[0].clientX);
-    setSwipeStartY(e.touches[0].clientY);
-  };
-  const onPanelTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    const dx = e.changedTouches[0].clientX - swipeStartX;
-    const dy = e.changedTouches[0].clientY - swipeStartY;
-    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
-      if (dx < 0) handleSectionArrow(1);
-      else handleSectionArrow(-1);
-    } else if (panelOpen && dy > 40 && Math.abs(dy) > Math.abs(dx)) {
-      setPanelOpen(false);
+      setSwipeStartX(0);
+      setSwipeEndX(0);
+      setSwipeStartY(0);
     }
   };
 
@@ -289,6 +270,7 @@ export default function Home() {
         touchAction: "pan-y",
         overscrollBehaviorX: "none",
       }}
+      id="main"
     >
       <div
         className="mt-6 sm:mt-8 md:mt-12 lg:mt-16 relative w-full max-w-sm sm:max-w-md flex items-center justify-center"
@@ -370,6 +352,7 @@ export default function Home() {
             animate={centerCard}
             transition={cardTransition}
             onTouchStart={onCardTouchStart}
+            onTouchMove={onCardTouchMove}
             onTouchEnd={onCardTouchEnd}
             key={currentProject.id}
           >
@@ -386,7 +369,7 @@ export default function Home() {
               setTheme={setTheme}
               selectPanel={selectPanel}
               onCardTouchStart={onCardTouchStart}
-              onCardTouchMove={() => {}}
+              onCardTouchMove={onCardTouchMove}
               onCardTouchEnd={onCardTouchEnd}
               audioRef={audioRef}
             />
@@ -395,15 +378,13 @@ export default function Home() {
             <AnimatePresence>
               {panelOpen && panel !== "listen" && (
                 <motion.div
-                  initial={{ y: "100%", opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: "100%", opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 26 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
                   className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
                   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
-                  onTouchStart={onPanelTouchStart}
-                  onTouchEnd={onPanelTouchEnd}
-                  tabIndex={0}
+                  tabIndex={-1}
                   aria-modal="true"
                   role="dialog"
                 >
@@ -496,11 +477,6 @@ export default function Home() {
                   <div
                     className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
                     onClick={() => setPanelOpen(false)}
-                    onTouchStart={(e) => setSwipeStartY(e.touches[0].clientY)}
-                    onTouchEnd={(e) => {
-                      const deltaY = e.changedTouches[0].clientY - swipeStartY;
-                      if (deltaY > 40) setPanelOpen(false);
-                    }}
                     tabIndex={0}
                     role="button"
                     aria-label="Close panel"
@@ -593,6 +569,7 @@ function Card({
         minHeight: 320,
       }}
       onTouchStart={onCardTouchStart}
+      onTouchMove={onCardTouchMove}
       onTouchEnd={onCardTouchEnd}
     >
       {/* Top nav bar */}
