@@ -41,6 +41,8 @@ const projects: Project[] = [
       { src: "/music/track4.mp3", title: "City Loop" },
       { src: "/music/track5.mp3", title: "Echo Chamber" },
       { src: "/music/track6.mp3", title: "Sleepless" },
+      { src: "/music/track10.mp3", title: "Extra Track" },
+      { src: "/music/track11.mp3", title: "Another Track" },
     ],
   },
   {
@@ -58,7 +60,6 @@ const projects: Project[] = [
 
 type Panel = "listen" | "read" | "about" | "journal";
 
-// --- AUDIO FADE HELPERS, RACE SAFE ---
 let fadeInterval: NodeJS.Timeout | null = null;
 
 function fadeAudioOut(audio: HTMLAudioElement, onDone: () => void) {
@@ -102,9 +103,7 @@ function fadeAudioIn(audio: HTMLAudioElement) {
   };
 }
 
-// --- MAIN COMPONENT ---
 export default function Home() {
-  // --- STATE ---
   const [projectIdx, setProjectIdx] = useState(0);
   const [currentTracks, setCurrentTracks] = useState<Track[]>(projects[0].tracks);
   const [panel, setPanel] = useState<Panel>("listen");
@@ -113,11 +112,11 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [wasPlaying, setWasPlaying] = useState(false);
   const [justSwiped, setJustSwiped] = useState(false);
+  const [isTrackListScrolling, setIsTrackListScrolling] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextTrackRef = useRef<Track[]>(currentTracks);
 
-  // --- SCROLL LOCK ---
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehaviorX = "none";
@@ -127,22 +126,25 @@ export default function Home() {
     };
   }, []);
 
-  // --- THEME PERSISTENCE ---
+  // Theme persistence + effect
   useEffect(() => {
     localStorage.setItem("theme", theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [theme]);
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "light" || saved === "dark") setTheme(saved);
   }, []);
 
-  // --- PROJECT/TRACK SYNC ---
   useEffect(() => {
     setCurrentTracks(projects[projectIdx].tracks);
   }, [projectIdx]);
 
-  // --- AUDIO PLAYBACK LOGIC ---
+  // Audio playback
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -161,7 +163,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTracks]);
 
-  // --- AUDIO PLAY/PAUSE UI STATE ---
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -178,7 +179,7 @@ export default function Home() {
     };
   }, []);
 
-  // --- KEYBOARD NAV FOR CAROUSEL ---
+  // Carousel arrow keys
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (panel === "listen" && !panelOpen) {
@@ -191,15 +192,17 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel, panelOpen, projectIdx, isPlaying, justSwiped]);
 
-  // --- CAROUSEL FUNCTIONS ---
   const actuallySwitchProject = useCallback((dir: 1 | -1) => {
     setProjectIdx((i) => (i + dir + projects.length) % projects.length);
     setPanel("listen");
     setPanelOpen(false);
   }, []);
 
+  // Only allow swipe/panel switching when not playing
+  const canChangeProject = !isPlaying && !justSwiped && panel === "listen" && !panelOpen;
+
   const nextProject = useCallback(() => {
-    if (justSwiped) return;
+    if (!canChangeProject) return;
     setJustSwiped(true);
     setTimeout(() => setJustSwiped(false), 320);
     setWasPlaying(isPlaying);
@@ -214,10 +217,10 @@ export default function Home() {
       actuallySwitchProject(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [justSwiped, isPlaying, actuallySwitchProject]);
+  }, [canChangeProject, isPlaying, actuallySwitchProject]);
 
   const prevProject = useCallback(() => {
-    if (justSwiped) return;
+    if (!canChangeProject) return;
     setJustSwiped(true);
     setTimeout(() => setJustSwiped(false), 320);
     setWasPlaying(isPlaying);
@@ -232,17 +235,11 @@ export default function Home() {
       actuallySwitchProject(-1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [justSwiped, isPlaying, actuallySwitchProject]);
+  }, [canChangeProject, isPlaying, actuallySwitchProject]);
 
-  // --- PANEL FUNCTIONS ---
   function selectPanel(next: Panel) {
-    if (next === "listen") {
-      setPanel("listen");
-      setPanelOpen(false);
-    } else {
-      if (!panelOpen) setPanelOpen(true);
-      setPanel(next);
-    }
+    setPanel(next);
+    setPanelOpen(next !== "listen");
   }
   function playTrack(_proj: Project, t: Track) {
     if (currentTracks[0]?.src === t.src) return;
@@ -271,23 +268,22 @@ export default function Home() {
     }
   }
 
-  // --- SWIPE LOGIC ---
   const [swipeStartX, setSwipeStartX] = useState(0);
   const [swipeEndX, setSwipeEndX] = useState(0);
   const [swipeStartY, setSwipeStartY] = useState(0);
 
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    if (panel === "listen" && !panelOpen) {
+    if (canChangeProject) {
       setSwipeStartX(e.touches[0].clientX);
       setSwipeStartY(e.touches[0].clientY);
       setSwipeEndX(e.touches[0].clientX);
     }
   };
   const onCardTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    if (panel === "listen" && !panelOpen) setSwipeEndX(e.touches[0].clientX);
+    if (canChangeProject) setSwipeEndX(e.touches[0].clientX);
   };
   const onCardTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
-    if (panel === "listen" && !panelOpen) {
+    if (canChangeProject) {
       const dx = swipeEndX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
       if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) + 16) {
@@ -307,11 +303,9 @@ export default function Home() {
     return projects[idx];
   }
 
-  // --- CARD ANIMATION ---
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
   const cardSize = "max-w-[430px] w-[84vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
 
-  // --- RENDER ---
   const currentProject = projects[projectIdx];
 
   return (
@@ -336,7 +330,6 @@ export default function Home() {
         id="main"
       >
         <div className={clsx("mt-8 relative w-full flex items-center justify-center", cardSize)}>
-          {/* Desktop Arrows */}
           {panel === "listen" && !panelOpen && (
             <>
               <button
@@ -356,12 +349,10 @@ export default function Home() {
             </>
           )}
 
-          {/* Carousel */}
           <div
             className={clsx("relative flex items-center justify-center", cardSize, "select-none")}
             style={{ touchAction: "pan-y" }}
           >
-            {/* Left card */}
             <motion.div
               className={clsx("absolute top-0 left-0 w-[80%]")}
               style={{ pointerEvents: "none" }}
@@ -388,7 +379,6 @@ export default function Home() {
                 cardSize={cardSize}
               />
             </motion.div>
-            {/* Center (active) card */}
             <motion.div
               className={clsx("relative mx-auto z-10", cardSize)}
               animate={{ scale: 1, opacity: 1, zIndex: 10, filter: "none", x: 0 }}
@@ -417,7 +407,6 @@ export default function Home() {
                 cardSize={cardSize}
               />
 
-              {/* Panels overlay */}
               <AnimatePresence>
                 {panelOpen && panel !== "listen" && (
                   <PanelOverlay
@@ -433,7 +422,6 @@ export default function Home() {
                 )}
               </AnimatePresence>
             </motion.div>
-            {/* Right card */}
             <motion.div
               className={clsx("absolute top-0 right-0 w-[80%]")}
               style={{ pointerEvents: "none" }}
@@ -467,7 +455,6 @@ export default function Home() {
   );
 }
 
-// --- PANEL OVERLAY COMPONENT ---
 function PanelOverlay({
   panel,
   currentProject,
@@ -499,7 +486,7 @@ function PanelOverlay({
       role="dialog"
     >
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-bold fantasy-glow capitalize">
+        <h2 className="text-lg font-bold fantasy-glow capitalize text-yellow-300">
           {panel === "read"
             ? currentProject.title
             : panel === "about"
@@ -541,7 +528,6 @@ function PanelOverlay({
           </button>
         </div>
       </div>
-      {/* Panel content */}
       <div className="flex-1 text-sm text-yellow-200/90 whitespace-pre-line mt-3 font-serif">
         {panel === "read" && <>{currentProject.readContent}</>}
         {panel === "about" && (
@@ -559,7 +545,6 @@ function PanelOverlay({
         )}
         {panel === "journal" && <div>Journal section…</div>}
       </div>
-      {/* Close handle for swipe down */}
       <div
         className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
         onClick={() => {
@@ -575,7 +560,6 @@ function PanelOverlay({
   );
 }
 
-// --- CARD COMPONENT ---
 function Card({
   project,
   isActive,
@@ -611,7 +595,6 @@ function Card({
   audioRef: React.RefObject<HTMLAudioElement | null>;
   cardSize: string;
 }) {
-  // --- Share feedback ---
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -632,7 +615,6 @@ function Card({
     };
   }, []);
 
-  // --- Playlist keyboard navigation ---
   const playlistRef = useRef<HTMLUListElement | null>(null);
   function handlePlaylistKeyDown(e: React.KeyboardEvent) {
     if (!isActive || panel !== "listen") return;
@@ -672,7 +654,6 @@ function Card({
       onTouchMove={onCardTouchMove}
       onTouchEnd={onCardTouchEnd}
     >
-      {/* --- Background image layer --- */}
       <div
         className="absolute inset-0 w-full h-full z-0 rounded-2xl bg-cover bg-center"
         style={{
@@ -681,7 +662,6 @@ function Card({
         }}
         aria-hidden="true"
       />
-      {/* Top nav bar */}
       <nav className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
           <button
@@ -689,17 +669,9 @@ function Card({
             role="tab"
             aria-selected={panel === tab}
             onClick={() => isActive && selectPanel(tab)}
-            onKeyDown={(e) => {
-              if (
-                isActive &&
-                (e.key === "Enter" || e.key === " ")
-              ) {
-                selectPanel(tab);
-              }
-            }}
             className={clsx(
               "fantasy-btn text-sm px-3 py-1 mx-1",
-              panel === tab && isActive && "fantasy-glow scale-110"
+              panel === tab && isActive && "fantasy-glow scale-110 text-yellow-300 font-bold"
             )}
             disabled={!isActive}
             type="button"
@@ -708,10 +680,14 @@ function Card({
           </button>
         ))}
       </nav>
-      {/* Main image (taller) + Floating controls */}
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
-          <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative shadow-2xl">
+          <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
+            style={{
+              boxShadow: "0 8px 42px 0 #e5c06c44, 0 0 0 0 #19191b",
+              borderRadius: "25px",
+            }}
+          >
             <Image
               src={project.image}
               alt={project.title}
@@ -721,16 +697,14 @@ function Card({
               style={{
                 opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
                 borderRadius: 25,
-                border: "2px solid #e5c06c",
-                boxShadow: "0 2px 28px 0 #e5c06c44, 0 0 0 8px #19191b",
+                border: "none",
+                boxShadow: "0 8px 42px 0 #e5c06c2a",
               }}
               className="transition-opacity duration-300"
               priority
               sizes="(max-width: 600px) 80vw, 430px"
             />
-            {/* Top overlay, fade effect */}
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
-            {/* --- FLOATING CONTROLS --- */}
             {!panelOpen && isActive && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
                 <button
@@ -780,26 +754,24 @@ function Card({
           </div>
         </div>
       )}
-      {/* Bottom title, currently playing, and playlist */}
       <div className="relative flex flex-col items-center w-full pb-5 pt-0 px-4 z-20" style={{ minHeight: 140 }}>
-        <h2 className="fantasy-title text-center mb-1 mt-0">{project.title}</h2>
-        {/* "Currently playing" just below title */}
+        <h2 className="fantasy-title text-center mb-1 mt-0 text-yellow-300">{project.title}</h2>
         <div className="h-6 flex items-center justify-center w-full mb-1">
           {isActive && panel === "listen" && isPlaying && (
-            <p className="text-xs fantasy-glow animate-fade-sine">
-              Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span>
+            <p className="text-xs fantasy-glow animate-fade-sine text-yellow-300">
+              Currently playing: <span className="font-semibold text-yellow-300">{currentTracks[0]?.title}</span>
             </p>
           )}
         </div>
-        {/* Playlist at the very bottom */}
         <div className="w-full mt-auto">
           {isActive && panel === "listen" && (
             <aside className="fantasy-playlist w-full">
               <ul
-                className="space-y-1 px-1 py-1"
+                className="space-y-1 px-1 py-1 max-h-[96px] overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-900/50"
                 ref={playlistRef}
                 tabIndex={0}
                 onKeyDown={handlePlaylistKeyDown}
+                style={{ minHeight: 50 }}
               >
                 {project.tracks.map((t) => (
                   <li key={t.src}>
@@ -810,11 +782,11 @@ function Card({
                       className={clsx(
                         "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm w-full text-left",
                         currentTracks[0]?.src === t.src
-                          ? "fantasy-track-active font-semibold"
-                          : "hover:bg-yellow-900/40 text-yellow-300"
+                          ? "fantasy-track-active font-semibold text-yellow-300"
+                          : "hover:bg-yellow-900/40 text-yellow-200"
                       )}
                     >
-                      <span>{t.title}</span>
+                      <span className="font-serif">{t.title}</span>
                     </button>
                   </li>
                 ))}
@@ -823,7 +795,6 @@ function Card({
           )}
         </div>
       </div>
-      {/* Audio element for center card */}
       {isActive && <audio ref={audioRef} hidden />}
     </div>
   );
