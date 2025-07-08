@@ -566,7 +566,8 @@ function Card({
 }) {
   // --- Share button feedback ---
   const [copied, setCopied] = useState(false);
-  const timerRef = useRef<any>(null);
+const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);

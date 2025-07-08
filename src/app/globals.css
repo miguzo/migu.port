@@ -119,6 +119,15 @@ html { -webkit-tap-highlight-color: transparent;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(8px);}
+  12% { opacity: 1; transform: none;}
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-8px);}
+}
+.animate-fade-in-out {
+  animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
+}
 
 @layer base {
   * {
