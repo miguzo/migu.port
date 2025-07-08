@@ -682,7 +682,7 @@ function Card({
       />
 
       {/* --- Nav Tabs --- */}
-    <nav
+   <nav
   className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
   role="tablist"
 >
@@ -702,10 +702,14 @@ function Card({
         }
       }}
       className={clsx(
-        "fantasy-btn text-sm px-3 py-1 mx-1",
-        panel === tab && isActive && "fantasy-glow scale-110"
+        "fantasy-btn text-sm px-3 py-1 mx-1 font-serif border-2",
+        panel === tab
+          ? "bg-yellow-300 text-[#19191b] border-yellow-400 font-bold shadow-yellow-400/40 shadow-lg"
+          : "bg-transparent text-yellow-100 border-yellow-400 hover:bg-yellow-700/30 hover:text-yellow-300",
+        "focus-visible:ring-2 focus-visible:ring-yellow-400/80"
       )}
       disabled={!isActive}
+      type="button"
     >
       {tab[0].toUpperCase() + tab.slice(1)}
     </button>
