@@ -7,7 +7,6 @@ import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2 } 
 import Image from "next/image";
 import { FastAverageColor } from "fast-average-color";
 
-
 // --- Types and data ---
 type Track = { src: string; title: string };
 type Project = {
@@ -16,7 +15,6 @@ type Project = {
   image?: string;
   readContent?: string;
   tracks: Track[];
-  palette?: { bg: string; text: string; accent: string };
 };
 const projects: Project[] = [
   {
@@ -56,6 +54,7 @@ const projects: Project[] = [
 
 type Panel = "listen" | "read" | "about" | "journal";
 
+// --- Utility: fade audio in/out ---
 function fadeAudioOut(audio: HTMLAudioElement, onDone: () => void) {
   if (!audio) return onDone();
   let fading = true;
@@ -92,6 +91,7 @@ function fadeAudioIn(audio: HTMLAudioElement) {
   return () => clearInterval(fade);
 }
 
+// --- Main Page ---
 export default function Home() {
   const [projectIdx, setProjectIdx] = useState(0);
   const currentProject = projects[projectIdx];
@@ -265,9 +265,12 @@ export default function Home() {
   });
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
 
+  // --- Main wrapper always fits the card/panel ---
   return (
     <main
-      className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-zinc-900 overflow-y-auto overflow-x-hidden transition-colors"
+      className={clsx(
+        "flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900 transition-colors"
+      )}
       style={{
         WebkitTapHighlightColor: "transparent",
         touchAction: "pan-y",
@@ -276,259 +279,270 @@ export default function Home() {
       id="main"
     >
       <div
-        className="mt-6 sm:mt-8 md:mt-12 lg:mt-16 relative w-full max-w-sm sm:max-w-md flex items-center justify-center"
+        className="flex items-center justify-center w-full"
         style={{
-          minHeight: 450,
-          minWidth: 220,
-          marginLeft: "auto",
-          marginRight: "auto",
+          minHeight: 480,
         }}
       >
-        {/* Carousel controls */}
-        {panel === "listen" && !panelOpen && (
-          <>
-            <button
-              className={clsx(
-                "absolute left-1 top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border border-gray-300 dark:border-yellow-300",
-                theme === "dark"
-                  ? "bg-zinc-800/90 text-yellow-200 hover:bg-yellow-300/20"
-                  : "bg-white text-gray-700 hover:bg-gray-200"
-              )}
-              aria-label="Previous project"
-              onClick={prevProject}
-              tabIndex={0}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              className={clsx(
-                "absolute right-1 top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border border-gray-300 dark:border-yellow-300",
-                theme === "dark"
-                  ? "bg-zinc-800/90 text-yellow-200 hover:bg-yellow-300/20"
-                  : "bg-white text-gray-700 hover:bg-gray-200"
-              )}
-              aria-label="Next project"
-              onClick={nextProject}
-              tabIndex={0}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </>
-        )}
-
-        {/* Carousel with three cards (peek sides) */}
         <div
-          className="relative flex items-center justify-center h-[370px] select-none w-full"
+          className="relative w-full max-w-sm sm:max-w-md"
           style={{
-            touchAction: "pan-y",
+            minHeight: 370,
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
-          {/* Left side card */}
-          <motion.div
-            className="absolute top-0 left-0 w-[84%] mx-auto"
-            style={{ pointerEvents: "none" }}
-            animate={sideCard("left")}
-            transition={cardTransition}
-            key={"left-" + projectIdx}
-          >
-            <Card
-              project={getCard(projectIdx - 1)}
-              isActive={false}
-              panel={panel}
-              panelOpen={panelOpen}
-              playTrack={playTrack}
-              currentTracks={currentTracks}
-              isPlaying={isPlaying}
-              theme={theme}
-              togglePlayPause={togglePlayPause}
-              setTheme={setTheme}
-              selectPanel={selectPanel}
-              onCardTouchStart={() => {}}
-              onCardTouchMove={() => {}}
-              onCardTouchEnd={() => {}}
-              audioRef={audioRef}
-            />
-          </motion.div>
-          {/* Center (active) card */}
-          <motion.div
-            className="relative w-[93%] mx-auto z-10"
-            animate={centerCard}
-            transition={cardTransition}
-            onTouchStart={onCardTouchStart}
-            onTouchMove={onCardTouchMove}
-            onTouchEnd={onCardTouchEnd}
-            key={currentProject.id}
-          >
-            <Card
-              project={currentProject}
-              isActive={true}
-              panel={panel}
-              panelOpen={panelOpen}
-              playTrack={playTrack}
-              currentTracks={currentTracks}
-              isPlaying={isPlaying}
-              theme={theme}
-              togglePlayPause={togglePlayPause}
-              setTheme={setTheme}
-              selectPanel={selectPanel}
-              onCardTouchStart={onCardTouchStart}
-              onCardTouchMove={onCardTouchMove}
-              onCardTouchEnd={onCardTouchEnd}
-              audioRef={audioRef}
-            />
+          {/* Carousel controls (arrows) */}
+          {panel === "listen" && !panelOpen && (
+            <>
+              <button
+                className={clsx(
+                  "absolute left-1 top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border",
+                  "hidden sm:block"
+                )}
+                style={{
+                  background: "#18182599",
+                  color: "#ffe971",
+                  borderColor: "#ffe971",
+                }}
+                aria-label="Previous project"
+                onClick={prevProject}
+                tabIndex={0}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                className={clsx(
+                  "absolute right-1 top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border",
+                  "hidden sm:block"
+                )}
+                style={{
+                  background: "#18182599",
+                  color: "#ffe971",
+                  borderColor: "#ffe971",
+                }}
+                aria-label="Next project"
+                onClick={nextProject}
+                tabIndex={0}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
+          )}
 
-            {/* Panels overlay */}
-            <AnimatePresence>
-              {panelOpen && panel !== "listen" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.16 }}
-                  className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
-                  style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
-                  tabIndex={-1}
-                  aria-modal="true"
-                  role="dialog"
-                >
-                  {/* Panel header */}
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-lg font-bold text-black dark:text-white capitalize">
-                      {panel === "read"
-                        ? currentProject.title
-                        : panel === "about"
-                        ? "About"
-                        : "Journal"}
-                    </h2>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                        aria-label="Toggle theme"
-                        className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
-                        tabIndex={0}
-                      >
-                        {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
-                      </button>
-                      <button
-                        onClick={togglePlayPause}
-                        aria-label={isPlaying ? "Pause" : "Play"}
-                        className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
-                        tabIndex={0}
-                      >
-                        {isPlaying ? <Pause size={15} /> : <Play size={15} />}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPanelOpen(false);
-                          setPanel("listen");
-                        }}
-                        aria-label="Close panel"
-                        className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none ml-1"
-                        tabIndex={0}
-                      >
-                        <span className="sr-only">Close</span>
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 14 14"
-                          stroke="currentColor"
-                          fill="none"
-                        >
-                          <path d="M2 2l10 10m0-10L2 12" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  {/* Panel content */}
-                  {panel === "read" && (
-                    <p className="mt-1 text-gray-600 dark:text-gray-100 leading-relaxed text-[15px]">
-                      {currentProject.readContent}
-                    </p>
-                  )}
-                  {panel === "about" && (
-                    <div className="text-gray-700 dark:text-gray-100 leading-relaxed space-y-3 text-[15px]">
-                      <div>
-                        Welcome! I&apos;m Igor Dubreucq, a freelance sound artist and composer.
-                        I create immersive audio experiences and experimental music projects.
-                        This site showcases my recent works, explorations, and ongoing collaborations.
-                      </div>
-                      <div>
-                        I&apos;m looking forward to work on new projects, so feel free to reach out at{" "}
-                        <a
-                          href="mailto:igordubreucq.pro@gmail.com"
-                          className="underline hover:opacity-70 focus:outline-none"
-                        >
-                          igordubreucq.pro@gmail.com
-                        </a>{" "}
-                        if you have any questions or ideas.
-                      </div>
-                    </div>
-                  )}
-                  {panel === "journal" && (
-                    <div className="text-gray-700 dark:text-gray-100 leading-relaxed text-[15px]">
-                      What happened and what&apos;s to come?
-                      <br />
-                      <br />
-                      <a
-                        href="https://www.mouvement.net/arts/octobre-numerique-a-arles-faire-monde-quand-tout-est-k-o?"
-                        className="underline hover:opacity-70 focus:outline-none"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        mouvement.net/arts/octobre-numerique
-                      </a>
-                    </div>
-                  )}
-                  {/* Close handle */}
-                  <div
-                    className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
-                    onClick={() => {
-                      setPanelOpen(false);
-                      setPanel("listen");
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label="Close panel"
+          {/* Carousel with three cards (peek sides) */}
+          <div className="relative flex items-center justify-center select-none w-full">
+            {/* Left side card */}
+            <motion.div
+              className="absolute top-0 left-0 w-[84%] mx-auto"
+              style={{ pointerEvents: "none" }}
+              animate={sideCard("left")}
+              transition={cardTransition}
+              key={"left-" + projectIdx}
+            >
+              <Card
+                project={getCard(projectIdx - 1)}
+                isActive={false}
+                panel={panel}
+                panelOpen={panelOpen}
+                playTrack={playTrack}
+                currentTracks={currentTracks}
+                isPlaying={isPlaying}
+                theme={theme}
+                togglePlayPause={togglePlayPause}
+                setTheme={setTheme}
+                selectPanel={selectPanel}
+                onCardTouchStart={() => {}}
+                onCardTouchMove={() => {}}
+                onCardTouchEnd={() => {}}
+                audioRef={audioRef}
+              />
+            </motion.div>
+            {/* Center (active) card */}
+            <motion.div
+              className="relative w-full mx-auto z-10"
+              animate={centerCard}
+              transition={cardTransition}
+              onTouchStart={onCardTouchStart}
+              onTouchMove={onCardTouchMove}
+              onTouchEnd={onCardTouchEnd}
+              key={currentProject.id}
+            >
+              <Card
+                project={currentProject}
+                isActive={true}
+                panel={panel}
+                panelOpen={panelOpen}
+                playTrack={playTrack}
+                currentTracks={currentTracks}
+                isPlaying={isPlaying}
+                theme={theme}
+                togglePlayPause={togglePlayPause}
+                setTheme={setTheme}
+                selectPanel={selectPanel}
+                onCardTouchStart={onCardTouchStart}
+                onCardTouchMove={onCardTouchMove}
+                onCardTouchEnd={onCardTouchEnd}
+                audioRef={audioRef}
+              />
+
+              {/* Panels overlay */}
+              <AnimatePresence>
+                {panelOpen && panel !== "listen" && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.16 }}
+                    className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
+                    tabIndex={-1}
+                    aria-modal="true"
+                    role="dialog"
                   >
-                    <span className="w-10 h-1 bg-gray-400 dark:bg-gray-500 rounded-full" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-          {/* Right side card */}
-          <motion.div
-            className="absolute top-0 right-0 w-[84%] mx-auto"
-            style={{ pointerEvents: "none" }}
-            animate={sideCard("right")}
-            transition={cardTransition}
-            key={"right-" + projectIdx}
-          >
-            <Card
-              project={getCard(projectIdx + 1)}
-              isActive={false}
-              panel={panel}
-              panelOpen={panelOpen}
-              playTrack={playTrack}
-              currentTracks={currentTracks}
-              isPlaying={isPlaying}
-              theme={theme}
-              togglePlayPause={togglePlayPause}
-              setTheme={setTheme}
-              selectPanel={selectPanel}
-              onCardTouchStart={() => {}}
-              onCardTouchMove={() => {}}
-              onCardTouchEnd={() => {}}
-              audioRef={audioRef}
-            />
-          </motion.div>
+                    {/* Panel header */}
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className={clsx(
+                        "text-lg font-bold capitalize",
+                        theme === "dark" ? "text-white" : "text-black"
+                      )}>
+                        {panel === "read"
+                          ? currentProject.title
+                          : panel === "about"
+                          ? "About"
+                          : "Journal"}
+                      </h2>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                          aria-label="Toggle theme"
+                          className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
+                          tabIndex={0}
+                        >
+                          {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+                        </button>
+                        <button
+                          onClick={togglePlayPause}
+                          aria-label={isPlaying ? "Pause" : "Play"}
+                          className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
+                          tabIndex={0}
+                        >
+                          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPanelOpen(false);
+                            setPanel("listen");
+                          }}
+                          aria-label="Close panel"
+                          className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none ml-1"
+                          tabIndex={0}
+                        >
+                          <span className="sr-only">Close</span>
+                          <svg width="13" height="13" viewBox="0 0 14 14" stroke="currentColor" fill="none">
+                            <path d="M2 2l10 10m0-10L2 12" strokeWidth="2" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    {/* Panel content */}
+                    {panel === "read" && (
+                      <p className={clsx(
+                        "mt-1 leading-relaxed text-[15px]",
+                        theme === "dark" ? "text-gray-100" : "text-gray-800"
+                      )}>
+                        {currentProject.readContent}
+                      </p>
+                    )}
+                    {panel === "about" && (
+                      <div className={clsx(
+                        "leading-relaxed space-y-3 text-[15px]",
+                        theme === "dark" ? "text-gray-100" : "text-gray-800"
+                      )}>
+                        <div>
+                          Welcome! I&apos;m Igor Dubreucq, a freelance sound artist and composer.
+                          I create immersive audio experiences and experimental music projects.
+                          This site showcases my recent works, explorations, and ongoing collaborations.
+                        </div>
+                        <div>
+                          I&apos;m looking forward to work on new projects, so feel free to reach out at{" "}
+                          <a
+                            href="mailto:igordubreucq.pro@gmail.com"
+                            className="underline hover:opacity-70 focus:outline-none"
+                          >
+                            igordubreucq.pro@gmail.com
+                          </a>{" "}
+                          if you have any questions or ideas.
+                        </div>
+                      </div>
+                    )}
+                    {panel === "journal" && (
+                      <div className={clsx(
+                        "leading-relaxed text-[15px]",
+                        theme === "dark" ? "text-gray-100" : "text-gray-800"
+                      )}>
+                        What happened and what&apos;s to come?
+                        <br /><br />
+                        <a
+                          href="https://www.mouvement.net/arts/octobre-numerique-a-arles-faire-monde-quand-tout-est-k-o?"
+                          className="underline hover:opacity-70 focus:outline-none"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          mouvement.net/arts/octobre-numerique
+                        </a>
+                      </div>
+                    )}
+                    {/* Close handle */}
+                    <div
+                      className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
+                      onClick={() => {
+                        setPanelOpen(false);
+                        setPanel("listen");
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label="Close panel"
+                    >
+                      <span className="w-10 h-1 bg-gray-400 dark:bg-gray-500 rounded-full" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+            {/* Right side card */}
+            <motion.div
+              className="absolute top-0 right-0 w-[84%] mx-auto"
+              style={{ pointerEvents: "none" }}
+              animate={sideCard("right")}
+              transition={cardTransition}
+              key={"right-" + projectIdx}
+            >
+              <Card
+                project={getCard(projectIdx + 1)}
+                isActive={false}
+                panel={panel}
+                panelOpen={panelOpen}
+                playTrack={playTrack}
+                currentTracks={currentTracks}
+                isPlaying={isPlaying}
+                theme={theme}
+                togglePlayPause={togglePlayPause}
+                setTheme={setTheme}
+                selectPanel={selectPanel}
+                onCardTouchStart={() => {}}
+                onCardTouchMove={() => {}}
+                onCardTouchEnd={() => {}}
+                audioRef={audioRef}
+              />
+            </motion.div>
+          </div>
         </div>
       </div>
     </main>
   );
 }
 
-// --- Card component with automatic color theme ---
+// --- Card component ---
 function Card({
   project,
   isActive,
@@ -564,36 +578,32 @@ function Card({
 }) {
   // --- Dominant color palette ---
   const [palette, setPalette] = useState<{ bg: string; text: string; accent: string }>({
-    bg: theme === "dark" ? "#22223b" : "#f8f8f8",
-    text: theme === "dark" ? "#f6eecb" : "#191900",
-    accent: "#e0d20f"
+    bg: theme === "dark" ? "#181825" : "#f8f8f8",
+    text: theme === "dark" ? "#f8f8f8" : "#191900",
+    accent: "#ffe971"
   });
 
-  // Compute palette only for the active card (performance).
   useEffect(() => {
     if (!project.image || !isActive) return;
     const fac = new FastAverageColor();
-    // Create a temporary image
     const img = document.createElement("img");
     img.crossOrigin = "anonymous";
     img.src = project.image;
-
     img.onload = () => {
       const color = fac.getColor(img);
       const bg = color.hex;
-      // Simple luminance formula
+      // Luminance for text
       const luminance = (color.value[0] * 0.299 + color.value[1] * 0.587 + color.value[2] * 0.114) / 255;
-      const text = luminance > 0.55 ? "#222" : "#f8f8f8";
-      // Accent: slightly saturated version
-      const accent =
-        "hsl(" + color.value[0] * 1.5 + "," + Math.min(90, color.value[1] + 60) + "%,60%)";
+      const text = luminance > 0.55 ? "#1b1b1b" : "#fafafa";
+      // Accent: a saturated yellow or palette color
+      const accent = "#ffe971";
       setPalette({ bg, text, accent });
     };
     img.onerror = () => {
       setPalette({
-        bg: theme === "dark" ? "#22223b" : "#f8f8f8",
-        text: theme === "dark" ? "#f6eecb" : "#191900",
-        accent: "#e0d20f"
+        bg: theme === "dark" ? "#181825" : "#f8f8f8",
+        text: theme === "dark" ? "#f8f8f8" : "#191900",
+        accent: "#ffe971"
       });
     };
     // eslint-disable-next-line
@@ -610,26 +620,22 @@ function Card({
     }
   }, []);
 
-  // Card background for "Listen" mode (image covers card)
   return (
     <div
       className={clsx(
         "overflow-hidden pb-4 transition-all relative",
-        isActive
-          ? "border-2"
-          : "",
-        !isActive && "opacity-80",
+        isActive ? "" : "opacity-80",
         "backdrop-blur-md rounded-2xl shadow-xl"
       )}
       style={{
         pointerEvents: isActive ? "auto" : "none",
-        minHeight: 320,
-        borderColor: isActive ? palette.accent : "transparent",
+        minHeight: 370,
+        maxHeight: 500,
+        height: panelOpen ? "auto" : 370,
         background: !panelOpen && panel === "listen" && project.image
           ? undefined
           : palette.bg,
         color: palette.text,
-        // fallback in case image load fails
       }}
       onTouchStart={onCardTouchStart}
       onTouchMove={onCardTouchMove}
@@ -649,25 +655,21 @@ function Card({
           }}
         />
       )}
-
       {/* Optional gradient overlay for readability */}
       {(!panelOpen && panel === "listen" && project.image) && (
         <div className="absolute inset-0 rounded-2xl z-10 pointer-events-none"
           style={{
-            background: "linear-gradient(to top,rgba(30,30,40,0.66) 70%,transparent 100%)"
+            background: "linear-gradient(to top,rgba(30,30,40,0.7) 70%,transparent 100%)"
           }}
         />
       )}
 
       {/* Top nav bar */}
       <nav
-        className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none relative"
-        style={{
-          background: panelOpen || panel !== "listen"
-            ? palette.bg
-            : "rgba(0,0,0,0.11)",
-          color: palette.text,
-        }}
+        className={clsx(
+          "h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none relative",
+          theme === "dark" ? "bg-zinc-900 text-white" : "bg-white text-black"
+        )}
         role="tablist"
       >
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
@@ -773,8 +775,7 @@ function Card({
       {/* Main content, playlist etc */}
       <div
         className={clsx(
-          "p-3 flex flex-col items-center space-y-3 transition-opacity duration-500 relative z-20",
-          panelOpen && panel !== "listen" && "opacity-40 pointer-events-none select-none"
+          "p-3 flex flex-col items-center space-y-3 transition-opacity duration-500 relative z-20"
         )}
         style={{
           color: palette.text
@@ -796,29 +797,35 @@ function Card({
             )}
           </div>
         )}
-        <h2 className="text-base font-semibold text-center" style={{ color: palette.text }}>
+        <h2
+          className={clsx(
+            "text-base font-semibold text-center",
+            theme === "dark" ? "text-white" : "text-black"
+          )}
+          style={{ color: palette.text }}
+        >
           {project.title}
         </h2>
-        {/* Always reserve the line, fade in/out when not playing */}
-<p
-  className={clsx(
-    "text-xs min-h-[1.25rem] h-5 transition-opacity duration-300", // fixed height
-    isActive && isPlaying ? "opacity-100" : "opacity-0"
-  )}
-  style={{ color: palette.text, height: "1.25rem", lineHeight: "1.25rem" }}
->
-  {isActive && isPlaying ? (
-    <>Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span></>
-  ) : (
-    // Keeps the height with a &nbsp; (or you can leave empty string)
-    <>&nbsp;</>
-  )}
-</p>
-
+        {/* --- Reserved currently playing line (always takes space) --- */}
+        <p
+          className={clsx(
+            "text-xs min-h-[1.25rem] h-5 transition-opacity duration-300 text-center w-full",
+            isActive && isPlaying ? "opacity-100" : "opacity-0"
+          )}
+          style={{ color: palette.text, height: "1.25rem", lineHeight: "1.25rem" }}
+        >
+          {isActive && isPlaying ? (
+            <>Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span></>
+          ) : (
+            <>&nbsp;</>
+          )}
+        </p>
         {/* Playlist (only for active card) */}
         {isActive && (
-          <aside className="w-full p-2 bg-white/70 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]"
-            style={{ color: palette.text }}>
+          <aside className={clsx(
+            "w-full p-2 bg-white/70 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]",
+            theme === "dark" ? "text-gray-100" : "text-gray-800"
+          )}>
             <ul className="space-y-1 px-1">
               {project.tracks.map((t, i) => (
                 <li
