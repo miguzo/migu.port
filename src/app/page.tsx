@@ -192,8 +192,8 @@ export default function Home() {
     setPanelOpen(false);
   }, []);
 
-  // Only allow swipe/panel switching when not playing
-  const canChangeProject = !isPlaying && !justSwiped && panel === "listen" && !panelOpen;
+  // Allow card change anytime, even while playing
+  const canChangeProject = !justSwiped && panel === "listen" && !panelOpen;
 
   const nextProject = useCallback(() => {
     if (!canChangeProject) return;
@@ -299,6 +299,31 @@ export default function Home() {
   const cardSize = "max-w-[430px] w-[84vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
 
   const currentProject = projects[projectIdx];
+
+  // --- Custom scrollbar style ---
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #e5c06c #19191b;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 9px;
+        background: #19191b;
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, #e5c06c, #a8852c);
+        border-radius: 10px;
+        border: 2px solid #19191b;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   return (
     <>
@@ -663,7 +688,9 @@ function Card({
             onClick={() => isActive && selectPanel(tab)}
             className={clsx(
               "fantasy-btn text-sm px-3 py-1 mx-1",
-              panel === tab && isActive && "fantasy-glow scale-110 text-yellow-300 font-bold"
+              panel === tab
+                ? "fantasy-glow scale-110 text-yellow-300 font-bold bg-yellow-700/10 shadow-lg"
+                : "text-yellow-100"
             )}
             disabled={!isActive}
             type="button"
@@ -676,7 +703,7 @@ function Card({
         <div className="relative flex-1 flex items-center justify-center">
           <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
             style={{
-              boxShadow: "0 8px 42px 0 #e5c06c44, 0 0 0 0 #19191b",
+              boxShadow: "0 8px 42px 0 #e5c06c44",
               borderRadius: "25px",
             }}
           >
@@ -759,11 +786,16 @@ function Card({
           {isActive && panel === "listen" && (
             <aside className="fantasy-playlist w-full">
               <ul
-                className="space-y-1 px-1 py-1 max-h-[96px] overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-900/50"
+                className="space-y-1 px-1 py-1 max-h-[96px] overflow-y-auto custom-scrollbar"
                 ref={playlistRef}
                 tabIndex={0}
                 onKeyDown={handlePlaylistKeyDown}
-                style={{ minHeight: 50 }}
+                style={{
+                  minHeight: 50,
+                  background: "rgba(25, 25, 27, 0.7)",
+                  borderRadius: "8px",
+                  border: "1px solid #a8852c",
+                }}
               >
                 {project.tracks.map((t) => (
                   <li key={t.src}>
@@ -772,13 +804,13 @@ function Card({
                       onClick={() => playTrack(project, t)}
                       aria-label={`Play ${t.title}`}
                       className={clsx(
-                        "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm w-full text-left",
+                        "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm w-full text-left font-serif",
                         currentTracks[0]?.src === t.src
                           ? "fantasy-track-active font-semibold text-yellow-300"
                           : "hover:bg-yellow-900/40 text-yellow-200"
                       )}
                     >
-                      <span className="font-serif">{t.title}</span>
+                      <span>{t.title}</span>
                     </button>
                   </li>
                 ))}
