@@ -566,7 +566,7 @@ function Card({
 }) {
   // --- Share button feedback ---
   const [copied, setCopied] = useState(false);
-const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -624,7 +624,7 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
         ))}
       </nav>
 
-      {/* Main image (taller) */}
+      {/* Main image (taller) + Floating controls */}
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
           <div className="w-[77%] mx-auto h-[60%] sm:h-[78%] relative">
@@ -644,6 +644,53 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
             />
             {/* Top overlay, fade effect */}
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-black/25 dark:to-zinc-900/50 pointer-events-none rounded-t-2xl" />
+
+            {/* --- FLOATING CONTROLS --- */}
+            {!panelOpen && isActive && (
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
+                <button
+                  onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                  aria-label="Toggle theme"
+                  className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200"
+                >
+                  {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                </button>
+                <button
+                  onClick={togglePlayPause}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200"
+                >
+                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+                <a
+                  href="https://instagram.com/migu.exe"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-pink-500"
+                >
+                  <Instagram size={16} />
+                </a>
+                <button
+                  onClick={handleShare}
+                  aria-label="Share"
+                  className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200 relative"
+                >
+                  <Share2 size={16} />
+                  <span
+                    className={clsx(
+                      "absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
+                      copied ? "opacity-100" : "opacity-0 pointer-events-none"
+                    )}
+                    style={{
+                      transition: "opacity 0.5s",
+                    }}
+                  >
+                    Copied!
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -686,52 +733,6 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
             </p>
           )}
         </div>
-        {/* Floating controls */}
-        {!panelOpen && isActive && (
-         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
-            <button
-              onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-              aria-label="Toggle theme"
-              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200"
-            >
-              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-            <button
-              onClick={togglePlayPause}
-              aria-label={isPlaying ? "Pause" : "Play"}
-              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200"
-            >
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-            </button>
-            <a
-              href="https://instagram.com/migu.exe"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-pink-500"
-            >
-              <Instagram size={16} />
-            </a>
-            <button
-              onClick={handleShare}
-              aria-label="Share"
-              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200 relative"
-            >
-              <Share2 size={16} />
-              <span
-                className={clsx(
-                  "absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
-                  copied ? "opacity-100" : "opacity-0 pointer-events-none"
-                )}
-                style={{
-                  transition: "opacity 0.5s",
-                }}
-              >
-                Copied!
-              </span>
-            </button>
-          </div>
-        )}
       </div>
       {/* Audio element for center card */}
       {isActive && <audio ref={audioRef} hidden />}
