@@ -24,7 +24,7 @@ const projects: Project[] = [
     id: "Les Fragments (2025)",
     title: "Les Fragments (2025)",
     image: "/next/image/Fragments.png",
-    readContent: `Fragments project description…`,
+    readContent: `For his debut, Victor Clavelly unveiled Les Fragments. The collection is suspended between medieval myth and digital vision. Sculptural garments, first modeled in 3D and then finished by hand, evoke both armor and artifact, hovering between protection and skin. The soundtrack echoed this balance. Classical strings and piano faded into electronic layers, evolving with each look.`,
     tracks: [
       { src: "/music/Fragments.mp3", title: "Lidge" },
       { src: "/music/DoubleCross.mp3", title: "Double Cross" },
