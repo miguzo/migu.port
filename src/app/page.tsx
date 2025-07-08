@@ -799,11 +799,22 @@ function Card({
         <h2 className="text-base font-semibold text-center" style={{ color: palette.text }}>
           {project.title}
         </h2>
-        {isActive && isPlaying && (
-          <p className="text-xs animate-fade-sine" style={{ color: palette.text }}>
-            Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span>
-          </p>
-        )}
+        {/* Always reserve the line, fade in/out when not playing */}
+<p
+  className={clsx(
+    "text-xs min-h-[1.25rem] h-5 transition-opacity duration-300", // fixed height
+    isActive && isPlaying ? "opacity-100" : "opacity-0"
+  )}
+  style={{ color: palette.text, height: "1.25rem", lineHeight: "1.25rem" }}
+>
+  {isActive && isPlaying ? (
+    <>Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span></>
+  ) : (
+    // Keeps the height with a &nbsp; (or you can leave empty string)
+    <>&nbsp;</>
+  )}
+</p>
+
         {/* Playlist (only for active card) */}
         {isActive && (
           <aside className="w-full p-2 bg-white/70 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]"
