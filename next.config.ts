@@ -1,7 +1,10 @@
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // ...tes autres configs ici si besoin
+  experimental: {
+    turbo: false, // Force Webpack au lieu de Turbopack !
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
