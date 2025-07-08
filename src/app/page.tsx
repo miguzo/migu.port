@@ -584,7 +584,7 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
       className={clsx(
         "overflow-hidden transition-all shadow-xl rounded-2xl bg-white/95 dark:bg-zinc-800/90 backdrop-blur-md flex flex-col",
         cardSize,
-        !isActive && "opacity-80 pointer-events-none select-none"
+        !isActive && "opacity-65 pointer-events-none select-none"
       )}
       style={{
         pointerEvents: isActive ? "auto" : "none",
@@ -627,7 +627,7 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
       {/* Main image (taller) */}
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
-          <div className="w-[92%] mx-auto h-[70%] sm:h-[78%] relative">
+          <div className="w-[77%] mx-auto h-[60%] sm:h-[78%] relative">
             <Image
               src={project.image}
               alt={project.title}
@@ -636,7 +636,7 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
                 objectFit: "cover",
                 objectPosition: "center",
                 opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
-                borderRadius: 18,
+                borderRadius: 25,
               }}
               className="transition-opacity duration-300"
               priority
@@ -688,7 +688,7 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
         </div>
         {/* Floating controls */}
         {!panelOpen && isActive && (
-          <div className="absolute right-1.5 top-[-52px] flex flex-col gap-2 z-40">
+          <div className="absolute right-1.5 top-[-29px] flex flex-col gap-2 z-40">
             <button
               onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
               aria-label="Toggle theme"
