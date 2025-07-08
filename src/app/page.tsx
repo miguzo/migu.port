@@ -570,8 +570,8 @@ function Card({
       const color = fac.getColor(img);
       const bg = color.hex;
       // Luminance for text
-      const luminance = (color.value[0] * 0.299 + color.value[1] * 0.587 + color.value[2] * 0.114) / 255;
-      const text = luminance > 0.55 ? "#1b1b1b" : "#fafafa";
+    //  const luminance = (color.value[0] * 0.299 + color.value[1] * 0.587 + color.value[2] * 0.114) / 255;
+     // const text = luminance > 0.55 ? "#1b1b1b" : "#fafafa";
       // Accent: neutral readable grey
       setPalette({
         bg,
