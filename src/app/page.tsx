@@ -627,7 +627,7 @@ function Card({
       {/* Main image (taller) + Floating controls */}
         {project.image && (
          <div className="relative flex-1 flex items-center justify-center">
-           <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative">
+           <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative shadow-2xl">
              <Image
         src={project.image}
         alt={project.title}
