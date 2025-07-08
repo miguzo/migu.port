@@ -455,7 +455,7 @@ export default function Home() {
                     </div>
                   </div>
                   {/* Panel content */}
-                  <div className="flex-1 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line">
+                 <div className="flex-1 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line mt-3">
                     {panel === "read" && <>{currentProject.readContent}</>}
                     {panel === "about" && (
                       <div>
