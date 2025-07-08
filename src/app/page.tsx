@@ -401,11 +401,12 @@ export default function Home() {
   animate={{ opacity: 1 }}
   exit={{ opacity: 0.5 }}
   transition={{ duration: 0.16 }}
-  className="absolute left-0 right-0 top-16 w-full h-[calc(100%-3.5rem)] bg-white dark:bg-zinc-800/95 z-50 p-4 pt-2 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
+  className="absolute inset-0 bg-white dark:bg-zinc-800/95 z-50 p-4 pt-16 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
   tabIndex={-1}
   aria-modal="true"
   role="dialog"
+
 >
                   {/* Panel header */}
                   <div className="flex items-center justify-between mb-2">
