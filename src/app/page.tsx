@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Head from "next/head";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import {
   Moon, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2
 } from "lucide-react";
-import Image from "next/image";
 import SUN3 from "@/components/icons/SUN3.svg";
 
-
-
-
-// --- DATA ---
-
+// --- DATA TYPES AND DATA ---
 type Track = { src: string; title: string };
 type Project = {
   id: string;
@@ -61,56 +58,66 @@ const projects: Project[] = [
 
 type Panel = "listen" | "read" | "about" | "journal";
 
+// --- AUDIO FADE HELPERS, RACE SAFE ---
+let fadeInterval: NodeJS.Timeout | null = null;
+
 function fadeAudioOut(audio: HTMLAudioElement, onDone: () => void) {
+  if (fadeInterval) clearInterval(fadeInterval);
   if (!audio) return onDone();
   let fading = true;
-  const fade = setInterval(() => {
-    if (!fading) return clearInterval(fade);
+  fadeInterval = setInterval(() => {
+    if (!fading) return clearInterval(fadeInterval!);
     if (audio.volume > 0.08) {
       audio.volume = Math.max(0, audio.volume - 0.08);
     } else {
       audio.volume = 0;
-      clearInterval(fade);
+      clearInterval(fadeInterval!);
       fading = false;
       onDone();
     }
   }, 25);
   return () => {
     fading = false;
-    clearInterval(fade);
+    if (fadeInterval) clearInterval(fadeInterval);
   };
 }
+
 function fadeAudioIn(audio: HTMLAudioElement) {
+  if (fadeInterval) clearInterval(fadeInterval);
   if (!audio) return;
   let v = 0;
   audio.volume = 0;
-  const fade = setInterval(() => {
-    if (!audio) return clearInterval(fade);
+  fadeInterval = setInterval(() => {
+    if (!audio) return clearInterval(fadeInterval!);
     if (v < 0.94) {
       v += 0.08;
       audio.volume = Math.min(1, v);
     } else {
       audio.volume = 1;
-      clearInterval(fade);
+      clearInterval(fadeInterval!);
     }
   }, 25);
-  return () => clearInterval(fade);
+  return () => {
+    if (fadeInterval) clearInterval(fadeInterval);
+  };
 }
 
+// --- MAIN COMPONENT ---
 export default function Home() {
+  // --- STATE ---
   const [projectIdx, setProjectIdx] = useState(0);
-  const currentProject = projects[projectIdx];
-  const [currentTracks, setCurrentTracks] = useState<Track[]>(currentProject.tracks);
+  const [currentTracks, setCurrentTracks] = useState<Track[]>(projects[0].tracks);
   const [panel, setPanel] = useState<Panel>("listen");
   const [panelOpen, setPanelOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [justSwiped, setJustSwiped] = useState(false);
   const [wasPlaying, setWasPlaying] = useState(false);
+  const [justSwiped, setJustSwiped] = useState(false);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextTrackRef = useRef<Track[]>(currentTracks);
 
-  // Lock the entire page against scrolling
+  // --- SCROLL LOCK ---
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehaviorX = "none";
@@ -120,15 +127,22 @@ export default function Home() {
     };
   }, []);
 
+  // --- THEME PERSISTENCE ---
   useEffect(() => {
+    localStorage.setItem("theme", theme);
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") setTheme(saved);
+  }, []);
 
+  // --- PROJECT/TRACK SYNC ---
   useEffect(() => {
     setCurrentTracks(projects[projectIdx].tracks);
   }, [projectIdx]);
 
-  // Only autoplay when wasPlaying is true
+  // --- AUDIO PLAYBACK LOGIC ---
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -147,6 +161,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTracks]);
 
+  // --- AUDIO PLAY/PAUSE UI STATE ---
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -163,8 +178,27 @@ export default function Home() {
     };
   }, []);
 
-  // --- Card/project carousel logic ---
-  function nextProject() {
+  // --- KEYBOARD NAV FOR CAROUSEL ---
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (panel === "listen" && !panelOpen) {
+        if (e.key === "ArrowRight") nextProject();
+        if (e.key === "ArrowLeft") prevProject();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel, panelOpen, projectIdx, isPlaying, justSwiped]);
+
+  // --- CAROUSEL FUNCTIONS ---
+  const actuallySwitchProject = useCallback((dir: 1 | -1) => {
+    setProjectIdx((i) => (i + dir + projects.length) % projects.length);
+    setPanel("listen");
+    setPanelOpen(false);
+  }, []);
+
+  const nextProject = useCallback(() => {
     if (justSwiped) return;
     setJustSwiped(true);
     setTimeout(() => setJustSwiped(false), 320);
@@ -179,8 +213,10 @@ export default function Home() {
     } else {
       actuallySwitchProject(1);
     }
-  }
-  function prevProject() {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [justSwiped, isPlaying, actuallySwitchProject]);
+
+  const prevProject = useCallback(() => {
     if (justSwiped) return;
     setJustSwiped(true);
     setTimeout(() => setJustSwiped(false), 320);
@@ -195,14 +231,10 @@ export default function Home() {
     } else {
       actuallySwitchProject(-1);
     }
-  }
-  function actuallySwitchProject(dir: 1 | -1) {
-    setProjectIdx((i) => (i + dir + projects.length) % projects.length);
-    setPanel("listen");
-    setPanelOpen(false);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [justSwiped, isPlaying, actuallySwitchProject]);
 
-  // --- Panel and section logic ---
+  // --- PANEL FUNCTIONS ---
   function selectPanel(next: Panel) {
     if (next === "listen") {
       setPanel("listen");
@@ -215,7 +247,7 @@ export default function Home() {
   function playTrack(_proj: Project, t: Track) {
     if (currentTracks[0]?.src === t.src) return;
     const a = audioRef.current;
-    nextTrackRef.current = [t, ...currentProject.tracks.filter((x) => x.src !== t.src)];
+    nextTrackRef.current = [t, ...projects[projectIdx].tracks.filter((x) => x.src !== t.src)];
     setWasPlaying(isPlaying);
     if (a && !a.paused && a.volume > 0) {
       fadeAudioOut(a, () => {
@@ -224,7 +256,7 @@ export default function Home() {
         setCurrentTracks(nextTrackRef.current);
       });
     } else {
-      setCurrentTracks([t, ...currentProject.tracks.filter((x) => x.src !== t.src)]);
+      setCurrentTracks([t, ...projects[projectIdx].tracks.filter((x) => x.src !== t.src)]);
     }
   }
 
@@ -239,10 +271,11 @@ export default function Home() {
     }
   }
 
-  // --- Swiping logic (for card/project only, no panels) ---
+  // --- SWIPE LOGIC ---
   const [swipeStartX, setSwipeStartX] = useState(0);
   const [swipeEndX, setSwipeEndX] = useState(0);
   const [swipeStartY, setSwipeStartY] = useState(0);
+
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
       setSwipeStartX(e.touches[0].clientX);
@@ -274,266 +307,275 @@ export default function Home() {
     return projects[idx];
   }
 
+  // --- CARD ANIMATION ---
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
-  const cardSize =
-    "max-w-[430px] w-[84vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
+  const cardSize = "max-w-[430px] w-[84vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
+
+  // --- RENDER ---
+  const currentProject = projects[projectIdx];
 
   return (
-    <main
-      className="flex flex-col items-center min-h-screen overflow-hidden transition-colors"
-      style={{
-        background: "#19191b url('https://www.transparenttextures.com/patterns/dark-fish-skin.png') repeat",
-        fontFamily: "'Cinzel', serif",
-        WebkitTapHighlightColor: "transparent",
-        touchAction: "pan-y",
-        overscrollBehaviorX: "none",
-      }}
-      id="main"
-    >
-      <div
-        className={clsx(
-          "mt-8 relative w-full flex items-center justify-center",
-          cardSize
-        )}
+    <>
+      <Head>
+        <title>Victor Clavelly | Music & Projects</title>
+        <meta name="description" content="Music, interactive projects and collections by Victor Clavelly." />
+        <meta property="og:title" content="Victor Clavelly | Music & Projects" />
+        <meta property="og:description" content="Music, interactive projects and collections by Victor Clavelly." />
+        <meta property="og:image" content="/next/image/FragmentsUp.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Head>
+      <main
+        className="flex flex-col items-center min-h-screen overflow-hidden transition-colors"
+        style={{
+          background: "#19191b url('https://www.transparenttextures.com/patterns/dark-fish-skin.png') repeat",
+          fontFamily: "'Cinzel', serif",
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "pan-y",
+          overscrollBehaviorX: "none",
+        }}
+        id="main"
       >
-        {/* Arrows for desktop only */}
-        {panel === "listen" && !panelOpen && (
-          <>
-            <button
-              className={clsx(
-                "hidden md:flex fantasy-btn absolute left-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
-              )}
-              aria-label="Previous project"
-              onClick={prevProject}
-              tabIndex={0}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              className={clsx(
-                "hidden md:flex fantasy-btn absolute right-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
-              )}
-              aria-label="Next project"
-              onClick={nextProject}
-              tabIndex={0}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </>
-        )}
-
-        {/* Carousel (three cards) */}
-        <div
-          className={clsx(
-            "relative flex items-center justify-center",
-            cardSize,
-            "select-none"
+        <div className={clsx("mt-8 relative w-full flex items-center justify-center", cardSize)}>
+          {/* Desktop Arrows */}
+          {panel === "listen" && !panelOpen && (
+            <>
+              <button
+                className="hidden md:flex fantasy-btn absolute left-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
+                aria-label="Previous project"
+                onClick={prevProject}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                className="hidden md:flex fantasy-btn absolute right-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
+                aria-label="Next project"
+                onClick={nextProject}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
           )}
-          style={{ touchAction: "pan-y" }}
-        >
-          {/* Left side card */}
-          <motion.div
-            className={clsx("absolute top-0 left-0 w-[80%]")}
-            style={{ pointerEvents: "none" }}
-            animate={{
-              scale: 0.85,
-              opacity: 0.55,
-              zIndex: 1,
-              filter: "blur(1.5px)",
-              x: -50,
-            }}
-            transition={cardTransition}
-            key={"left-" + projectIdx}
-          >
-            <Card
-              project={getCard(projectIdx - 1)}
-              isActive={false}
-              panel={panel}
-              panelOpen={panelOpen}
-              playTrack={playTrack}
-              currentTracks={currentTracks}
-              isPlaying={isPlaying}
-              theme={theme}
-              togglePlayPause={togglePlayPause}
-              setTheme={setTheme}
-              selectPanel={selectPanel}
-              onCardTouchStart={() => {}}
-              onCardTouchMove={() => {}}
-              onCardTouchEnd={() => {}}
-              audioRef={audioRef}
-              cardSize={cardSize}
-            />
-          </motion.div>
-          {/* Center (active) card */}
-          <motion.div
-            className={clsx("relative mx-auto z-10", cardSize)}
-            animate={{
-              scale: 1,
-              opacity: 1,
-              zIndex: 10,
-              filter: "none",
-              x: 0,
-            }}
-            transition={cardTransition}
-            onTouchStart={onCardTouchStart}
-            onTouchMove={onCardTouchMove}
-            onTouchEnd={onCardTouchEnd}
-            key={currentProject.id}
-          >
-            <Card
-              project={currentProject}
-              isActive={true}
-              panel={panel}
-              panelOpen={panelOpen}
-              playTrack={playTrack}
-              currentTracks={currentTracks}
-              isPlaying={isPlaying}
-              theme={theme}
-              togglePlayPause={togglePlayPause}
-              setTheme={setTheme}
-              selectPanel={selectPanel}
-              onCardTouchStart={onCardTouchStart}
-              onCardTouchMove={onCardTouchMove}
-              onCardTouchEnd={onCardTouchEnd}
-              audioRef={audioRef}
-              cardSize={cardSize}
-            />
 
-            {/* Panels overlay */}
-            <AnimatePresence>
-              {panelOpen && panel !== "listen" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0.5 }}
-                  transition={{ duration: 0.16 }}
-                  className="fantasy-panel absolute left-0 right-0 top-12 w-full h-[calc(100%-3rem)] z-50 p-4 pt-7 flex flex-col"
-                  tabIndex={-1}
-                  aria-modal="true"
-                  role="dialog"
-                >
-                  {/* Panel header */}
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-lg font-bold fantasy-glow capitalize">
-                      {panel === "read"
-                        ? currentProject.title
-                        : panel === "about"
-                        ? "About"
-                        : "Journal"}
-                    </h2>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                        aria-label="Toggle theme"
-                        className="fantasy-btn p-1.5"
-                        tabIndex={0}
-                      >
-                        {theme === "light" ? <Moon size={15} /> : <SUN3 size={15} />}
-                      </button>
-                      <button
-                        onClick={togglePlayPause}
-                        aria-label={isPlaying ? "Pause" : "Play"}
-                        className="fantasy-btn p-1.5"
-                        tabIndex={0}
-                      >
-                        {isPlaying ? <Pause size={15} /> : <Play size={15} />}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPanelOpen(false);
-                          setPanel("listen");
-                        }}
-                        aria-label="Close panel"
-                        className="fantasy-btn p-1.5 ml-1"
-                        tabIndex={0}
-                      >
-                        <span className="sr-only">Close</span>
-                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                          <path
-                            d="M3.75 3.75l8.5 8.5M3.75 12.25l8.5-8.5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  {/* Panel content */}
-                  <div className="flex-1 text-sm text-yellow-200/90 whitespace-pre-line mt-3 font-serif">
-                    {panel === "read" && <>{currentProject.readContent}</>}
-                    {panel === "about" && (
-                      <div>
-                        About section here.
-                        <a
-                          href="https://mouvement.net/arts/octobre-numerique"
-                          className="ml-1 underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          mouvement.net/arts/octobre-numerique
-                        </a>
-                      </div>
-                    )}
-                    {panel === "journal" && <div>Journal section…</div>}
-                  </div>
-                  {/* Close handle for swipe down */}
-                  <div
-                    className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
-                    onClick={() => {
-                      setPanelOpen(false);
-                      setPanel("listen");
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label="Close panel"
-                  >
-                    <span className="w-10 h-1 bg-yellow-600 rounded-full" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-          {/* Right side card */}
-          <motion.div
-            className={clsx("absolute top-0 right-0 w-[80%]")}
-            style={{ pointerEvents: "none" }}
-            animate={{
-              scale: 0.85,
-              opacity: 0.55,
-              zIndex: 1,
-              filter: "blur(1.5px)",
-              x: 50,
-            }}
-            transition={cardTransition}
-            key={"right-" + projectIdx}
+          {/* Carousel */}
+          <div
+            className={clsx("relative flex items-center justify-center", cardSize, "select-none")}
+            style={{ touchAction: "pan-y" }}
           >
-            <Card
-              project={getCard(projectIdx + 1)}
-              isActive={false}
-              panel={panel}
-              panelOpen={panelOpen}
-              playTrack={playTrack}
-              currentTracks={currentTracks}
-              isPlaying={isPlaying}
-              theme={theme}
-              togglePlayPause={togglePlayPause}
-              setTheme={setTheme}
-              selectPanel={selectPanel}
-              onCardTouchStart={() => {}}
-              onCardTouchMove={() => {}}
-              onCardTouchEnd={() => {}}
-              audioRef={audioRef}
-              cardSize={cardSize}
-            />
-          </motion.div>
+            {/* Left card */}
+            <motion.div
+              className={clsx("absolute top-0 left-0 w-[80%]")}
+              style={{ pointerEvents: "none" }}
+              animate={{ scale: 0.85, opacity: 0.55, zIndex: 1, filter: "blur(1.5px)", x: -50 }}
+              transition={cardTransition}
+              key={"left-" + projectIdx}
+            >
+              <Card
+                project={getCard(projectIdx - 1)}
+                isActive={false}
+                panel={panel}
+                panelOpen={panelOpen}
+                playTrack={playTrack}
+                currentTracks={currentTracks}
+                isPlaying={isPlaying}
+                theme={theme}
+                togglePlayPause={togglePlayPause}
+                setTheme={setTheme}
+                selectPanel={selectPanel}
+                onCardTouchStart={() => {}}
+                onCardTouchMove={() => {}}
+                onCardTouchEnd={() => {}}
+                audioRef={audioRef}
+                cardSize={cardSize}
+              />
+            </motion.div>
+            {/* Center (active) card */}
+            <motion.div
+              className={clsx("relative mx-auto z-10", cardSize)}
+              animate={{ scale: 1, opacity: 1, zIndex: 10, filter: "none", x: 0 }}
+              transition={cardTransition}
+              onTouchStart={onCardTouchStart}
+              onTouchMove={onCardTouchMove}
+              onTouchEnd={onCardTouchEnd}
+              key={currentProject.id}
+            >
+              <Card
+                project={currentProject}
+                isActive={true}
+                panel={panel}
+                panelOpen={panelOpen}
+                playTrack={playTrack}
+                currentTracks={currentTracks}
+                isPlaying={isPlaying}
+                theme={theme}
+                togglePlayPause={togglePlayPause}
+                setTheme={setTheme}
+                selectPanel={selectPanel}
+                onCardTouchStart={onCardTouchStart}
+                onCardTouchMove={onCardTouchMove}
+                onCardTouchEnd={onCardTouchEnd}
+                audioRef={audioRef}
+                cardSize={cardSize}
+              />
+
+              {/* Panels overlay */}
+              <AnimatePresence>
+                {panelOpen && panel !== "listen" && (
+                  <PanelOverlay
+                    panel={panel}
+                    currentProject={currentProject}
+                    theme={theme}
+                    setTheme={setTheme}
+                    isPlaying={isPlaying}
+                    togglePlayPause={togglePlayPause}
+                    setPanelOpen={setPanelOpen}
+                    setPanel={setPanel}
+                  />
+                )}
+              </AnimatePresence>
+            </motion.div>
+            {/* Right card */}
+            <motion.div
+              className={clsx("absolute top-0 right-0 w-[80%]")}
+              style={{ pointerEvents: "none" }}
+              animate={{ scale: 0.85, opacity: 0.55, zIndex: 1, filter: "blur(1.5px)", x: 50 }}
+              transition={cardTransition}
+              key={"right-" + projectIdx}
+            >
+              <Card
+                project={getCard(projectIdx + 1)}
+                isActive={false}
+                panel={panel}
+                panelOpen={panelOpen}
+                playTrack={playTrack}
+                currentTracks={currentTracks}
+                isPlaying={isPlaying}
+                theme={theme}
+                togglePlayPause={togglePlayPause}
+                setTheme={setTheme}
+                selectPanel={selectPanel}
+                onCardTouchStart={() => {}}
+                onCardTouchMove={() => {}}
+                onCardTouchEnd={() => {}}
+                audioRef={audioRef}
+                cardSize={cardSize}
+              />
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
 
-// --- Card component ---
+// --- PANEL OVERLAY COMPONENT ---
+function PanelOverlay({
+  panel,
+  currentProject,
+  theme,
+  setTheme,
+  isPlaying,
+  togglePlayPause,
+  setPanelOpen,
+  setPanel,
+}: {
+  panel: Panel;
+  currentProject: Project;
+  theme: "light" | "dark";
+  setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
+  isPlaying: boolean;
+  togglePlayPause: () => void;
+  setPanelOpen: (v: boolean) => void;
+  setPanel: (p: Panel) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0.5 }}
+      transition={{ duration: 0.16 }}
+      className="fantasy-panel absolute left-0 right-0 top-12 w-full h-[calc(100%-3rem)] z-50 p-4 pt-7 flex flex-col"
+      tabIndex={-1}
+      aria-modal="true"
+      role="dialog"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-bold fantasy-glow capitalize">
+          {panel === "read"
+            ? currentProject.title
+            : panel === "about"
+            ? "About"
+            : "Journal"}
+        </h2>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+            aria-label="Toggle theme"
+            className="fantasy-btn p-1.5"
+          >
+            {theme === "light" ? <Moon size={15} /> : <SUN3 size={15} />}
+          </button>
+          <button
+            onClick={togglePlayPause}
+            aria-label={isPlaying ? "Pause" : "Play"}
+            className="fantasy-btn p-1.5"
+          >
+            {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+          </button>
+          <button
+            onClick={() => {
+              setPanelOpen(false);
+              setPanel("listen");
+            }}
+            aria-label="Close panel"
+            className="fantasy-btn p-1.5 ml-1"
+          >
+            <span className="sr-only">Close</span>
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+              <path
+                d="M3.75 3.75l8.5 8.5M3.75 12.25l8.5-8.5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {/* Panel content */}
+      <div className="flex-1 text-sm text-yellow-200/90 whitespace-pre-line mt-3 font-serif">
+        {panel === "read" && <>{currentProject.readContent}</>}
+        {panel === "about" && (
+          <div>
+            About section here.
+            <a
+              href="https://mouvement.net/arts/octobre-numerique"
+              className="ml-1 underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              mouvement.net/arts/octobre-numerique
+            </a>
+          </div>
+        )}
+        {panel === "journal" && <div>Journal section…</div>}
+      </div>
+      {/* Close handle for swipe down */}
+      <div
+        className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
+        onClick={() => {
+          setPanelOpen(false);
+          setPanel("listen");
+        }}
+        role="button"
+        aria-label="Close panel"
+      >
+        <span className="w-10 h-1 bg-yellow-600 rounded-full" />
+      </div>
+    </motion.div>
+  );
+}
+
+// --- CARD COMPONENT ---
 function Card({
   project,
   isActive,
@@ -569,54 +611,81 @@ function Card({
   audioRef: React.RefObject<HTMLAudioElement | null>;
   cardSize: string;
 }) {
-  // --- Share button feedback ---
+  // --- Share feedback ---
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setCopied(false), 1500);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 1500);
+    } else {
+      window.prompt("Copy this link:", window.location.href);
+    }
   };
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
-return (
-  <div
-    className={clsx(
-      "fantasy-card flex flex-col",
-      cardSize,
-      !isActive && "opacity-65 pointer-events-none select-none"
-    )}
-    style={{
-      pointerEvents: isActive ? "auto" : "none",
-      position: "relative",
-      zIndex: 10,
-      margin: 0,
-      padding: 0,
-    }}
-    onTouchStart={onCardTouchStart}
-    onTouchMove={onCardTouchMove}
-    onTouchEnd={onCardTouchEnd}
-  >
-    {/* --- Background image layer --- */}
+  // --- Playlist keyboard navigation ---
+  const playlistRef = useRef<HTMLUListElement | null>(null);
+  function handlePlaylistKeyDown(e: React.KeyboardEvent) {
+    if (!isActive || panel !== "listen") return;
+    const current = currentTracks[0];
+    const idx = project.tracks.findIndex((t) => t.src === current?.src);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = project.tracks[(idx + 1) % project.tracks.length];
+      playTrack(project, next);
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = project.tracks[(idx - 1 + project.tracks.length) % project.tracks.length];
+      playTrack(project, prev);
+    }
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      playTrack(project, project.tracks[idx]);
+    }
+  }
+
+  return (
     <div
-      className="absolute inset-0 w-full h-full z-0 rounded-2xl bg-cover bg-center"
+      className={clsx(
+        "fantasy-card flex flex-col",
+        cardSize,
+        !isActive && "opacity-65 pointer-events-none select-none"
+      )}
       style={{
-        backgroundImage: `url('/next/image/BackGroundFrag.png')`, // replace with your image name/path
-        opacity: 0.16
+        pointerEvents: isActive ? "auto" : "none",
+        position: "relative",
+        zIndex: 10,
+        margin: 0,
+        padding: 0,
       }}
-      aria-hidden="true"
-    />
+      onTouchStart={onCardTouchStart}
+      onTouchMove={onCardTouchMove}
+      onTouchEnd={onCardTouchEnd}
+    >
+      {/* --- Background image layer --- */}
+      <div
+        className="absolute inset-0 w-full h-full z-0 rounded-2xl bg-cover bg-center"
+        style={{
+          backgroundImage: `url('/next/image/BackGroundFrag.png')`,
+          opacity: 0.16,
+        }}
+        aria-hidden="true"
+      />
       {/* Top nav bar */}
       <nav className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
           <button
             key={tab}
-            tabIndex={0}
             role="tab"
             aria-selected={panel === tab}
             onClick={() => isActive && selectPanel(tab)}
@@ -633,12 +702,12 @@ return (
               panel === tab && isActive && "fantasy-glow scale-110"
             )}
             disabled={!isActive}
+            type="button"
           >
             {tab[0].toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </nav>
-
       {/* Main image (taller) + Floating controls */}
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
@@ -647,9 +716,9 @@ return (
               src={project.image}
               alt={project.title}
               fill
+              objectFit="cover"
+              objectPosition="center"
               style={{
-                objectFit: "cover",
-                objectPosition: "center",
                 opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
                 borderRadius: 25,
                 border: "2px solid #e5c06c",
@@ -661,7 +730,6 @@ return (
             />
             {/* Top overlay, fade effect */}
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
-
             {/* --- FLOATING CONTROLS --- */}
             {!panelOpen && isActive && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
@@ -669,6 +737,7 @@ return (
                   onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
                   aria-label="Toggle theme"
                   className="fantasy-btn p-1.5"
+                  type="button"
                 >
                   {theme === "light" ? <Moon size={16} /> : <SUN3 size={16} />}
                 </button>
@@ -676,6 +745,7 @@ return (
                   onClick={togglePlayPause}
                   aria-label={isPlaying ? "Pause" : "Play"}
                   className="fantasy-btn p-1.5"
+                  type="button"
                 >
                   {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                 </button>
@@ -692,6 +762,7 @@ return (
                   onClick={handleShare}
                   aria-label="Share"
                   className="fantasy-btn p-1.5 relative"
+                  type="button"
                 >
                   <Share2 size={16} />
                   <span
@@ -699,9 +770,7 @@ return (
                       "absolute left-10 top-1/2 -translate-y-1/2 bg-yellow-900 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
                       copied ? "opacity-100" : "opacity-0 pointer-events-none"
                     )}
-                    style={{
-                      transition: "opacity 0.5s",
-                    }}
+                    style={{ transition: "opacity 0.5s" }}
                   >
                     Copied!
                   </span>
@@ -711,13 +780,9 @@ return (
           </div>
         </div>
       )}
-
       {/* Bottom title, currently playing, and playlist */}
       <div className="relative flex flex-col items-center w-full pb-5 pt-0 px-4 z-20" style={{ minHeight: 140 }}>
-        {/* Title (move closer to image by setting mt-0 and mb-1) */}
-        <h2 className="fantasy-title text-center mb-1 mt-0">
-          {project.title}
-        </h2>
+        <h2 className="fantasy-title text-center mb-1 mt-0">{project.title}</h2>
         {/* "Currently playing" just below title */}
         <div className="h-6 flex items-center justify-center w-full mb-1">
           {isActive && panel === "listen" && isPlaying && (
@@ -730,22 +795,27 @@ return (
         <div className="w-full mt-auto">
           {isActive && panel === "listen" && (
             <aside className="fantasy-playlist w-full">
-              <ul className="space-y-1 px-1 py-1">
-                {project.tracks.map((t, i) => (
-                  <li
-                    key={i}
-                    onClick={() => playTrack(project, t)}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Play ${t.title}`}
-                    className={clsx(
-                      "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm",
-                      currentTracks[0]?.src === t.src
-                        ? "fantasy-track-active font-semibold"
-                        : "hover:bg-yellow-900/40 text-yellow-300"
-                    )}
-                  >
-                    <span>{t.title}</span>
+              <ul
+                className="space-y-1 px-1 py-1"
+                ref={playlistRef}
+                tabIndex={0}
+                onKeyDown={handlePlaylistKeyDown}
+              >
+                {project.tracks.map((t) => (
+                  <li key={t.src}>
+                    <button
+                      type="button"
+                      onClick={() => playTrack(project, t)}
+                      aria-label={`Play ${t.title}`}
+                      className={clsx(
+                        "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm w-full text-left",
+                        currentTracks[0]?.src === t.src
+                          ? "fantasy-track-active font-semibold"
+                          : "hover:bg-yellow-900/40 text-yellow-300"
+                      )}
+                    >
+                      <span>{t.title}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
