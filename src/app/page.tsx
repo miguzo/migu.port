@@ -584,24 +584,33 @@ function Card({
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 
-  return (
+return (
+  <div
+    className={clsx(
+      "fantasy-card flex flex-col",
+      cardSize,
+      !isActive && "opacity-65 pointer-events-none select-none"
+    )}
+    style={{
+      pointerEvents: isActive ? "auto" : "none",
+      position: "relative",
+      zIndex: 10,
+      margin: 0,
+      padding: 0,
+    }}
+    onTouchStart={onCardTouchStart}
+    onTouchMove={onCardTouchMove}
+    onTouchEnd={onCardTouchEnd}
+  >
+    {/* --- Background image layer --- */}
     <div
-      className={clsx(
-        "fantasy-card flex flex-col",
-        cardSize,
-        !isActive && "opacity-65 pointer-events-none select-none"
-      )}
+      className="absolute inset-0 w-full h-full z-0 rounded-2xl bg-cover bg-center"
       style={{
-        pointerEvents: isActive ? "auto" : "none",
-        position: "relative",
-        zIndex: 10,
-        margin: 0,
-        padding: 0,
+        backgroundImage: `url('/next/image/BackGroundFrag.png')`, // replace with your image name/path
+        opacity: 0.16
       }}
-      onTouchStart={onCardTouchStart}
-      onTouchMove={onCardTouchMove}
-      onTouchEnd={onCardTouchEnd}
-    >
+      aria-hidden="true"
+    />
       {/* Top nav bar */}
       <nav className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
