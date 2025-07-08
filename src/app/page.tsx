@@ -7,6 +7,10 @@ import {
   Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2
 } from "lucide-react";
 import Image from "next/image";
+import SUN3 from "@/components/icons/SUN3.svg";
+
+
+
 
 // --- DATA ---
 
@@ -424,7 +428,7 @@ export default function Home() {
                         className="fantasy-btn p-1.5"
                         tabIndex={0}
                       >
-                        {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+                        {theme === "light" ? <Moon size={15} /> : <SUN3 size={15} />}
                       </button>
                       <button
                         onClick={togglePlayPause}
@@ -657,7 +661,7 @@ function Card({
                   aria-label="Toggle theme"
                   className="fantasy-btn p-1.5"
                 >
-                  {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                  {theme === "light" ? <Moon size={16} /> : <SUN3 size={16} />}
                 </button>
                 <button
                   onClick={togglePlayPause}

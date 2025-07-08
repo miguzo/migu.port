@@ -1,0 +1,22 @@
+<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Circle -->
+  <circle cx="24" cy="24" r="12" stroke="currentColor" fill="none"></circle>
+  <!-- Inner Circle -->
+  <circle cx="24" cy="24" r="4" stroke="currentColor" fill="none"></circle>
+  <!-- Center Dot -->
+  <circle cx="24" cy="24" r="1.2" fill="currentColor" stroke="none"></circle>
+  <!-- Sun Rays, leaf/feather style -->
+  <path d="M24 6 L24 13 M24 35 L24 42"></path>
+  <path d="M6 24 L13 24 M35 24 L42 24"></path>
+  <path d="M11.8 11.8 L17.2 17.2 M36.2 36.2 L30.8 30.8"></path>
+  <path d="M36.2 11.8 L30.8 17.2 M11.8 36.2 L17.2 30.8"></path>
+  <!-- Tips of each ray: ovals to evoke "feather" look -->
+  <ellipse cx="24" cy="5" rx="1" ry="2" fill="none" stroke="currentColor"></ellipse>
+  <ellipse cx="24" cy="43" rx="1" ry="2" fill="none" stroke="currentColor"></ellipse>
+  <ellipse cx="5" cy="24" rx="2" ry="1" fill="none" stroke="currentColor"></ellipse>
+  <ellipse cx="43" cy="24" rx="2" ry="1" fill="none" stroke="currentColor"></ellipse>
+  <ellipse cx="10" cy="10" rx="1.2" ry="2" fill="none" stroke="currentColor" transform="rotate(-45 10 10)"></ellipse>
+  <ellipse cx="38" cy="38" rx="1.2" ry="2" fill="none" stroke="currentColor" transform="rotate(-45 38 38)"></ellipse>
+  <ellipse cx="38" cy="10" rx="1.2" ry="2" fill="none" stroke="currentColor" transform="rotate(45 38 10)"></ellipse>
+  <ellipse cx="10" cy="38" rx="1.2" ry="2" fill="none" stroke="currentColor" transform="rotate(45 10 38)"></ellipse>
+</svg>
