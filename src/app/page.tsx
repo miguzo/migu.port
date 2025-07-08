@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import {
-  Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2
+  Moon, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2
 } from "lucide-react";
 import Image from "next/image";
 import SUN3 from "@/components/icons/SUN3.svg";
