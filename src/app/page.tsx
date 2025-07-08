@@ -682,36 +682,35 @@ function Card({
       />
 
       {/* --- Nav Tabs --- */}
-      <nav
-        className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
-        role="tablist"
-      >
-        {(["listen", "read", "about", "journal"] as const).map((tab) => (
-          <button
-            key={tab}
-            role="tab"
-            aria-selected={panel === tab}
-            onClick={() => isActive && selectPanel(tab)}
-            className={clsx(
-              "fantasy-tab-btn text-sm px-4 py-1 mx-1 outline-none transition font-serif border-2",
-              panel === tab
-                ? "bg-yellow-300 text-[#19191b] border-yellow-400 font-bold shadow-yellow-400/40 shadow-lg"
-                : "bg-transparent text-yellow-100 border-yellow-400 hover:bg-yellow-700/30 hover:text-yellow-300",
-              "focus-visible:ring-2 focus-visible:ring-yellow-400/80"
-            )}
-            style={{
-              borderRadius: '1.6em',
-              boxShadow: panel === tab ? "0 0 6px 2px #e5c06c66" : undefined,
-              transition: 'box-shadow 0.18s'
-            }}
-            disabled={!isActive}
-            type="button"
-            tabIndex={isActive ? 0 : -1}
-          >
-            {tab[0].toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </nav>
+    <nav
+  className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
+  role="tablist"
+>
+  {(["listen", "read", "about", "journal"] as const).map((tab) => (
+    <button
+      key={tab}
+      tabIndex={0}
+      role="tab"
+      aria-selected={panel === tab}
+      onClick={() => isActive && selectPanel(tab)}
+      onKeyDown={(e) => {
+        if (
+          isActive &&
+          (e.key === "Enter" || e.key === " ")
+        ) {
+          selectPanel(tab);
+        }
+      }}
+      className={clsx(
+        "fantasy-btn text-sm px-3 py-1 mx-1",
+        panel === tab && isActive && "fantasy-glow scale-110"
+      )}
+      disabled={!isActive}
+    >
+      {tab[0].toUpperCase() + tab.slice(1)}
+    </button>
+  ))}
+</nav>
 
       {/* --- Main Image + Floating Controls --- */}
       {project.image && (
