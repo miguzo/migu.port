@@ -688,7 +688,7 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
         </div>
         {/* Floating controls */}
         {!panelOpen && isActive && (
-         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
+         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
             <button
               onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
               aria-label="Toggle theme"
