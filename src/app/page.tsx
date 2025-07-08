@@ -272,7 +272,7 @@ export default function Home() {
 
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
   const cardSize =
-    "max-w-[430px] w-[96vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
+    "max-w-[430px] w-[84vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
 
   return (
     <main
@@ -582,7 +582,7 @@ function Card({
   return (
     <div
       className={clsx(
-        "overflow-hidden transition-all shadow-xl rounded-2xl bg-white/95 dark:bg-zinc-800/90 backdrop-blur-md flex flex-col",
+        "overflow-hidden transition-all shadow-xl rounded-2xl bg-white/95 dark:bg-zinc-800/60 backdrop-blur-md flex flex-col",
         cardSize,
         !isActive && "opacity-65 pointer-events-none select-none"
       )}
@@ -625,23 +625,23 @@ function Card({
       </nav>
 
       {/* Main image (taller) + Floating controls */}
-      {project.image && (
-        <div className="relative flex-1 flex items-center justify-center">
-          <div className="w-[77%] mx-auto h-[60%] sm:h-[78%] relative">
-            <Image
-              src={project.image}
-              alt={project.title}
-              fill
-              style={{
-                objectFit: "cover",
-                objectPosition: "center",
-                opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
-                borderRadius: 25,
-              }}
-              className="transition-opacity duration-300"
-              priority
-              sizes="(max-width: 600px) 80vw, 430px"
-            />
+        {project.image && (
+         <div className="relative flex-1 flex items-center justify-center">
+           <div className="w-[78vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[44vw] sm:h-[78%] relative">
+             <Image
+        src={project.image}
+        alt={project.title}
+        fill
+        style={{
+          objectFit: "cover",
+          objectPosition: "center",
+          opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
+          borderRadius: 25,
+             }}
+               className="transition-opacity duration-300"
+               priority
+               sizes="(max-width: 600px) 80vw, 430px"
+                 />
             {/* Top overlay, fade effect */}
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-black/25 dark:to-zinc-900/50 pointer-events-none rounded-t-2xl" />
 
