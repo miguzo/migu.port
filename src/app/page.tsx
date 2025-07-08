@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2 } from "lucide-react";
 import Image from "next/image";
-import { FastAverageColor } from "fast-average-color";
 
-// --- Types and data ---
+// Example data
 type Track = { src: string; title: string };
 type Project = {
   id: string;
@@ -54,7 +53,6 @@ const projects: Project[] = [
 
 type Panel = "listen" | "read" | "about" | "journal";
 
-// --- Utility: fade audio in/out ---
 function fadeAudioOut(audio: HTMLAudioElement, onDone: () => void) {
   if (!audio) return onDone();
   let fading = true;
@@ -91,7 +89,6 @@ function fadeAudioIn(audio: HTMLAudioElement) {
   return () => clearInterval(fade);
 }
 
-// --- Main Page ---
 export default function Home() {
   const [projectIdx, setProjectIdx] = useState(0);
   const currentProject = projects[projectIdx];
@@ -102,7 +99,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Swipe state for card/project change
+  // For swiping
   const [swipeStartX, setSwipeStartX] = useState(0);
   const [swipeEndX, setSwipeEndX] = useState(0);
   const [swipeStartY, setSwipeStartY] = useState(0);
@@ -238,7 +235,7 @@ export default function Home() {
     }
   };
 
-  // --- Partial card carousel logic ---
+  // --- Carousel helper ---
   function getCard(idx: number) {
     const n = projects.length;
     if (idx < 0) return projects[(idx + n) % n];
@@ -247,271 +244,262 @@ export default function Home() {
   }
 
   // --- Animations ---
-  const centerCard = {
-    scale: 1,
-    opacity: 1,
-    zIndex: 10,
-    filter: "none",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
-    x: 0,
-  };
-  const sideCard = (side: "left" | "right") => ({
-    scale: 0.8,
-    opacity: 0.55,
-    zIndex: 1,
-    filter: "blur(1.5px)",
-    boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
-    x: side === "left" ? -56 : 56,
-  });
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
 
-  // --- Card/panel height (always fixed) ---
-  const CARD_HEIGHT = 430; // adjust as you want!
+  // Sizing
+  const cardSize = "w-[380px] sm:w-[410px] md:w-[430px] h-[430px] sm:h-[470px] md:h-[500px]";
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900 transition-colors">
-      <div className="flex justify-center items-center w-full relative" style={{ minHeight: CARD_HEIGHT + 40 }}>
-        {/* Arrows outside the card */}
-        <button
-          className="hidden sm:flex items-center justify-center absolute -left-20 top-1/2 -translate-y-1/2 z-40
-            p-2 rounded-full shadow transition border"
-          style={{
-            background: "#191a1e",
-            color: "#ededed",
-            borderColor: "#ededed",
-          }}
-          aria-label="Previous project"
-          onClick={prevProject}
-          tabIndex={0}
-        >
-          <ChevronLeft size={22} />
-        </button>
-        <div className="relative w-full max-w-md" style={{ height: CARD_HEIGHT }}>
-          {/* Carousel with three cards (peek sides) */}
-          <div className="relative flex items-center justify-center select-none w-full h-full">
-            {/* Left side card */}
-            <motion.div
-              className="absolute top-0 left-0 w-[84%] mx-auto"
-              style={{ pointerEvents: "none" }}
-              animate={sideCard("left")}
-              transition={cardTransition}
-              key={"left-" + projectIdx}
+    <main
+      className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-zinc-900 overflow-y-auto overflow-x-hidden transition-colors"
+      style={{
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "pan-y",
+        overscrollBehaviorX: "none",
+      }}
+      id="main"
+    >
+      <div
+        className={clsx(
+          "mt-8 relative w-full flex items-center justify-center",
+          cardSize
+        )}
+      >
+        {/* Arrows for desktop only */}
+        {panel === "listen" && !panelOpen && (
+          <>
+            <button
+              className={clsx(
+                "hidden md:flex absolute left-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border border-gray-300 dark:border-zinc-700 bg-white/90 dark:bg-zinc-800/90 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-zinc-700"
+              )}
+              aria-label="Previous project"
+              onClick={prevProject}
+              tabIndex={0}
             >
-              <Card
-                project={getCard(projectIdx - 1)}
-                isActive={false}
-                panel={panel}
-                panelOpen={panelOpen}
-                playTrack={playTrack}
-                currentTracks={currentTracks}
-                isPlaying={isPlaying}
-                theme={theme}
-                togglePlayPause={togglePlayPause}
-                setTheme={setTheme}
-                selectPanel={selectPanel}
-                onCardTouchStart={() => {}}
-                onCardTouchMove={() => {}}
-                onCardTouchEnd={() => {}}
-                audioRef={audioRef}
-                cardHeight={CARD_HEIGHT}
-              />
-            </motion.div>
-            {/* Center (active) card */}
-            <motion.div
-              className="relative w-full mx-auto z-10"
-              animate={centerCard}
-              transition={cardTransition}
-              onTouchStart={onCardTouchStart}
-              onTouchMove={onCardTouchMove}
-              onTouchEnd={onCardTouchEnd}
-              key={currentProject.id}
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className={clsx(
+                "hidden md:flex absolute right-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border border-gray-300 dark:border-zinc-700 bg-white/90 dark:bg-zinc-800/90 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-zinc-700"
+              )}
+              aria-label="Next project"
+              onClick={nextProject}
+              tabIndex={0}
             >
-              <Card
-                project={currentProject}
-                isActive={true}
-                panel={panel}
-                panelOpen={panelOpen}
-                playTrack={playTrack}
-                currentTracks={currentTracks}
-                isPlaying={isPlaying}
-                theme={theme}
-                togglePlayPause={togglePlayPause}
-                setTheme={setTheme}
-                selectPanel={selectPanel}
-                onCardTouchStart={onCardTouchStart}
-                onCardTouchMove={onCardTouchMove}
-                onCardTouchEnd={onCardTouchEnd}
-                audioRef={audioRef}
-                cardHeight={CARD_HEIGHT}
-              />
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
 
-              {/* Panels overlay */}
-              <AnimatePresence>
-                {panelOpen && panel !== "listen" && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.16 }}
-                    className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
-                    style={{ minHeight: CARD_HEIGHT - 48, height: CARD_HEIGHT - 48 }}
-                    tabIndex={-1}
-                    aria-modal="true"
-                    role="dialog"
-                  >
-                    {/* Panel header */}
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className={clsx(
-                        "text-lg font-bold capitalize",
-                        theme === "dark" ? "text-white" : "text-black"
-                      )}>
-                        {panel === "read"
-                          ? currentProject.title
-                          : panel === "about"
-                          ? "About"
-                          : "Journal"}
-                      </h2>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                          aria-label="Toggle theme"
-                          className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
-                          tabIndex={0}
-                        >
-                          {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
-                        </button>
-                        <button
-                          onClick={togglePlayPause}
-                          aria-label={isPlaying ? "Pause" : "Play"}
-                          className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
-                          tabIndex={0}
-                        >
-                          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setPanelOpen(false);
-                            setPanel("listen");
-                          }}
-                          aria-label="Close panel"
-                          className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none ml-1"
-                          tabIndex={0}
-                        >
-                          <span className="sr-only">Close</span>
-                          <svg width="13" height="13" viewBox="0 0 14 14" stroke="currentColor" fill="none">
-                            <path d="M2 2l10 10m0-10L2 12" strokeWidth="2" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    {/* Panel content */}
-                    {panel === "read" && (
-                      <p className={clsx(
-                        "mt-1 leading-relaxed text-[15px]",
-                        theme === "dark" ? "text-gray-100" : "text-gray-800"
-                      )}>
-                        {currentProject.readContent}
-                      </p>
-                    )}
-                    {panel === "about" && (
-                      <div className={clsx(
-                        "leading-relaxed space-y-3 text-[15px]",
-                        theme === "dark" ? "text-gray-100" : "text-gray-800"
-                      )}>
-                        <div>
-                          Welcome! I&apos;m Igor Dubreucq, a freelance sound artist and composer.
-                          I create immersive audio experiences and experimental music projects.
-                          This site showcases my recent works, explorations, and ongoing collaborations.
-                        </div>
-                        <div>
-                          I&apos;m looking forward to work on new projects, so feel free to reach out at{" "}
-                          <a
-                            href="mailto:igordubreucq.pro@gmail.com"
-                            className="underline hover:opacity-70 focus:outline-none"
-                          >
-                            igordubreucq.pro@gmail.com
-                          </a>{" "}
-                          if you have any questions or ideas.
-                        </div>
-                      </div>
-                    )}
-                    {panel === "journal" && (
-                      <div className={clsx(
-                        "leading-relaxed text-[15px]",
-                        theme === "dark" ? "text-gray-100" : "text-gray-800"
-                      )}>
-                        What happened and what&apos;s to come?
-                        <br /><br />
-                        <a
-                          href="https://www.mouvement.net/arts/octobre-numerique-a-arles-faire-monde-quand-tout-est-k-o?"
-                          className="underline hover:opacity-70 focus:outline-none"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          mouvement.net/arts/octobre-numerique
-                        </a>
-                      </div>
-                    )}
-                    {/* Close handle */}
-                    <div
-                      className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
-                      onClick={() => {
-                        setPanelOpen(false);
-                        setPanel("listen");
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label="Close panel"
-                    >
-                      <span className="w-10 h-1 bg-gray-400 dark:bg-gray-500 rounded-full" />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-            {/* Right side card */}
-            <motion.div
-              className="absolute top-0 right-0 w-[84%] mx-auto"
-              style={{ pointerEvents: "none" }}
-              animate={sideCard("right")}
-              transition={cardTransition}
-              key={"right-" + projectIdx}
-            >
-              <Card
-                project={getCard(projectIdx + 1)}
-                isActive={false}
-                panel={panel}
-                panelOpen={panelOpen}
-                playTrack={playTrack}
-                currentTracks={currentTracks}
-                isPlaying={isPlaying}
-                theme={theme}
-                togglePlayPause={togglePlayPause}
-                setTheme={setTheme}
-                selectPanel={selectPanel}
-                onCardTouchStart={() => {}}
-                onCardTouchMove={() => {}}
-                onCardTouchEnd={() => {}}
-                audioRef={audioRef}
-                cardHeight={CARD_HEIGHT}
-              />
-            </motion.div>
-          </div>
-        </div>
-        <button
-          className="hidden sm:flex items-center justify-center absolute -right-20 top-1/2 -translate-y-1/2 z-40
-            p-2 rounded-full shadow transition border"
-          style={{
-            background: "#191a1e",
-            color: "#ededed",
-            borderColor: "#ededed",
-          }}
-          aria-label="Next project"
-          onClick={nextProject}
-          tabIndex={0}
+        {/* Carousel (three cards) */}
+        <div
+          className={clsx(
+            "relative flex items-center justify-center",
+            cardSize,
+            "select-none"
+          )}
+          style={{ touchAction: "pan-y" }}
         >
-          <ChevronRight size={22} />
-        </button>
+          {/* Left side card */}
+          <motion.div
+            className={clsx("absolute top-0 left-0 w-[80%]")}
+            style={{ pointerEvents: "none" }}
+            animate={{
+              scale: 0.85,
+              opacity: 0.55,
+              zIndex: 1,
+              filter: "blur(1.5px)",
+              x: -50,
+            }}
+            transition={cardTransition}
+            key={"left-" + projectIdx}
+          >
+            <Card
+              project={getCard(projectIdx - 1)}
+              isActive={false}
+              panel={panel}
+              panelOpen={panelOpen}
+              playTrack={playTrack}
+              currentTracks={currentTracks}
+              isPlaying={isPlaying}
+              theme={theme}
+              togglePlayPause={togglePlayPause}
+              setTheme={setTheme}
+              selectPanel={selectPanel}
+              onCardTouchStart={() => {}}
+              onCardTouchMove={() => {}}
+              onCardTouchEnd={() => {}}
+              audioRef={audioRef}
+              cardSize={cardSize}
+            />
+          </motion.div>
+          {/* Center (active) card */}
+          <motion.div
+            className={clsx("relative mx-auto z-10", cardSize)}
+            animate={{
+              scale: 1,
+              opacity: 1,
+              zIndex: 10,
+              filter: "none",
+              x: 0,
+            }}
+            transition={cardTransition}
+            onTouchStart={onCardTouchStart}
+            onTouchMove={onCardTouchMove}
+            onTouchEnd={onCardTouchEnd}
+            key={currentProject.id}
+          >
+            <Card
+              project={currentProject}
+              isActive={true}
+              panel={panel}
+              panelOpen={panelOpen}
+              playTrack={playTrack}
+              currentTracks={currentTracks}
+              isPlaying={isPlaying}
+              theme={theme}
+              togglePlayPause={togglePlayPause}
+              setTheme={setTheme}
+              selectPanel={selectPanel}
+              onCardTouchStart={onCardTouchStart}
+              onCardTouchMove={onCardTouchMove}
+              onCardTouchEnd={onCardTouchEnd}
+              audioRef={audioRef}
+              cardSize={cardSize}
+            />
+
+            {/* Panels overlay */}
+            <AnimatePresence>
+              {panelOpen && panel !== "listen" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16 }}
+                  className="absolute left-0 right-0 top-0 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
+                  style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
+                  tabIndex={-1}
+                  aria-modal="true"
+                  role="dialog"
+                >
+                  {/* Panel header */}
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-lg font-bold text-black dark:text-white capitalize">
+                      {panel === "read"
+                        ? currentProject.title
+                        : panel === "about"
+                        ? "About"
+                        : "Journal"}
+                    </h2>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                        aria-label="Toggle theme"
+                        className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
+                        tabIndex={0}
+                      >
+                        {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+                      </button>
+                      <button
+                        onClick={togglePlayPause}
+                        aria-label={isPlaying ? "Pause" : "Play"}
+                        className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none"
+                        tabIndex={0}
+                      >
+                        {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+                      </button>
+                      <button
+                        onClick={() => setPanelOpen(false)}
+                        aria-label="Close panel"
+                        className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none ml-1"
+                        tabIndex={0}
+                      >
+                        <span className="sr-only">Close</span>
+                        <svg width="13" height="13" viewBox="0 0 14 14" stroke="currentColor" fill="none">
+                          <path d="M2 2l10 10m0-10L2 12" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  {/* Panel content */}
+                  {panel === "read" && (
+                    <p className="mt-1 text-gray-600 dark:text-gray-100 leading-relaxed text-[15px]">
+                      {currentProject.readContent}
+                    </p>
+                  )}
+                  {panel === "about" && (
+                    <div className="text-gray-700 dark:text-gray-100 leading-relaxed space-y-3 text-[15px]">
+                      <div>
+                        Welcome! I&apos;m Igor Dubreucq, a freelance sound artist and composer.
+                        I create immersive audio experiences and experimental music projects.
+                        This site showcases my recent works, explorations, and ongoing collaborations.
+                      </div>
+                      <div>
+                        I&apos;m looking forward to work on new projects, so feel free to reach out at{" "}
+                        <a href="mailto:igordubreucq.pro@gmail.com" className="underline hover:opacity-70 focus:outline-none">
+                          igordubreucq.pro@gmail.com
+                        </a>
+                        {" "}if you have any questions or ideas.
+                      </div>
+                    </div>
+                  )}
+                  {panel === "journal" && (
+                    <div className="text-gray-700 dark:text-gray-100 leading-relaxed text-[15px]">
+                      What happened and what&apos;s to come?
+                      <br /><br />
+                      <a href="https://www.mouvement.net/arts/octobre-numerique-a-arles-faire-monde-quand-tout-est-k-o?" className="underline hover:opacity-70 focus:outline-none" target="_blank" rel="noopener noreferrer">
+                        mouvement.net/arts/octobre-numerique
+                      </a>
+                    </div>
+                  )}
+                  {/* Close handle */}
+                  <div
+                    className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
+                    onClick={() => setPanelOpen(false)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Close panel"
+                  >
+                    <span className="w-10 h-1 bg-gray-400 dark:bg-gray-500 rounded-full" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+          {/* Right side card */}
+          <motion.div
+            className={clsx("absolute top-0 right-0 w-[80%]")}
+            style={{ pointerEvents: "none" }}
+            animate={{
+              scale: 0.85,
+              opacity: 0.55,
+              zIndex: 1,
+              filter: "blur(1.5px)",
+              x: 50,
+            }}
+            transition={cardTransition}
+            key={"right-" + projectIdx}
+          >
+            <Card
+              project={getCard(projectIdx + 1)}
+              isActive={false}
+              panel={panel}
+              panelOpen={panelOpen}
+              playTrack={playTrack}
+              currentTracks={currentTracks}
+              isPlaying={isPlaying}
+              theme={theme}
+              togglePlayPause={togglePlayPause}
+              setTheme={setTheme}
+              selectPanel={selectPanel}
+              onCardTouchStart={() => {}}
+              onCardTouchMove={() => {}}
+              onCardTouchEnd={() => {}}
+              audioRef={audioRef}
+              cardSize={cardSize}
+            />
+          </motion.div>
+        </div>
       </div>
     </main>
   );
@@ -534,7 +522,7 @@ function Card({
   onCardTouchMove,
   onCardTouchEnd,
   audioRef,
-  cardHeight,
+  cardSize,
 }: {
   project: Project;
   isActive: boolean;
@@ -551,104 +539,33 @@ function Card({
   onCardTouchMove: React.TouchEventHandler<HTMLDivElement>;
   onCardTouchEnd: React.TouchEventHandler<HTMLDivElement>;
   audioRef: React.RefObject<HTMLAudioElement | null>;
-  cardHeight: number;
+  cardSize: string;
 }) {
-  // --- Dominant color palette ---
-  const [palette, setPalette] = useState<{ bg: string; text: string; accent: string }>({
-    bg: theme === "dark" ? "#181825" : "#f8f8f8",
-    text: theme === "dark" ? "#f8f8f8" : "#222",
-    accent: theme === "dark" ? "#ededed" : "#282828"
-  });
-
-  useEffect(() => {
-    if (!project.image || !isActive) return;
-    const fac = new FastAverageColor();
-    const img = document.createElement("img");
-    img.crossOrigin = "anonymous";
-    img.src = project.image;
-    img.onload = () => {
-      const color = fac.getColor(img);
-      const bg = color.hex;
-      // Luminance for text
-    //  const luminance = (color.value[0] * 0.299 + color.value[1] * 0.587 + color.value[2] * 0.114) / 255;
-     // const text = luminance > 0.55 ? "#1b1b1b" : "#fafafa";
-      // Accent: neutral readable grey
-      setPalette({
-        bg,
-        text: theme === "dark" ? "#f8f8f8" : "#222",
-        accent: theme === "dark" ? "#ededed" : "#282828"
-      });
-    };
-    img.onerror = () => {
-      setPalette({
-        bg: theme === "dark" ? "#181825" : "#f8f8f8",
-        text: theme === "dark" ? "#f8f8f8" : "#222",
-        accent: theme === "dark" ? "#ededed" : "#282828"
-      });
-    };
-    // eslint-disable-next-line
-  }, [project.image, isActive, theme]);
-
-  // --- Share/Instagram controls ---
+  // --- Share button feedback ---
   const [copied, setCopied] = useState(false);
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
 
-  const handleShare = useCallback(() => {
-    if (typeof window !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }, []);
-
+  // --- Render ---
   return (
     <div
       className={clsx(
-        "overflow-hidden pb-4 transition-all relative backdrop-blur-md rounded-2xl shadow-xl"
+        "overflow-hidden transition-all shadow-xl rounded-2xl bg-white/95 dark:bg-zinc-800/90 backdrop-blur-md flex flex-col",
+        cardSize,
+        !isActive && "opacity-80 pointer-events-none select-none"
       )}
       style={{
         pointerEvents: isActive ? "auto" : "none",
-        minHeight: cardHeight,
-        height: cardHeight,
-        background: !panelOpen && panel === "listen" && project.image
-          ? undefined
-          : palette.bg,
-        color: palette.text,
       }}
       onTouchStart={onCardTouchStart}
       onTouchMove={onCardTouchMove}
       onTouchEnd={onCardTouchEnd}
     >
-      {/* Image as full bg when Listen is open */}
-      {(!panelOpen && panel === "listen" && project.image) && (
-        <Image
-          src={project.image}
-          alt={project.title}
-          fill
-          priority
-          className="object-cover w-full h-full absolute inset-0 z-0"
-          style={{
-            filter: "brightness(0.8) saturate(1.1)",
-            borderRadius: "1rem"
-          }}
-        />
-      )}
-      {/* Optional gradient overlay for readability */}
-      {(!panelOpen && panel === "listen" && project.image) && (
-        <div className="absolute inset-0 rounded-2xl z-10 pointer-events-none"
-          style={{
-            background: "linear-gradient(to top,rgba(30,30,40,0.7) 70%,transparent 100%)"
-          }}
-        />
-      )}
-
       {/* Top nav bar */}
-      <nav
-        className={clsx(
-          "h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none relative",
-          theme === "dark" ? "bg-zinc-900 text-white" : "bg-white text-black"
-        )}
-        role="tablist"
-      >
+      <nav className="h-12 bg-transparent flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
           <button
             key={tab}
@@ -665,12 +582,12 @@ function Card({
               }
             }}
             className={clsx(
-              "text-md cursor-pointer bg-transparent border-none transition rounded focus:outline-none z-20",
+              "text-md cursor-pointer bg-transparent border-none transition rounded focus:outline-none",
               panel === tab && isActive
-                ? "font-semibold"
-                : "font-normal opacity-70"
+                ? "font-semibold text-black dark:text-white underline"
+                : "font-normal text-gray-400"
             )}
-            style={{ padding: "0 0.3rem", minWidth: "auto" }}
+            style={{ padding: "0 0.4rem", minWidth: "auto" }}
             disabled={!isActive}
           >
             {tab[0].toUpperCase() + tab.slice(1)}
@@ -678,132 +595,33 @@ function Card({
         ))}
       </nav>
 
-      {/* Floating controls */}
-      {!panelOpen && isActive && (
-        <div className="fixed right-3 top-20 flex flex-col gap-2 z-40">
-          {/* Theme toggle */}
-          <button
-            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-            aria-label="Toggle theme"
-            className="p-1.5 rounded-full shadow transition focus:outline-none"
-            style={{
-              background: palette.text,
-              color: palette.bg,
-              border: "1.5px solid " + palette.accent
-            }}
-          >
-            {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-          </button>
-          {/* Play/Pause */}
-          <button
-            onClick={togglePlayPause}
-            aria-label={isPlaying ? "Pause" : "Play"}
-            className="p-1.5 rounded-full shadow transition focus:outline-none"
-            style={{
-              background: palette.text,
-              color: palette.bg,
-              border: "1.5px solid " + palette.accent
-            }}
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          {/* Instagram */}
-          <a
-            href="https://instagram.com/YOUR_INSTAGRAM_HERE"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Instagram"
-            className="p-1.5 rounded-full shadow transition focus:outline-none flex items-center justify-center"
-            style={{
-              background: "#fff",
-              color: "#d72689",
-              border: "1.5px solid #d72689"
-            }}
-          >
-            <Instagram size={16} />
-          </a>
-          {/* Share */}
-          <button
-            onClick={handleShare}
-            aria-label="Share"
-            className="p-1.5 rounded-full shadow transition focus:outline-none"
-            style={{
-              background: palette.text,
-              color: palette.bg,
-              border: "1.5px solid " + palette.accent
-            }}
-          >
-            <Share2 size={16} />
-          </button>
-          {/* Copied feedback */}
-          {copied && (
-            <span className="absolute right-0 top-12 bg-black text-white px-3 py-1 rounded shadow text-xs z-50 animate-fade-in-out"
-              style={{
-                opacity: 0.92,
-                pointerEvents: "none",
-                whiteSpace: "nowrap"
-              }}>
-              Copied!
-            </span>
-          )}
+      {/* Main image */}
+      {project.image && (
+        <div className="relative w-full flex-1 flex items-center justify-center">
+          <Image
+            src={project.image}
+            alt={project.title}
+            fill
+            style={{ objectFit: "cover", objectPosition: "center", opacity: panel === "listen" && !panelOpen ? 1 : 0.16 }}
+            className="transition-opacity duration-300 rounded-2xl"
+            priority
+            sizes="(max-width: 600px) 80vw, 430px"
+          />
+          {/* Top overlay, fade effect */}
+          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-black/25 dark:to-zinc-900/50 pointer-events-none rounded-t-2xl" />
         </div>
       )}
 
-      {/* Main content, playlist etc */}
-      <div
-        className={clsx(
-          "p-3 flex flex-col items-center space-y-3 transition-opacity duration-500 relative z-20"
-        )}
-        style={{
-          color: palette.text
-        }}
-      >
-        {/* If not Listen, or not showing image bg, fallback to inline image */}
-        {(panelOpen || panel !== "listen" || !project.image) && (
-          <div className="relative w-full flex items-center justify-center">
-            {project.image && (
-              <Image
-                src={project.image}
-                alt={project.title}
-                width={170}
-                height={170}
-                className="w-[60%] max-w-[170px] aspect-square object-cover rounded-xl shadow"
-                style={{ marginTop: 6, marginBottom: 6 }}
-                priority
-              />
-            )}
-          </div>
-        )}
-        <h2
-          className={clsx(
-            "text-base font-semibold text-center",
-            theme === "dark" ? "text-white" : "text-black"
-          )}
-          style={{ color: palette.text }}
-        >
+      {/* Bottom title and playlist, always at the bottom */}
+      <div className="relative flex flex-col items-center justify-end w-full pb-5 pt-3 px-4 z-20" style={{ minHeight: 140 }}>
+        {/* Title */}
+        <h2 className="text-base font-semibold text-black dark:text-white text-center mb-1">
           {project.title}
         </h2>
-        {/* --- Reserved currently playing line (always takes space) --- */}
-        <p
-          className={clsx(
-            "text-xs min-h-[1.25rem] h-5 transition-opacity duration-300 text-center w-full",
-            isActive && isPlaying ? "opacity-100" : "opacity-0"
-          )}
-          style={{ color: palette.text, height: "1.25rem", lineHeight: "1.25rem" }}
-        >
-          {isActive && isPlaying ? (
-            <>Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span></>
-          ) : (
-            <>&nbsp;</>
-          )}
-        </p>
-        {/* Playlist (only for active card) */}
-        {isActive && (
-          <aside className={clsx(
-            "w-full p-2 bg-white/30 dark:bg-zinc-800/80 border border-gray-400 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]",
-            theme === "dark" ? "text-gray-100" : "text-gray-800"
-          )}>
-            <ul className="space-y-1 px-1">
+        {/* Playlist (for active card, only in Listen) */}
+        {isActive && panel === "listen" && (
+          <aside className="w-full bg-white/90 dark:bg-zinc-800/80 border border-gray-100 dark:border-zinc-700 shadow rounded-xl overflow-y-auto">
+            <ul className="space-y-1 px-1 py-1">
               {project.tracks.map((t, i) => (
                 <li
                   key={i}
@@ -812,21 +630,65 @@ function Card({
                   role="button"
                   aria-label={`Play ${t.title}`}
                   className={clsx(
-                    "playlist-track px-2 py-1 rounded-full shadow-sm transition cursor-pointer bg-transparent no-underline focus:outline-none text-sm",
+                    "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm",
                     currentTracks[0]?.src === t.src
-                      ? "font-semibold"
-                      : "hover:opacity-80"
+                      ? "bg-gray-200 dark:bg-zinc-700 font-semibold text-black dark:text-white"
+                      : "hover:bg-gray-100 dark:hover:bg-zinc-700 text-black dark:text-white"
                   )}
-                  style={{
-                    background: currentTracks[0]?.src === t.src ? palette.accent : "transparent",
-                    color: currentTracks[0]?.src === t.src ? palette.bg : palette.text,
-                  }}
                 >
                   <span>{t.title}</span>
                 </li>
               ))}
             </ul>
           </aside>
+        )}
+        {/* Space for "currently playing" (always occupies space) */}
+        <div className="h-6 flex items-center justify-center w-full">
+          {isActive && panel === "listen" && isPlaying && (
+            <p className="text-xs text-gray-700 dark:text-gray-300 animate-fade-sine">
+              Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span>
+            </p>
+          )}
+        </div>
+        {/* Floating controls */}
+        {!panelOpen && isActive && (
+          <div className="absolute right-1.5 top-[-52px] flex flex-col gap-2 z-40">
+            <button
+              onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+              aria-label="Toggle theme"
+              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200"
+            >
+              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+            <button
+              onClick={togglePlayPause}
+              aria-label={isPlaying ? "Pause" : "Play"}
+              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200"
+            >
+              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+            </button>
+            <a
+              href="https://instagram.com/your_instagram"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-pink-500"
+            >
+              <Instagram size={16} />
+            </a>
+            <button
+              onClick={handleShare}
+              aria-label="Share"
+              className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200 relative"
+            >
+              <Share2 size={16} />
+              {copied && (
+                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 animate-fade">
+                  Copied!
+                </span>
+              )}
+            </button>
+          </div>
         )}
       </div>
       {/* Audio element for center card */}
