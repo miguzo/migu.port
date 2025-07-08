@@ -679,26 +679,37 @@ function Card({
         }}
         aria-hidden="true"
       />
-      <nav className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
-        {(["listen", "read", "about", "journal"] as const).map((tab) => (
-          <button
-            key={tab}
-            role="tab"
-            aria-selected={panel === tab}
-            onClick={() => isActive && selectPanel(tab)}
-            className={clsx(
-              "fantasy-btn text-sm px-3 py-1 mx-1",
-              panel === tab
-                ? "fantasy-glow scale-110 text-yellow-300 font-bold bg-yellow-700/10 shadow-lg"
-                : "text-yellow-100"
-            )}
-            disabled={!isActive}
-            type="button"
-          >
-            {tab[0].toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </nav>
+     <nav
+  className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
+  role="tablist"
+>
+  {(["listen", "read", "about", "journal"] as const).map((tab) => (
+    <button
+      key={tab}
+      role="tab"
+      aria-selected={panel === tab}
+      onClick={() => isActive && selectPanel(tab)}
+      className={clsx(
+        "fantasy-btn text-sm px-3 py-1 mx-1 outline-none transition",
+        panel === tab
+          ? "font-bold fantasy-glow text-yellow-300 bg-yellow-700/10 shadow-lg ring-2 ring-yellow-400/90 ring-inset border-2 border-yellow-400"
+          : "text-yellow-100 border-2 border-transparent hover:bg-yellow-900/20",
+        "focus-visible:ring-2 focus-visible:ring-yellow-400/80"
+      )}
+      disabled={!isActive}
+      type="button"
+      tabIndex={isActive ? 0 : -1}
+      style={{
+        borderRadius: '1.6em',
+        boxShadow: panel === tab ? "0 0 7px 1.5px #e5c06c66" : undefined,
+        transition: 'box-shadow 0.18s'
+      }}
+    >
+      {tab[0].toUpperCase() + tab.slice(1)}
+    </button>
+  ))}
+</nav>
+
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
           <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
