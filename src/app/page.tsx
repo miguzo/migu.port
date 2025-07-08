@@ -399,9 +399,9 @@ export default function Home() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  exit={{ opacity: 0.5 }}
                   transition={{ duration: 0.16 }}
-                  className="absolute left-0 right-0 top-0 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
+                  className="absolute left-0 right-0 top-12 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
                   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
                   tabIndex={-1}
                   aria-modal="true"
@@ -613,8 +613,8 @@ const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
             className={clsx(
               "text-md cursor-pointer bg-transparent border-none transition rounded focus:outline-none",
               panel === tab && isActive
-                ? "font-semibold text-black dark:text-white underline"
-                : "font-normal text-gray-400"
+                  ? "font-semibold text-black dark:text-white"
+                  : "font-normal text-gray-400"
             )}
             style={{ padding: "0 0.4rem", minWidth: "auto" }}
             disabled={!isActive}
