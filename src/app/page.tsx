@@ -112,7 +112,6 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [wasPlaying, setWasPlaying] = useState(false);
   const [justSwiped, setJustSwiped] = useState(false);
-  const [isTrackListScrolling, setIsTrackListScrolling] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextTrackRef = useRef<Track[]>(currentTracks);
@@ -126,7 +125,6 @@ export default function Home() {
     };
   }, []);
 
-  // Theme persistence + effect
   useEffect(() => {
     localStorage.setItem("theme", theme);
     if (theme === "dark") {
@@ -144,7 +142,6 @@ export default function Home() {
     setCurrentTracks(projects[projectIdx].tracks);
   }, [projectIdx]);
 
-  // Audio playback
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -160,8 +157,7 @@ export default function Home() {
     return () => {
       if (fadeInCleaner) fadeInCleaner();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTracks]);
+  }, [currentTracks, wasPlaying]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -179,7 +175,6 @@ export default function Home() {
     };
   }, []);
 
-  // Carousel arrow keys
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (panel === "listen" && !panelOpen) {
@@ -189,8 +184,7 @@ export default function Home() {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panel, panelOpen, projectIdx, isPlaying, justSwiped]);
+  }, [panel, panelOpen, justSwiped, isPlaying]);
 
   const actuallySwitchProject = useCallback((dir: 1 | -1) => {
     setProjectIdx((i) => (i + dir + projects.length) % projects.length);
@@ -216,7 +210,6 @@ export default function Home() {
     } else {
       actuallySwitchProject(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canChangeProject, isPlaying, actuallySwitchProject]);
 
   const prevProject = useCallback(() => {
@@ -234,7 +227,6 @@ export default function Home() {
     } else {
       actuallySwitchProject(-1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canChangeProject, isPlaying, actuallySwitchProject]);
 
   function selectPanel(next: Panel) {
