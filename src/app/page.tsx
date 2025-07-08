@@ -401,7 +401,7 @@ export default function Home() {
   animate={{ opacity: 1 }}
   exit={{ opacity: 0.5 }}
   transition={{ duration: 0.16 }}
-  className="absolute left-0 right-0 top-14 w-full h-[calc(100%-3.5rem)] bg-white dark:bg-zinc-800/95 z-50 p-4 pt-10 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
+  className="absolute left-0 right-0 top-16 w-full h-[calc(100%-3.5rem)] bg-white dark:bg-zinc-800/95 z-50 p-4 pt-10 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
   tabIndex={-1}
   aria-modal="true"
@@ -594,7 +594,7 @@ function Card({
       onTouchEnd={onCardTouchEnd}
     >
       {/* Top nav bar */}
-      <nav className="h-20 bg-transparent flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
+      <nav className="h-12 bg-transparent flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none shadow-md" role="tablist">
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
           <button
             key={tab}
