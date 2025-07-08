@@ -396,17 +396,17 @@ export default function Home() {
             {/* Panels overlay */}
             <AnimatePresence>
               {panelOpen && panel !== "listen" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0.5 }}
-                  transition={{ duration: 0.16 }}
-                  className="absolute left-0 right-0 top-12 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
-                  style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
-                  tabIndex={-1}
-                  aria-modal="true"
-                  role="dialog"
-                >
+               <motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0.5 }}
+  transition={{ duration: 0.16 }}
+  className="absolute left-0 right-0 top-0 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 pt-14 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
+  style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
+  tabIndex={-1}
+  aria-modal="true"
+  role="dialog"
+>
                   {/* Panel header */}
                   <div className="flex items-center justify-between mb-2">
                     <h2 className="text-lg font-bold text-black dark:text-white capitalize">
