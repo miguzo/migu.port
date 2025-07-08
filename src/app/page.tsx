@@ -1,12 +1,11 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2 } from "lucide-react";
 import Image from "next/image";
 
-// Example data
+// Your data
 type Track = { src: string; title: string };
 type Project = {
   id: string;
@@ -103,6 +102,7 @@ export default function Home() {
   const [swipeStartX, setSwipeStartX] = useState(0);
   const [swipeEndX, setSwipeEndX] = useState(0);
   const [swipeStartY, setSwipeStartY] = useState(0);
+  const [justSwiped, setJustSwiped] = useState(false); // Prevents multiple triggers
   const nextTrackRef = useRef<Track[]>(currentTracks);
 
   useEffect(() => {
@@ -111,6 +111,8 @@ export default function Home() {
 
   useEffect(() => {
     document.body.style.overflow = panelOpen ? "hidden" : "";
+    // Lock horizontal scroll on body
+    document.body.style.overscrollBehaviorX = "none";
   }, [panelOpen]);
 
   useEffect(() => {
@@ -133,20 +135,27 @@ export default function Home() {
   }, [currentTracks]);
 
   useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    a.addEventListener("play", onPlay);
-    a.addEventListener("pause", onPause);
-    return () => {
-      a.removeEventListener("play", onPlay);
-      a.removeEventListener("pause", onPause);
-    };
-  }, []);
+  const a = audioRef.current;
+  if (!a) return;
+  const onPlay = () => setIsPlaying(true);
+  const onPause = () => setIsPlaying(false);
+  const onEnded = () => setIsPlaying(false);
+  a.addEventListener("play", onPlay);
+  a.addEventListener("pause", onPause);
+  a.addEventListener("ended", onEnded);
+  return () => {
+    a.removeEventListener("play", onPlay);
+    a.removeEventListener("pause", onPause);
+    a.removeEventListener("ended", onEnded);
+  };
+}, []);
+  
 
   // --- Card/project carousel logic ---
   function nextProject() {
+    if (justSwiped) return;
+    setJustSwiped(true);
+    setTimeout(() => setJustSwiped(false), 320);
     const a = audioRef.current;
     if (a && !a.paused && a.volume > 0) {
       fadeAudioOut(a, () => {
@@ -159,6 +168,9 @@ export default function Home() {
     }
   }
   function prevProject() {
+    if (justSwiped) return;
+    setJustSwiped(true);
+    setTimeout(() => setJustSwiped(false), 320);
     const a = audioRef.current;
     if (a && !a.paused && a.volume > 0) {
       fadeAudioOut(a, () => {
@@ -201,14 +213,16 @@ export default function Home() {
     }
   }
   function togglePlayPause() {
-    const a = audioRef.current;
-    if (!a) return;
-    if (a.paused) {
-      a.play().catch(() => {});
-    } else {
-      a.pause();
-    }
+  const a = audioRef.current;
+  if (!a) return;
+  if (a.paused) {
+    a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+  } else {
+    a.pause();
+    setIsPlaying(false);
   }
+}
+
 
   // --- Swiping logic (for card/project only, no panels) ---
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
@@ -225,7 +239,8 @@ export default function Home() {
     if (panel === "listen" && !panelOpen) {
       const dx = swipeEndX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
-      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
+      // Only allow swipe if horizontal move is much bigger than vertical
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) + 16) {
         if (dx < 0) nextProject();
         else prevProject();
       }
@@ -246,8 +261,18 @@ export default function Home() {
   // --- Animations ---
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
 
-  // Sizing
-  const cardSize = "w-[380px] sm:w-[410px] md:w-[430px] h-[430px] sm:h-[470px] md:h-[500px]";
+  // Card sizing: always a bit of margin, even on small screens
+  const cardSize =
+    "max-w-[430px] w-[96vw] sm:w-[410px] md:w-[430px] h-[450px] sm:h-[470px] md:h-[500px]";
+
+  // Prevent any horizontal scroll on mobile!
+  useEffect(() => {
+    const prevent = (e: Event) => {
+      if (Math.abs(window.scrollX) > 0) window.scrollTo(0, window.scrollY);
+    };
+    window.addEventListener("scroll", prevent);
+    return () => window.removeEventListener("scroll", prevent);
+  }, []);
 
   return (
     <main
@@ -409,53 +434,51 @@ export default function Home() {
                         {isPlaying ? <Pause size={15} /> : <Play size={15} />}
                       </button>
                       <button
-                        onClick={() => setPanelOpen(false)}
+                        onClick={() => {
+                          setPanelOpen(false);
+                          setPanel("listen");
+                        }}
                         aria-label="Close panel"
                         className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none ml-1"
                         tabIndex={0}
                       >
                         <span className="sr-only">Close</span>
-                        <svg width="13" height="13" viewBox="0 0 14 14" stroke="currentColor" fill="none">
-                          <path d="M2 2l10 10m0-10L2 12" strokeWidth="2" strokeLinecap="round" />
+                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                          <path
+                            d="M3.75 3.75l8.5 8.5M3.75 12.25l8.5-8.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
                         </svg>
                       </button>
                     </div>
                   </div>
                   {/* Panel content */}
-                  {panel === "read" && (
-                    <p className="mt-1 text-gray-600 dark:text-gray-100 leading-relaxed text-[15px]">
-                      {currentProject.readContent}
-                    </p>
-                  )}
-                  {panel === "about" && (
-                    <div className="text-gray-700 dark:text-gray-100 leading-relaxed space-y-3 text-[15px]">
+                  <div className="flex-1 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line">
+                    {panel === "read" && <>{currentProject.readContent}</>}
+                    {panel === "about" && (
                       <div>
-                        Welcome! I&apos;m Igor Dubreucq, a freelance sound artist and composer.
-                        I create immersive audio experiences and experimental music projects.
-                        This site showcases my recent works, explorations, and ongoing collaborations.
-                      </div>
-                      <div>
-                        I&apos;m looking forward to work on new projects, so feel free to reach out at{" "}
-                        <a href="mailto:igordubreucq.pro@gmail.com" className="underline hover:opacity-70 focus:outline-none">
-                          igordubreucq.pro@gmail.com
+                        About section here.  
+                        <a
+                          href="https://mouvement.net/arts/octobre-numerique"
+                          className="ml-1 underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          mouvement.net/arts/octobre-numerique
                         </a>
-                        {" "}if you have any questions or ideas.
                       </div>
-                    </div>
-                  )}
-                  {panel === "journal" && (
-                    <div className="text-gray-700 dark:text-gray-100 leading-relaxed text-[15px]">
-                      What happened and what&apos;s to come?
-                      <br /><br />
-                      <a href="https://www.mouvement.net/arts/octobre-numerique-a-arles-faire-monde-quand-tout-est-k-o?" className="underline hover:opacity-70 focus:outline-none" target="_blank" rel="noopener noreferrer">
-                        mouvement.net/arts/octobre-numerique
-                      </a>
-                    </div>
-                  )}
-                  {/* Close handle */}
+                    )}
+                    {panel === "journal" && <div>Journal section…</div>}
+                  </div>
+                  {/* Close handle for swipe down */}
                   <div
                     className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
-                    onClick={() => setPanelOpen(false)}
+                    onClick={() => {
+                      setPanelOpen(false);
+                      setPanel("listen");
+                    }}
                     tabIndex={0}
                     role="button"
                     aria-label="Close panel"
@@ -546,7 +569,7 @@ function Card({
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   // --- Render ---
@@ -597,18 +620,25 @@ function Card({
 
       {/* Main image */}
       {project.image && (
-        <div className="relative w-full flex-1 flex items-center justify-center">
-          <Image
-            src={project.image}
-            alt={project.title}
-            fill
-            style={{ objectFit: "cover", objectPosition: "center", opacity: panel === "listen" && !panelOpen ? 1 : 0.16 }}
-            className="transition-opacity duration-300 rounded-2xl"
-            priority
-            sizes="(max-width: 600px) 80vw, 430px"
-          />
-          {/* Top overlay, fade effect */}
-          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-black/25 dark:to-zinc-900/50 pointer-events-none rounded-t-2xl" />
+        <div className="relative flex-1 flex items-center justify-center">
+          <div className="w-[92%] mx-auto h-[55%] sm:h-[64%] relative">
+            <Image
+              src={project.image}
+              alt={project.title}
+              fill
+              style={{
+                objectFit: "cover",
+                objectPosition: "center",
+                opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
+                borderRadius: 18,
+              }}
+              className="transition-opacity duration-300"
+              priority
+              sizes="(max-width: 600px) 80vw, 430px"
+            />
+            {/* Top overlay, fade effect */}
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-black/25 dark:to-zinc-900/50 pointer-events-none rounded-t-2xl" />
+          </div>
         </div>
       )}
 
@@ -668,7 +698,7 @@ function Card({
               {isPlaying ? <Pause size={16} /> : <Play size={16} />}
             </button>
             <a
-              href="https://instagram.com/your_instagram"
+              href="https://instagram.com/migu.exe"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -683,11 +713,28 @@ function Card({
             >
               <Share2 size={16} />
               {copied && (
-                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 animate-fade">
+                <span
+                  className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 animate-fade"
+                  style={{
+                    animation: "fadeOut 1.5s linear",
+                  }}
+                >
                   Copied!
                 </span>
               )}
             </button>
+            {/* Simple fade animation */}
+            <style jsx>{`
+              @keyframes fadeOut {
+                0% { opacity: 0; }
+                20% { opacity: 1; }
+                70% { opacity: 1; }
+                100% { opacity: 0; }
+              }
+              .animate-fade {
+                animation: fadeOut 1.5s linear;
+              }
+            `}</style>
           </div>
         )}
       </div>
