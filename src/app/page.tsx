@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
-import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
+import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2 } from "lucide-react";
 import Image from "next/image";
+import { FastAverageColor } from "fast-average-color";
+
 
 // --- Types and data ---
 type Track = { src: string; title: string };
@@ -14,6 +16,7 @@ type Project = {
   image?: string;
   readContent?: string;
   tracks: Track[];
+  palette?: { bg: string; text: string; accent: string };
 };
 const projects: Project[] = [
   {
@@ -229,7 +232,6 @@ export default function Home() {
         if (dx < 0) nextProject();
         else prevProject();
       }
-      // Always reset swipe state after end (prevents stuck on mobile)
       setSwipeStartX(0);
       setSwipeEndX(0);
       setSwipeStartY(0);
@@ -416,7 +418,10 @@ export default function Home() {
                         {isPlaying ? <Pause size={15} /> : <Play size={15} />}
                       </button>
                       <button
-                        onClick={() => setPanelOpen(false)}
+                        onClick={() => {
+                          setPanelOpen(false);
+                          setPanel("listen");
+                        }}
                         aria-label="Close panel"
                         className="p-1.5 bg-white dark:bg-zinc-700 rounded-full shadow text-gray-600 dark:text-white focus:outline-none ml-1"
                         tabIndex={0}
@@ -477,7 +482,10 @@ export default function Home() {
                   {/* Close handle */}
                   <div
                     className="absolute left-0 bottom-0 w-full h-6 flex items-center justify-center cursor-pointer z-40"
-                    onClick={() => setPanelOpen(false)}
+                    onClick={() => {
+                      setPanelOpen(false);
+                      setPanel("listen");
+                    }}
                     tabIndex={0}
                     role="button"
                     aria-label="Close panel"
@@ -520,7 +528,7 @@ export default function Home() {
   );
 }
 
-// --- Card component ---
+// --- Card component with automatic color theme ---
 function Card({
   project,
   isActive,
@@ -554,28 +562,112 @@ function Card({
   onCardTouchEnd: React.TouchEventHandler<HTMLDivElement>;
   audioRef: React.RefObject<HTMLAudioElement | null>;
 }) {
+  // --- Dominant color palette ---
+  const [palette, setPalette] = useState<{ bg: string; text: string; accent: string }>({
+    bg: theme === "dark" ? "#22223b" : "#f8f8f8",
+    text: theme === "dark" ? "#f6eecb" : "#191900",
+    accent: "#e0d20f"
+  });
+
+  // Compute palette only for the active card (performance).
+  useEffect(() => {
+    if (!project.image || !isActive) return;
+    const fac = new FastAverageColor();
+    // Create a temporary image
+    const img = document.createElement("img");
+    img.crossOrigin = "anonymous";
+    img.src = project.image;
+
+    img.onload = () => {
+      const color = fac.getColor(img);
+      const bg = color.hex;
+      // Simple luminance formula
+      const luminance = (color.value[0] * 0.299 + color.value[1] * 0.587 + color.value[2] * 0.114) / 255;
+      const text = luminance > 0.55 ? "#222" : "#f8f8f8";
+      // Accent: slightly saturated version
+      const accent =
+        "hsl(" + color.value[0] * 1.5 + "," + Math.min(90, color.value[1] + 60) + "%,60%)";
+      setPalette({ bg, text, accent });
+    };
+    img.onerror = () => {
+      setPalette({
+        bg: theme === "dark" ? "#22223b" : "#f8f8f8",
+        text: theme === "dark" ? "#f6eecb" : "#191900",
+        accent: "#e0d20f"
+      });
+    };
+    // eslint-disable-next-line
+  }, [project.image, isActive, theme]);
+
+  // --- Share/Instagram controls ---
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = useCallback(() => {
+    if (typeof window !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, []);
+
+  // Card background for "Listen" mode (image covers card)
   return (
     <div
       className={clsx(
-        "overflow-hidden pb-4 transition-all",
+        "overflow-hidden pb-4 transition-all relative",
         isActive
-          ? "border-2" +
-              (theme === "dark" ? " border-yellow-300" : " border-gray-300")
+          ? "border-2"
           : "",
         !isActive && "opacity-80",
-        "bg-white/95 dark:bg-zinc-800/90 backdrop-blur-md rounded-2xl shadow-xl"
+        "backdrop-blur-md rounded-2xl shadow-xl"
       )}
       style={{
         pointerEvents: isActive ? "auto" : "none",
         minHeight: 320,
+        borderColor: isActive ? palette.accent : "transparent",
+        background: !panelOpen && panel === "listen" && project.image
+          ? undefined
+          : palette.bg,
+        color: palette.text,
+        // fallback in case image load fails
       }}
       onTouchStart={onCardTouchStart}
       onTouchMove={onCardTouchMove}
       onTouchEnd={onCardTouchEnd}
     >
+      {/* Image as full bg when Listen is open */}
+      {(!panelOpen && panel === "listen" && project.image) && (
+        <Image
+          src={project.image}
+          alt={project.title}
+          fill
+          priority
+          className="object-cover w-full h-full absolute inset-0 z-0"
+          style={{
+            filter: "brightness(0.8) saturate(1.1)",
+            borderRadius: "1rem"
+          }}
+        />
+      )}
+
+      {/* Optional gradient overlay for readability */}
+      {(!panelOpen && panel === "listen" && project.image) && (
+        <div className="absolute inset-0 rounded-2xl z-10 pointer-events-none"
+          style={{
+            background: "linear-gradient(to top,rgba(30,30,40,0.66) 70%,transparent 100%)"
+          }}
+        />
+      )}
+
       {/* Top nav bar */}
       <nav
-        className="h-12 bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
+        className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none relative"
+        style={{
+          background: panelOpen || panel !== "listen"
+            ? palette.bg
+            : "rgba(0,0,0,0.11)",
+          color: palette.text,
+        }}
         role="tablist"
       >
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
@@ -594,10 +686,10 @@ function Card({
               }
             }}
             className={clsx(
-              "text-md cursor-pointer bg-transparent border-none transition rounded focus:outline-none",
+              "text-md cursor-pointer bg-transparent border-none transition rounded focus:outline-none z-20",
               panel === tab && isActive
-                ? "font-semibold text-black dark:text-white"
-                : "font-normal text-gray-400"
+                ? "font-semibold"
+                : "font-normal opacity-70"
             )}
             style={{ padding: "0 0.3rem", minWidth: "auto" }}
             disabled={!isActive}
@@ -610,64 +702,112 @@ function Card({
       {/* Floating controls */}
       {!panelOpen && isActive && (
         <div className="fixed right-3 top-20 flex flex-col gap-2 z-40">
+          {/* Theme toggle */}
           <button
             onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
             aria-label="Toggle theme"
             className="p-1.5 rounded-full shadow transition focus:outline-none"
-            style={
-              theme === "dark"
-                ? { background: "#f9f6e9", color: "#3d2d0d" }
-                : { background: "#1a1a1a", color: "#fbe877" }
-            }
+            style={{
+              background: palette.text,
+              color: palette.bg,
+              border: "1.5px solid " + palette.accent
+            }}
           >
             {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
           </button>
+          {/* Play/Pause */}
           <button
             onClick={togglePlayPause}
             aria-label={isPlaying ? "Pause" : "Play"}
             className="p-1.5 rounded-full shadow transition focus:outline-none"
-            style={
-              theme === "dark"
-                ? { background: "#f9f6e9", color: "#3d2d0d" }
-                : { background: "#1a1a1a", color: "#fbe877" }
-            }
+            style={{
+              background: palette.text,
+              color: palette.bg,
+              border: "1.5px solid " + palette.accent
+            }}
           >
             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           </button>
+          {/* Instagram */}
+          <a
+            href="https://instagram.com/YOUR_INSTAGRAM_HERE"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="p-1.5 rounded-full shadow transition focus:outline-none flex items-center justify-center"
+            style={{
+              background: "#fff",
+              color: "#d72689",
+              border: "1.5px solid #d72689"
+            }}
+          >
+            <Instagram size={16} />
+          </a>
+          {/* Share */}
+          <button
+            onClick={handleShare}
+            aria-label="Share"
+            className="p-1.5 rounded-full shadow transition focus:outline-none"
+            style={{
+              background: palette.text,
+              color: palette.bg,
+              border: "1.5px solid " + palette.accent
+            }}
+          >
+            <Share2 size={16} />
+          </button>
+          {/* Copied feedback */}
+          {copied && (
+            <span className="absolute right-0 top-12 bg-black text-white px-3 py-1 rounded shadow text-xs z-50 animate-fade-in-out"
+              style={{
+                opacity: 0.92,
+                pointerEvents: "none",
+                whiteSpace: "nowrap"
+              }}>
+              Copied!
+            </span>
+          )}
         </div>
       )}
 
-      {/* Listen (main view, image, playlist) */}
+      {/* Main content, playlist etc */}
       <div
         className={clsx(
-          "p-3 flex flex-col items-center space-y-3 transition-opacity duration-500",
+          "p-3 flex flex-col items-center space-y-3 transition-opacity duration-500 relative z-20",
           panelOpen && panel !== "listen" && "opacity-40 pointer-events-none select-none"
         )}
+        style={{
+          color: palette.text
+        }}
       >
-        {project.image && (
+        {/* If not Listen, or not showing image bg, fallback to inline image */}
+        {(panelOpen || panel !== "listen" || !project.image) && (
           <div className="relative w-full flex items-center justify-center">
-            <Image
-              src={project.image}
-              alt={project.title}
-              width={170}
-              height={170}
-              className="w-[60%] max-w-[170px] aspect-square object-cover rounded-xl shadow"
-              style={{ marginTop: 6, marginBottom: 6 }}
-              priority
-            />
+            {project.image && (
+              <Image
+                src={project.image}
+                alt={project.title}
+                width={170}
+                height={170}
+                className="w-[60%] max-w-[170px] aspect-square object-cover rounded-xl shadow"
+                style={{ marginTop: 6, marginBottom: 6 }}
+                priority
+              />
+            )}
           </div>
         )}
-        <h2 className="text-base font-semibold text-black dark:text-white text-center">
+        <h2 className="text-base font-semibold text-center" style={{ color: palette.text }}>
           {project.title}
         </h2>
         {isActive && isPlaying && (
-          <p className="text-xs text-gray-700 dark:text-gray-300 animate-fade-sine">
+          <p className="text-xs animate-fade-sine" style={{ color: palette.text }}>
             Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span>
           </p>
         )}
         {/* Playlist (only for active card) */}
         {isActive && (
-          <aside className="w-full p-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]">
+          <aside className="w-full p-2 bg-white/70 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]"
+            style={{ color: palette.text }}>
             <ul className="space-y-1 px-1">
               {project.tracks.map((t, i) => (
                 <li
@@ -679,9 +819,13 @@ function Card({
                   className={clsx(
                     "playlist-track px-2 py-1 rounded-full shadow-sm transition cursor-pointer bg-transparent no-underline focus:outline-none text-sm",
                     currentTracks[0]?.src === t.src
-                      ? "bg-gray-200 dark:bg-zinc-700 font-semibold text-black dark:text-white"
-                      : "hover:bg-gray-100 dark:hover:bg-zinc-700 text-black dark:text-white"
+                      ? "font-semibold"
+                      : "hover:opacity-80"
                   )}
+                  style={{
+                    background: currentTracks[0]?.src === t.src ? palette.accent : "transparent",
+                    color: currentTracks[0]?.src === t.src ? palette.bg : palette.text,
+                  }}
                 >
                   <span>{t.title}</span>
                 </li>
