@@ -265,73 +265,30 @@ export default function Home() {
   });
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
 
-  // --- Main wrapper always fits the card/panel ---
-  return (
-    <main
-      className={clsx(
-        "flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900 transition-colors"
-      )}
-      style={{
-        WebkitTapHighlightColor: "transparent",
-        touchAction: "pan-y",
-        overscrollBehaviorX: "none",
-      }}
-      id="main"
-    >
-      <div
-        className="flex items-center justify-center w-full"
-        style={{
-          minHeight: 480,
-        }}
-      >
-        <div
-          className="relative w-full max-w-sm sm:max-w-md"
-          style={{
-            minHeight: 370,
-            marginLeft: "auto",
-            marginRight: "auto",
-          }}
-        >
-          {/* Carousel controls (arrows) */}
-          {panel === "listen" && !panelOpen && (
-            <>
-              <button
-                className={clsx(
-                  "absolute left-1 top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border",
-                  "hidden sm:block"
-                )}
-                style={{
-                  background: "#18182599",
-                  color: "#ffe971",
-                  borderColor: "#ffe971",
-                }}
-                aria-label="Previous project"
-                onClick={prevProject}
-                tabIndex={0}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                className={clsx(
-                  "absolute right-1 top-1/2 z-40 -translate-y-1/2 p-1.5 rounded-full shadow transition border",
-                  "hidden sm:block"
-                )}
-                style={{
-                  background: "#18182599",
-                  color: "#ffe971",
-                  borderColor: "#ffe971",
-                }}
-                aria-label="Next project"
-                onClick={nextProject}
-                tabIndex={0}
-              >
-                <ChevronRight size={18} />
-              </button>
-            </>
-          )}
+  // --- Card/panel height (always fixed) ---
+  const CARD_HEIGHT = 430; // adjust as you want!
 
+  return (
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900 transition-colors">
+      <div className="flex justify-center items-center w-full relative" style={{ minHeight: CARD_HEIGHT + 40 }}>
+        {/* Arrows outside the card */}
+        <button
+          className="hidden sm:flex items-center justify-center absolute -left-20 top-1/2 -translate-y-1/2 z-40
+            p-2 rounded-full shadow transition border"
+          style={{
+            background: "#191a1e",
+            color: "#ededed",
+            borderColor: "#ededed",
+          }}
+          aria-label="Previous project"
+          onClick={prevProject}
+          tabIndex={0}
+        >
+          <ChevronLeft size={22} />
+        </button>
+        <div className="relative w-full max-w-md" style={{ height: CARD_HEIGHT }}>
           {/* Carousel with three cards (peek sides) */}
-          <div className="relative flex items-center justify-center select-none w-full">
+          <div className="relative flex items-center justify-center select-none w-full h-full">
             {/* Left side card */}
             <motion.div
               className="absolute top-0 left-0 w-[84%] mx-auto"
@@ -356,6 +313,7 @@ export default function Home() {
                 onCardTouchMove={() => {}}
                 onCardTouchEnd={() => {}}
                 audioRef={audioRef}
+                cardHeight={CARD_HEIGHT}
               />
             </motion.div>
             {/* Center (active) card */}
@@ -384,6 +342,7 @@ export default function Home() {
                 onCardTouchMove={onCardTouchMove}
                 onCardTouchEnd={onCardTouchEnd}
                 audioRef={audioRef}
+                cardHeight={CARD_HEIGHT}
               />
 
               {/* Panels overlay */}
@@ -395,6 +354,7 @@ export default function Home() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.16 }}
                     className="absolute left-0 right-0 top-12 bottom-0 w-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-b-2xl backdrop-blur-md shadow-2xl"
+                    style={{ minHeight: CARD_HEIGHT - 48, height: CARD_HEIGHT - 48 }}
                     tabIndex={-1}
                     aria-modal="true"
                     role="dialog"
@@ -533,10 +493,25 @@ export default function Home() {
                 onCardTouchMove={() => {}}
                 onCardTouchEnd={() => {}}
                 audioRef={audioRef}
+                cardHeight={CARD_HEIGHT}
               />
             </motion.div>
           </div>
         </div>
+        <button
+          className="hidden sm:flex items-center justify-center absolute -right-20 top-1/2 -translate-y-1/2 z-40
+            p-2 rounded-full shadow transition border"
+          style={{
+            background: "#191a1e",
+            color: "#ededed",
+            borderColor: "#ededed",
+          }}
+          aria-label="Next project"
+          onClick={nextProject}
+          tabIndex={0}
+        >
+          <ChevronRight size={22} />
+        </button>
       </div>
     </main>
   );
@@ -559,6 +534,7 @@ function Card({
   onCardTouchMove,
   onCardTouchEnd,
   audioRef,
+  cardHeight,
 }: {
   project: Project;
   isActive: boolean;
@@ -575,12 +551,13 @@ function Card({
   onCardTouchMove: React.TouchEventHandler<HTMLDivElement>;
   onCardTouchEnd: React.TouchEventHandler<HTMLDivElement>;
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  cardHeight: number;
 }) {
   // --- Dominant color palette ---
   const [palette, setPalette] = useState<{ bg: string; text: string; accent: string }>({
     bg: theme === "dark" ? "#181825" : "#f8f8f8",
-    text: theme === "dark" ? "#f8f8f8" : "#191900",
-    accent: "#ffe971"
+    text: theme === "dark" ? "#f8f8f8" : "#222",
+    accent: theme === "dark" ? "#ededed" : "#282828"
   });
 
   useEffect(() => {
@@ -595,15 +572,18 @@ function Card({
       // Luminance for text
       const luminance = (color.value[0] * 0.299 + color.value[1] * 0.587 + color.value[2] * 0.114) / 255;
       const text = luminance > 0.55 ? "#1b1b1b" : "#fafafa";
-      // Accent: a saturated yellow or palette color
-      const accent = "#ffe971";
-      setPalette({ bg, text, accent });
+      // Accent: neutral readable grey
+      setPalette({
+        bg,
+        text: theme === "dark" ? "#f8f8f8" : "#222",
+        accent: theme === "dark" ? "#ededed" : "#282828"
+      });
     };
     img.onerror = () => {
       setPalette({
         bg: theme === "dark" ? "#181825" : "#f8f8f8",
-        text: theme === "dark" ? "#f8f8f8" : "#191900",
-        accent: "#ffe971"
+        text: theme === "dark" ? "#f8f8f8" : "#222",
+        accent: theme === "dark" ? "#ededed" : "#282828"
       });
     };
     // eslint-disable-next-line
@@ -623,15 +603,12 @@ function Card({
   return (
     <div
       className={clsx(
-        "overflow-hidden pb-4 transition-all relative",
-        isActive ? "" : "opacity-80",
-        "backdrop-blur-md rounded-2xl shadow-xl"
+        "overflow-hidden pb-4 transition-all relative backdrop-blur-md rounded-2xl shadow-xl"
       )}
       style={{
         pointerEvents: isActive ? "auto" : "none",
-        minHeight: 370,
-        maxHeight: 500,
-        height: panelOpen ? "auto" : 370,
+        minHeight: cardHeight,
+        height: cardHeight,
         background: !panelOpen && panel === "listen" && project.image
           ? undefined
           : palette.bg,
@@ -823,7 +800,7 @@ function Card({
         {/* Playlist (only for active card) */}
         {isActive && (
           <aside className={clsx(
-            "w-full p-2 bg-white/70 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]",
+            "w-full p-2 bg-white/30 dark:bg-zinc-800/80 border border-gray-400 dark:border-zinc-700 shadow rounded-xl overflow-y-auto max-h-[33vh]",
             theme === "dark" ? "text-gray-100" : "text-gray-800"
           )}>
             <ul className="space-y-1 px-1">
