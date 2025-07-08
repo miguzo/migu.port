@@ -594,7 +594,7 @@ function Card({
       onTouchEnd={onCardTouchEnd}
     >
       {/* Top nav bar */}
-      <nav className="h-12 bg-transparent flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
+      <nav className="h-20 bg-transparent flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none" role="tablist">
         {(["listen", "read", "about", "journal"] as const).map((tab) => (
           <button
             key={tab}
