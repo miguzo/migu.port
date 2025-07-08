@@ -695,47 +695,49 @@ function Card({
         </div>
       )}
 
-      {/* Bottom title and playlist, always at the bottom */}
-      <div className="relative flex flex-col items-center justify-end w-full pb-5 pt-3 px-4 z-20" style={{ minHeight: 140 }}>
-        {/* Title */}
-        <h2 className="text-base font-semibold text-black dark:text-white text-center mb-1">
-          {project.title}
-        </h2>
-        {/* Playlist (for active card, only in Listen) */}
-        {isActive && panel === "listen" && (
-          <aside className="w-full bg-white/90 dark:bg-zinc-800/80 border border-gray-100 dark:border-zinc-700 shadow rounded-xl">
-            <ul className="space-y-1 px-1 py-1">
-              {project.tracks.map((t, i) => (
-                <li
-                  key={i}
-                  onClick={() => playTrack(project, t)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`Play ${t.title}`}
-                  className={clsx(
-                    "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm",
-                    currentTracks[0]?.src === t.src
-                      ? "bg-gray-200 dark:bg-zinc-700 font-semibold text-black dark:text-white"
-                      : "hover:bg-gray-100 dark:hover:bg-zinc-700 text-black dark:text-white"
-                  )}
-                >
-                  <span>{t.title}</span>
-                </li>
-              ))}
-            </ul>
-          </aside>
-        )}
-        {/* Space for "currently playing" (always occupies space) */}
-        <div className="h-6 flex items-center justify-center w-full">
-          {isActive && panel === "listen" && isPlaying && (
-            <p className="text-xs text-gray-700 dark:text-gray-300 animate-fade-sine">
-              Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span>
-            </p>
-          )}
-        </div>
-      </div>
-      {/* Audio element for center card */}
-      {isActive && <audio ref={audioRef} hidden />}
+       {/* Bottom title, currently playing, and playlist */}
+  <div className="relative flex flex-col items-center w-full pb-5 pt-2 px-4 z-20" style={{ minHeight: 140 }}>
+    {/* Title (close to image) */}
+    <h2 className="text-base font-semibold text-black dark:text-white text-center mb-1 mt-2">
+      {project.title}
+    </h2>
+    {/* "Currently playing" just below title */}
+    <div className="h-6 flex items-center justify-center w-full mb-1">
+      {isActive && panel === "listen" && isPlaying && (
+        <p className="text-xs text-gray-700 dark:text-gray-300 animate-fade-sine">
+          Currently playing: <span className="font-semibold">{currentTracks[0]?.title}</span>
+        </p>
+      )}
     </div>
-  );
+    {/* Playlist at the very bottom */}
+    <div className="w-full mt-auto">
+      {isActive && panel === "listen" && (
+        <aside className="w-full bg-white/90 dark:bg-zinc-800/80 border border-gray-100 dark:border-zinc-700 shadow rounded-xl">
+          <ul className="space-y-1 px-1 py-1">
+            {project.tracks.map((t, i) => (
+              <li
+                key={i}
+                onClick={() => playTrack(project, t)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Play ${t.title}`}
+                className={clsx(
+                  "playlist-track px-2 py-1 rounded transition cursor-pointer no-underline focus:outline-none text-sm",
+                  currentTracks[0]?.src === t.src
+                    ? "bg-gray-200 dark:bg-zinc-700 font-semibold text-black dark:text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-zinc-700 text-black dark:text-white"
+                )}
+              >
+                <span>{t.title}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+    </div>
+  </div>
+  {/* Audio element for center card */}
+  {isActive && <audio ref={audioRef} hidden />}
+</div>
+);
 }
