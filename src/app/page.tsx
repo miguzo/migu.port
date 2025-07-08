@@ -26,9 +26,9 @@ const projects: Project[] = [
     image: "/next/image/Fragments.png",
     readContent: `Fragments project description…`,
     tracks: [
-      { src: "/music/Fragments.mp3", title: "Les Fragments – Lidge" },
-      { src: "/music/DoubleCross.mp3", title: "Les Fragments – Double Cross" },
-      { src: "/music/Rabbit.mp3", title: "Les Fragments – Rabbit" },
+      { src: "/music/Fragments.mp3", title: "Lidge" },
+      { src: "/music/DoubleCross.mp3", title: "Double Cross" },
+      { src: "/music/Rabbit.mp3", title: "Rabbit" },
     ],
   },
   {
