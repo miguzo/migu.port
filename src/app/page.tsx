@@ -149,7 +149,7 @@ export default function Home() {
     a.removeEventListener("ended", onEnded);
   };
 }, []);
-  
+
 
   // --- Card/project carousel logic ---
   function nextProject() {
@@ -267,9 +267,10 @@ export default function Home() {
 
   // Prevent any horizontal scroll on mobile!
   useEffect(() => {
-    const prevent = (e: Event) => {
-      if (Math.abs(window.scrollX) > 0) window.scrollTo(0, window.scrollY);
-    };
+  const prevent = () => {
+  if (Math.abs(window.scrollX) > 0) window.scrollTo(0, window.scrollY);
+};
+
     window.addEventListener("scroll", prevent);
     return () => window.removeEventListener("scroll", prevent);
   }, []);
