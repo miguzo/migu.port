@@ -211,3 +211,25 @@ body {
   background: #e5c06c22;
   color: #e5c06c;
 }
+.fantasy-tab-btn {
+  transition: all 0.18s;
+  font-family: 'Cinzel', serif;
+  border-radius: 1.6em;
+  /* Add any other shared styles for your nav tabs here */
+}
+.fantasy-tab-btn[aria-selected="true"] {
+  background: #fde68a !important; /* or #facc15 for more gold */
+  color: #19191b !important;
+  font-weight: bold;
+  border: 2px solid #eab308 !important;
+  box-shadow: 0 0 12px 2px #e5c06c66;
+}
+.fantasy-tab-btn:not([aria-selected="true"]) {
+  background: transparent;
+  color: #fef3c7;
+  border: 2px solid #eab308;
+}
+.fantasy-tab-btn:hover:not([aria-selected="true"]) {
+  background: #facc1580;
+  color: #ffe082;
+}

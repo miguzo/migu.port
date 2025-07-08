@@ -653,7 +653,7 @@ function Card({
     }
   }
 
-  return (
+    return (
     <div
       className={clsx(
         "fantasy-card flex flex-col",
@@ -671,6 +671,7 @@ function Card({
       onTouchMove={onCardTouchMove}
       onTouchEnd={onCardTouchEnd}
     >
+      {/* --- Background image layer --- */}
       <div
         className="absolute inset-0 w-full h-full z-0 rounded-2xl bg-cover bg-center"
         style={{
@@ -679,40 +680,44 @@ function Card({
         }}
         aria-hidden="true"
       />
-     <nav
-  className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
-  role="tablist"
->
-  {(["listen", "read", "about", "journal"] as const).map((tab) => (
-    <button
-      key={tab}
-      role="tab"
-      aria-selected={panel === tab}
-      onClick={() => isActive && selectPanel(tab)}
-      className={clsx(
-        "fantasy-btn text-sm px-3 py-1 mx-1 outline-none transition",
-        panel === tab
-          ? "font-bold fantasy-glow text-yellow-300 bg-yellow-700/10 shadow-lg ring-2 ring-yellow-400/90 ring-inset border-2 border-yellow-400"
-          : "text-yellow-100 border-2 border-transparent hover:bg-yellow-900/20",
-        "focus-visible:ring-2 focus-visible:ring-yellow-400/80"
-      )}
-      disabled={!isActive}
-      type="button"
-      tabIndex={isActive ? 0 : -1}
-      style={{
-        borderRadius: '1.6em',
-        boxShadow: panel === tab ? "0 0 7px 1.5px #e5c06c66" : undefined,
-        transition: 'box-shadow 0.18s'
-      }}
-    >
-      {tab[0].toUpperCase() + tab.slice(1)}
-    </button>
-  ))}
-</nav>
 
+      {/* --- Nav Tabs --- */}
+      <nav
+        className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
+        role="tablist"
+      >
+        {(["listen", "read", "about", "journal"] as const).map((tab) => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={panel === tab}
+            onClick={() => isActive && selectPanel(tab)}
+            className={clsx(
+              "fantasy-tab-btn text-sm px-4 py-1 mx-1 outline-none transition font-serif border-2",
+              panel === tab
+                ? "bg-yellow-300 text-[#19191b] border-yellow-400 font-bold shadow-yellow-400/40 shadow-lg"
+                : "bg-transparent text-yellow-100 border-yellow-400 hover:bg-yellow-700/30 hover:text-yellow-300",
+              "focus-visible:ring-2 focus-visible:ring-yellow-400/80"
+            )}
+            style={{
+              borderRadius: '1.6em',
+              boxShadow: panel === tab ? "0 0 6px 2px #e5c06c66" : undefined,
+              transition: 'box-shadow 0.18s'
+            }}
+            disabled={!isActive}
+            type="button"
+            tabIndex={isActive ? 0 : -1}
+          >
+            {tab[0].toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </nav>
+
+      {/* --- Main Image + Floating Controls --- */}
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
-          <div className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
+          <div
+            className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
             style={{
               boxShadow: "0 8px 42px 0 #e5c06c44",
               borderRadius: "25px",
@@ -722,9 +727,9 @@ function Card({
               src={project.image}
               alt={project.title}
               fill
-              objectFit="cover"
-              objectPosition="center"
               style={{
+                objectFit: "cover",
+                objectPosition: "center",
                 opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
                 borderRadius: 25,
                 border: "none",
@@ -735,6 +740,7 @@ function Card({
               sizes="(max-width: 600px) 80vw, 430px"
             />
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
+            {/* --- FLOATING CONTROLS --- */}
             {!panelOpen && isActive && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
                 <button
@@ -784,8 +790,12 @@ function Card({
           </div>
         </div>
       )}
+
+      {/* --- Title, Currently Playing, Playlist --- */}
       <div className="relative flex flex-col items-center w-full pb-5 pt-0 px-4 z-20" style={{ minHeight: 140 }}>
+        {/* Title */}
         <h2 className="fantasy-title text-center mb-1 mt-0 text-yellow-300">{project.title}</h2>
+        {/* Currently Playing */}
         <div className="h-6 flex items-center justify-center w-full mb-1">
           {isActive && panel === "listen" && isPlaying && (
             <p className="text-xs fantasy-glow animate-fade-sine text-yellow-300">
@@ -793,6 +803,7 @@ function Card({
             </p>
           )}
         </div>
+        {/* Playlist (with custom scrollbar) */}
         <div className="w-full mt-auto">
           {isActive && panel === "listen" && (
             <aside className="fantasy-playlist w-full">
@@ -830,6 +841,7 @@ function Card({
           )}
         </div>
       </div>
+      {/* Audio element for center card only */}
       {isActive && <audio ref={audioRef} hidden />}
     </div>
   );
