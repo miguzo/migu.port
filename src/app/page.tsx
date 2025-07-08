@@ -1,11 +1,15 @@
 "use client";
+
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
-import { Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2 } from "lucide-react";
+import {
+  Moon, Sun, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2
+} from "lucide-react";
 import Image from "next/image";
 
-// Your data
+// --- DATA ---
+
 type Track = { src: string; title: string };
 type Project = {
   id: string;
@@ -14,6 +18,7 @@ type Project = {
   readContent?: string;
   tracks: Track[];
 };
+
 const projects: Project[] = [
   {
     id: "Les Fragments (2025)",
@@ -96,29 +101,30 @@ export default function Home() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [justSwiped, setJustSwiped] = useState(false);
+  const [wasPlaying, setWasPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // For swiping
-  const [swipeStartX, setSwipeStartX] = useState(0);
-  const [swipeEndX, setSwipeEndX] = useState(0);
-  const [swipeStartY, setSwipeStartY] = useState(0);
-  const [justSwiped, setJustSwiped] = useState(false); // Prevents multiple triggers
   const nextTrackRef = useRef<Track[]>(currentTracks);
+
+  // Lock the entire page against scrolling
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehaviorX = "none";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.overscrollBehaviorX = "";
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
   useEffect(() => {
-    document.body.style.overflow = panelOpen ? "hidden" : "";
-    // Lock horizontal scroll on body
-    document.body.style.overscrollBehaviorX = "none";
-  }, [panelOpen]);
-
-  useEffect(() => {
     setCurrentTracks(projects[projectIdx].tracks);
   }, [projectIdx]);
 
+  // Only autoplay when wasPlaying is true
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -127,35 +133,38 @@ export default function Home() {
     a.currentTime = 0;
     a.src = currentTracks[0]?.src ?? "";
     a.load();
-    a.play().catch(() => {});
+    if (wasPlaying) {
+      a.play().catch(() => {});
+    }
     const fadeInCleaner = fadeAudioIn(a);
     return () => {
       if (fadeInCleaner) fadeInCleaner();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTracks]);
 
   useEffect(() => {
-  const a = audioRef.current;
-  if (!a) return;
-  const onPlay = () => setIsPlaying(true);
-  const onPause = () => setIsPlaying(false);
-  const onEnded = () => setIsPlaying(false);
-  a.addEventListener("play", onPlay);
-  a.addEventListener("pause", onPause);
-  a.addEventListener("ended", onEnded);
-  return () => {
-    a.removeEventListener("play", onPlay);
-    a.removeEventListener("pause", onPause);
-    a.removeEventListener("ended", onEnded);
-  };
-}, []);
-
+    const a = audioRef.current;
+    if (!a) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => setIsPlaying(false);
+    a.addEventListener("play", onPlay);
+    a.addEventListener("pause", onPause);
+    a.addEventListener("ended", onEnded);
+    return () => {
+      a.removeEventListener("play", onPlay);
+      a.removeEventListener("pause", onPause);
+      a.removeEventListener("ended", onEnded);
+    };
+  }, []);
 
   // --- Card/project carousel logic ---
   function nextProject() {
     if (justSwiped) return;
     setJustSwiped(true);
     setTimeout(() => setJustSwiped(false), 320);
+    setWasPlaying(isPlaying);
     const a = audioRef.current;
     if (a && !a.paused && a.volume > 0) {
       fadeAudioOut(a, () => {
@@ -171,6 +180,7 @@ export default function Home() {
     if (justSwiped) return;
     setJustSwiped(true);
     setTimeout(() => setJustSwiped(false), 320);
+    setWasPlaying(isPlaying);
     const a = audioRef.current;
     if (a && !a.paused && a.volume > 0) {
       fadeAudioOut(a, () => {
@@ -202,6 +212,7 @@ export default function Home() {
     if (currentTracks[0]?.src === t.src) return;
     const a = audioRef.current;
     nextTrackRef.current = [t, ...currentProject.tracks.filter((x) => x.src !== t.src)];
+    setWasPlaying(isPlaying);
     if (a && !a.paused && a.volume > 0) {
       fadeAudioOut(a, () => {
         a.pause();
@@ -212,19 +223,22 @@ export default function Home() {
       setCurrentTracks([t, ...currentProject.tracks.filter((x) => x.src !== t.src)]);
     }
   }
-  function togglePlayPause() {
-  const a = audioRef.current;
-  if (!a) return;
-  if (a.paused) {
-    a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-  } else {
-    a.pause();
-    setIsPlaying(false);
-  }
-}
 
+  function togglePlayPause() {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) {
+      a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    } else {
+      a.pause();
+      setIsPlaying(false);
+    }
+  }
 
   // --- Swiping logic (for card/project only, no panels) ---
+  const [swipeStartX, setSwipeStartX] = useState(0);
+  const [swipeEndX, setSwipeEndX] = useState(0);
+  const [swipeStartY, setSwipeStartY] = useState(0);
   const onCardTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
     if (panel === "listen" && !panelOpen) {
       setSwipeStartX(e.touches[0].clientX);
@@ -239,7 +253,6 @@ export default function Home() {
     if (panel === "listen" && !panelOpen) {
       const dx = swipeEndX - swipeStartX;
       const dy = e.changedTouches[0].clientY - swipeStartY;
-      // Only allow swipe if horizontal move is much bigger than vertical
       if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) + 16) {
         if (dx < 0) nextProject();
         else prevProject();
@@ -250,7 +263,6 @@ export default function Home() {
     }
   };
 
-  // --- Carousel helper ---
   function getCard(idx: number) {
     const n = projects.length;
     if (idx < 0) return projects[(idx + n) % n];
@@ -258,26 +270,13 @@ export default function Home() {
     return projects[idx];
   }
 
-  // --- Animations ---
   const cardTransition = { type: "spring" as const, stiffness: 260, damping: 20 };
-
-  // Card sizing: always a bit of margin, even on small screens
   const cardSize =
-    "max-w-[430px] w-[96vw] sm:w-[410px] md:w-[430px] h-[450px] sm:h-[470px] md:h-[500px]";
-
-  // Prevent any horizontal scroll on mobile!
-  useEffect(() => {
-  const prevent = () => {
-  if (Math.abs(window.scrollX) > 0) window.scrollTo(0, window.scrollY);
-};
-
-    window.addEventListener("scroll", prevent);
-    return () => window.removeEventListener("scroll", prevent);
-  }, []);
+    "max-w-[430px] w-[96vw] sm:w-[410px] md:w-[430px] h-[510px] sm:h-[570px] md:h-[620px]";
 
   return (
     <main
-      className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-zinc-900 overflow-y-auto overflow-x-hidden transition-colors"
+      className="flex flex-col items-center min-h-screen bg-gray-100 dark:bg-zinc-900 overflow-hidden transition-colors"
       style={{
         WebkitTapHighlightColor: "transparent",
         touchAction: "pan-y",
@@ -402,7 +401,7 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.16 }}
-                  className="absolute left-0 right-0 top-0 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 overflow-y-auto rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
+                  className="absolute left-0 right-0 top-0 bottom-0 w-full h-full bg-white dark:bg-zinc-800/95 z-50 p-4 rounded-2xl backdrop-blur-md shadow-2xl flex flex-col"
                   style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.08)" }}
                   tabIndex={-1}
                   aria-modal="true"
@@ -460,7 +459,7 @@ export default function Home() {
                     {panel === "read" && <>{currentProject.readContent}</>}
                     {panel === "about" && (
                       <div>
-                        About section here.  
+                        About section here.
                         <a
                           href="https://mouvement.net/arts/octobre-numerique"
                           className="ml-1 underline"
@@ -567,13 +566,18 @@ function Card({
 }) {
   // --- Share button feedback ---
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef<any>(null);
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 1500);
   };
 
-  // --- Render ---
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
   return (
     <div
       className={clsx(
@@ -619,10 +623,10 @@ function Card({
         ))}
       </nav>
 
-      {/* Main image */}
+      {/* Main image (taller) */}
       {project.image && (
         <div className="relative flex-1 flex items-center justify-center">
-          <div className="w-[92%] mx-auto h-[55%] sm:h-[64%] relative">
+          <div className="w-[92%] mx-auto h-[70%] sm:h-[78%] relative">
             <Image
               src={project.image}
               alt={project.title}
@@ -651,7 +655,7 @@ function Card({
         </h2>
         {/* Playlist (for active card, only in Listen) */}
         {isActive && panel === "listen" && (
-          <aside className="w-full bg-white/90 dark:bg-zinc-800/80 border border-gray-100 dark:border-zinc-700 shadow rounded-xl overflow-y-auto">
+          <aside className="w-full bg-white/90 dark:bg-zinc-800/80 border border-gray-100 dark:border-zinc-700 shadow rounded-xl">
             <ul className="space-y-1 px-1 py-1">
               {project.tracks.map((t, i) => (
                 <li
@@ -713,29 +717,18 @@ function Card({
               className="p-1.5 rounded-full shadow transition focus:outline-none bg-white/90 dark:bg-zinc-800/90 text-gray-700 dark:text-gray-200 relative"
             >
               <Share2 size={16} />
-              {copied && (
-                <span
-                  className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 animate-fade"
-                  style={{
-                    animation: "fadeOut 1.5s linear",
-                  }}
-                >
-                  Copied!
-                </span>
-              )}
+              <span
+                className={clsx(
+                  "absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
+                  copied ? "opacity-100" : "opacity-0 pointer-events-none"
+                )}
+                style={{
+                  transition: "opacity 0.5s",
+                }}
+              >
+                Copied!
+              </span>
             </button>
-            {/* Simple fade animation */}
-            <style jsx>{`
-              @keyframes fadeOut {
-                0% { opacity: 0; }
-                20% { opacity: 1; }
-                70% { opacity: 1; }
-                100% { opacity: 0; }
-              }
-              .animate-fade {
-                animation: fadeOut 1.5s linear;
-              }
-            `}</style>
           </div>
         )}
       </div>
