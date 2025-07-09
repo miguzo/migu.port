@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Head from "next/head";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
@@ -9,6 +8,23 @@ import {
   Moon, Play, Pause, ChevronLeft, ChevronRight, Instagram, Share2
 } from "lucide-react";
 import SUN3 from "@/components/icons/SUN3.svg";
+
+// --- PAGE METADATA (REPLACES <Head>) ---
+export const metadata = {
+  title: "Victor Clavelly | Music & Projects",
+  description: "Music, interactive projects and collections by Victor Clavelly.",
+  openGraph: {
+    title: "Victor Clavelly | Music & Projects",
+    description: "Music, interactive projects and collections by Victor Clavelly.",
+    images: ["/next/image/FragmentsUp.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Victor Clavelly | Music & Projects",
+    description: "Music, interactive projects and collections by Victor Clavelly.",
+    images: ["/next/image/FragmentsUp.png"],
+  },
+};
 
 // --- DATA TYPES AND DATA ---
 type Track = { src: string; title: string };
@@ -326,152 +342,142 @@ export default function Home() {
   }, []);
 
   return (
-    <>
-      <Head>
-        <title>Victor Clavelly | Music & Projects</title>
-        <meta name="description" content="Music, interactive projects and collections by Victor Clavelly." />
-        <meta property="og:title" content="Victor Clavelly | Music & Projects" />
-        <meta property="og:description" content="Music, interactive projects and collections by Victor Clavelly." />
-        <meta property="og:image" content="/next/image/FragmentsUp.png" />
-        <meta name="twitter:card" content="summary_large_image" />
-      </Head>
-      <main
-        className="flex flex-col items-center min-h-screen overflow-hidden transition-colors"
-        style={{
-          background: "#19191b url('https://www.transparenttextures.com/patterns/dark-fish-skin.png') repeat",
-          fontFamily: "'Cinzel', serif",
-          WebkitTapHighlightColor: "transparent",
-          touchAction: "pan-y",
-          overscrollBehaviorX: "none",
-        }}
-        id="main"
-      >
-        <div className={clsx("mt-8 relative w-full flex items-center justify-center", cardSize)}>
-          {panel === "listen" && !panelOpen && (
-            <>
-              <button
-                className="hidden md:flex fantasy-btn absolute left-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
-                aria-label="Previous project"
-                onClick={prevProject}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                className="hidden md:flex fantasy-btn absolute right-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
-                aria-label="Next project"
-                onClick={nextProject}
-              >
-                <ChevronRight size={18} />
-              </button>
-            </>
-          )}
+    <main
+      className="flex flex-col items-center min-h-screen overflow-hidden transition-colors"
+      style={{
+        background: "#19191b url('https://www.transparenttextures.com/patterns/dark-fish-skin.png') repeat",
+        fontFamily: "'Cinzel', serif",
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "pan-y",
+        overscrollBehaviorX: "none",
+      }}
+      id="main"
+    >
+      <div className={clsx("mt-8 relative w-full flex items-center justify-center", cardSize)}>
+        {panel === "listen" && !panelOpen && (
+          <>
+            <button
+              className="hidden md:flex fantasy-btn absolute left-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
+              aria-label="Previous project"
+              onClick={prevProject}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className="hidden md:flex fantasy-btn absolute right-[-56px] top-1/2 z-40 -translate-y-1/2 p-1.5"
+              aria-label="Next project"
+              onClick={nextProject}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
 
-          <div
-            className={clsx("relative flex items-center justify-center", cardSize, "select-none")}
-            style={{ touchAction: "pan-y" }}
+        <div
+          className={clsx("relative flex items-center justify-center", cardSize, "select-none")}
+          style={{ touchAction: "pan-y" }}
+        >
+          <motion.div
+            className={clsx("absolute top-0 left-0 w-[80%]")}
+            style={{ pointerEvents: "none" }}
+            animate={{ scale: 0.85, opacity: 0.55, zIndex: 1, filter: "blur(1.5px)", x: -50 }}
+            transition={cardTransition}
+            key={"left-" + projectIdx}
           >
-            <motion.div
-              className={clsx("absolute top-0 left-0 w-[80%]")}
-              style={{ pointerEvents: "none" }}
-              animate={{ scale: 0.85, opacity: 0.55, zIndex: 1, filter: "blur(1.5px)", x: -50 }}
-              transition={cardTransition}
-              key={"left-" + projectIdx}
-            >
-              <Card
-                project={getCard(projectIdx - 1)}
-                isActive={false}
-                panel={panel}
-                panelOpen={panelOpen}
-                playTrack={playTrack}
-                currentTracks={currentTracks}
-                isPlaying={isPlaying}
-                theme={theme}
-                togglePlayPause={togglePlayPause}
-                setTheme={setTheme}
-                selectPanel={selectPanel}
-                onCardTouchStart={() => {}}
-                onCardTouchMove={() => {}}
-                onCardTouchEnd={() => {}}
-                audioRef={audioRef}
-                cardSize={cardSize}
-              />
-            </motion.div>
-            <motion.div
-              className={clsx("relative mx-auto z-10", cardSize)}
-              animate={{ scale: 1, opacity: 1, zIndex: 10, filter: "none", x: 0 }}
-              transition={cardTransition}
-              onTouchStart={onCardTouchStart}
-              onTouchMove={onCardTouchMove}
-              onTouchEnd={onCardTouchEnd}
-              key={currentProject.id}
-            >
-              <Card
-                project={currentProject}
-                isActive={true}
-                panel={panel}
-                panelOpen={panelOpen}
-                playTrack={playTrack}
-                currentTracks={currentTracks}
-                isPlaying={isPlaying}
-                theme={theme}
-                togglePlayPause={togglePlayPause}
-                setTheme={setTheme}
-                selectPanel={selectPanel}
-                onCardTouchStart={onCardTouchStart}
-                onCardTouchMove={onCardTouchMove}
-                onCardTouchEnd={onCardTouchEnd}
-                audioRef={audioRef}
-                cardSize={cardSize}
-              />
+            <Card
+              project={getCard(projectIdx - 1)}
+              isActive={false}
+              panel={panel}
+              panelOpen={panelOpen}
+              playTrack={playTrack}
+              currentTracks={currentTracks}
+              isPlaying={isPlaying}
+              theme={theme}
+              togglePlayPause={togglePlayPause}
+              setTheme={setTheme}
+              selectPanel={selectPanel}
+              onCardTouchStart={() => {}}
+              onCardTouchMove={() => {}}
+              onCardTouchEnd={() => {}}
+              audioRef={audioRef}
+              cardSize={cardSize}
+            />
+          </motion.div>
+          <motion.div
+            className={clsx("relative mx-auto z-10", cardSize)}
+            animate={{ scale: 1, opacity: 1, zIndex: 10, filter: "none", x: 0 }}
+            transition={cardTransition}
+            onTouchStart={onCardTouchStart}
+            onTouchMove={onCardTouchMove}
+            onTouchEnd={onCardTouchEnd}
+            key={currentProject.id}
+          >
+            <Card
+              project={currentProject}
+              isActive={true}
+              panel={panel}
+              panelOpen={panelOpen}
+              playTrack={playTrack}
+              currentTracks={currentTracks}
+              isPlaying={isPlaying}
+              theme={theme}
+              togglePlayPause={togglePlayPause}
+              setTheme={setTheme}
+              selectPanel={selectPanel}
+              onCardTouchStart={onCardTouchStart}
+              onCardTouchMove={onCardTouchMove}
+              onCardTouchEnd={onCardTouchEnd}
+              audioRef={audioRef}
+              cardSize={cardSize}
+            />
 
-              <AnimatePresence>
-                {panelOpen && panel !== "listen" && (
-                  <PanelOverlay
-                    panel={panel}
-                    currentProject={currentProject}
-                    theme={theme}
-                    setTheme={setTheme}
-                    isPlaying={isPlaying}
-                    togglePlayPause={togglePlayPause}
-                    setPanelOpen={setPanelOpen}
-                    setPanel={setPanel}
-                  />
-                )}
-              </AnimatePresence>
-            </motion.div>
-            <motion.div
-              className={clsx("absolute top-0 right-0 w-[80%]")}
-              style={{ pointerEvents: "none" }}
-              animate={{ scale: 0.85, opacity: 0.55, zIndex: 1, filter: "blur(1.5px)", x: 50 }}
-              transition={cardTransition}
-              key={"right-" + projectIdx}
-            >
-              <Card
-                project={getCard(projectIdx + 1)}
-                isActive={false}
-                panel={panel}
-                panelOpen={panelOpen}
-                playTrack={playTrack}
-                currentTracks={currentTracks}
-                isPlaying={isPlaying}
-                theme={theme}
-                togglePlayPause={togglePlayPause}
-                setTheme={setTheme}
-                selectPanel={selectPanel}
-                onCardTouchStart={() => {}}
-                onCardTouchMove={() => {}}
-                onCardTouchEnd={() => {}}
-                audioRef={audioRef}
-                cardSize={cardSize}
-              />
-            </motion.div>
-          </div>
+            <AnimatePresence>
+              {panelOpen && panel !== "listen" && (
+                <PanelOverlay
+                  panel={panel}
+                  currentProject={currentProject}
+                  theme={theme}
+                  setTheme={setTheme}
+                  isPlaying={isPlaying}
+                  togglePlayPause={togglePlayPause}
+                  setPanelOpen={setPanelOpen}
+                  setPanel={setPanel}
+                />
+              )}
+            </AnimatePresence>
+          </motion.div>
+          <motion.div
+            className={clsx("absolute top-0 right-0 w-[80%]")}
+            style={{ pointerEvents: "none" }}
+            animate={{ scale: 0.85, opacity: 0.55, zIndex: 1, filter: "blur(1.5px)", x: 50 }}
+            transition={cardTransition}
+            key={"right-" + projectIdx}
+          >
+            <Card
+              project={getCard(projectIdx + 1)}
+              isActive={false}
+              panel={panel}
+              panelOpen={panelOpen}
+              playTrack={playTrack}
+              currentTracks={currentTracks}
+              isPlaying={isPlaying}
+              theme={theme}
+              togglePlayPause={togglePlayPause}
+              setTheme={setTheme}
+              selectPanel={selectPanel}
+              onCardTouchStart={() => {}}
+              onCardTouchMove={() => {}}
+              onCardTouchEnd={() => {}}
+              audioRef={audioRef}
+              cardSize={cardSize}
+            />
+          </motion.div>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }
-
+// --- PanelOverlay ---
 function PanelOverlay({
   panel,
   currentProject,
@@ -482,14 +488,14 @@ function PanelOverlay({
   setPanelOpen,
   setPanel,
 }: {
-  panel: Panel;
-  currentProject: Project;
+  panel: "listen" | "read" | "about" | "journal";
+  currentProject: any;
   theme: "light" | "dark";
   setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
   isPlaying: boolean;
   togglePlayPause: () => void;
   setPanelOpen: (v: boolean) => void;
-  setPanel: (p: Panel) => void;
+  setPanel: (p: "listen" | "read" | "about" | "journal") => void;
 }) {
   return (
     <motion.div
@@ -577,6 +583,7 @@ function PanelOverlay({
   );
 }
 
+// --- Card ---
 function Card({
   project,
   isActive,
@@ -595,17 +602,17 @@ function Card({
   audioRef,
   cardSize,
 }: {
-  project: Project;
+  project: any;
   isActive: boolean;
-  panel: Panel;
+  panel: "listen" | "read" | "about" | "journal";
   panelOpen: boolean;
-  playTrack: (proj: Project, t: Track) => void;
-  currentTracks: Track[];
+  playTrack: (proj: any, t: any) => void;
+  currentTracks: any[];
   isPlaying: boolean;
   theme: "light" | "dark";
   togglePlayPause: () => void;
   setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
-  selectPanel: (p: Panel) => void;
+  selectPanel: (p: "listen" | "read" | "about" | "journal") => void;
   onCardTouchStart: React.TouchEventHandler<HTMLDivElement>;
   onCardTouchMove: React.TouchEventHandler<HTMLDivElement>;
   onCardTouchEnd: React.TouchEventHandler<HTMLDivElement>;
@@ -636,7 +643,7 @@ function Card({
   function handlePlaylistKeyDown(e: React.KeyboardEvent) {
     if (!isActive || panel !== "listen") return;
     const current = currentTracks[0];
-    const idx = project.tracks.findIndex((t) => t.src === current?.src);
+    const idx = project.tracks.findIndex((t: any) => t.src === current?.src);
     if (e.key === "ArrowDown") {
       e.preventDefault();
       const next = project.tracks[(idx + 1) % project.tracks.length];
@@ -653,7 +660,7 @@ function Card({
     }
   }
 
-    return (
+  return (
     <div
       className={clsx(
         "fantasy-card flex flex-col",
@@ -682,35 +689,35 @@ function Card({
       />
 
       {/* --- Nav Tabs --- */}
-<nav
-  className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
-  role="tablist"
->
-  {(["listen", "read", "about", "journal"] as const).map((tab) => (
-    <button
-      key={tab}
-      tabIndex={0}
-      role="tab"
-      aria-selected={panel === tab}
-      onClick={() => isActive && selectPanel(tab)}
-      onKeyDown={(e) => {
-        if (
-          isActive &&
-          (e.key === "Enter" || e.key === " ")
-        ) {
-          selectPanel(tab);
-        }
-      }}
-      className={clsx(
-        "fantasy-btn text-sm px-3 py-1 mx-1",
-        panel === tab && isActive && "fantasy-glow scale-110"
-      )}
-      disabled={!isActive}
-    >
-      {tab[0].toUpperCase() + tab.slice(1)}
-    </button>
-  ))}
-</nav>
+      <nav
+        className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
+        role="tablist"
+      >
+        {(["listen", "read", "about", "journal"] as const).map((tab) => (
+          <button
+            key={tab}
+            tabIndex={0}
+            role="tab"
+            aria-selected={panel === tab}
+            onClick={() => isActive && selectPanel(tab)}
+            onKeyDown={(e) => {
+              if (
+                isActive &&
+                (e.key === "Enter" || e.key === " ")
+              ) {
+                selectPanel(tab);
+              }
+            }}
+            className={clsx(
+              "fantasy-btn text-sm px-3 py-1 mx-1",
+              panel === tab && isActive && "fantasy-glow scale-110"
+            )}
+            disabled={!isActive}
+          >
+            {tab[0].toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </nav>
 
       {/* --- Main Image + Floating Controls --- */}
       {project.image && (
@@ -818,7 +825,7 @@ function Card({
                   border: "1px solid #a8852c",
                 }}
               >
-                {project.tracks.map((t) => (
+                {project.tracks.map((t: any) => (
                   <li key={t.src}>
                     <button
                       type="button"
@@ -845,3 +852,6 @@ function Card({
     </div>
   );
 }
+
+// ...PanelOverlay and Card components below, unchanged...
+// (Use your existing PanelOverlay and Card from your last working code)
