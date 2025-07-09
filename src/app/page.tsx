@@ -472,6 +472,7 @@ export default function Home() {
   );
 }
 
+// --- PANEL OVERLAY ---
 function PanelOverlay({
   panel,
   currentProject,
@@ -577,6 +578,53 @@ function PanelOverlay({
   );
 }
 
+// --- ANIMATED FRAGMENTS SVG ---
+// Replace the image with this component for "Les Fragments (2025)"
+function AnimatedFragments() {
+  return (
+    <motion.svg
+      viewBox="0 0 640 640"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.9, ease: "easeOut" }}
+    >
+      {/* Example animated fragments */}
+      <motion.circle
+        cx="320"
+        cy="320"
+        r="160"
+        fill="#e5c06c"
+        initial={{ scale: 0.8, opacity: 0.7 }}
+        animate={{ scale: [0.8, 1.05, 1], opacity: [0.7, 0.9, 0.75] }}
+        transition={{ duration: 2.4, repeat: Infinity, repeatType: "reverse" }}
+      />
+      <motion.path
+        d="M220,390 Q320,220 420,390"
+        stroke="#a8852c"
+        strokeWidth="13"
+        fill="none"
+        initial={{ pathLength: 0.5, opacity: 0.4 }}
+        animate={{ pathLength: [0.5, 1, 0.75], opacity: [0.4, 1, 0.7] }}
+        transition={{ duration: 2.1, repeat: Infinity, repeatType: "reverse" }}
+      />
+      <motion.circle
+        cx="320"
+        cy="320"
+        r="120"
+        fill="#19191b"
+        initial={{ opacity: 0.7 }}
+        animate={{ opacity: [0.7, 0.5, 0.7] }}
+        transition={{ duration: 1.9, repeat: Infinity, repeatType: "reverse" }}
+      />
+      {/* Add more animated SVG shapes if you want! */}
+    </motion.svg>
+  );
+}
+
+// --- CARD COMPONENT ---
 function Card({
   project,
   isActive,
@@ -653,7 +701,7 @@ function Card({
     }
   }
 
-    return (
+  return (
     <div
       className={clsx(
         "fantasy-card flex flex-col",
@@ -682,64 +730,50 @@ function Card({
       />
 
       {/* --- Nav Tabs --- */}
-<nav
-  className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
-  role="tablist"
->
-  {(["listen", "read", "about", "journal"] as const).map((tab) => (
-    <button
-      key={tab}
-      tabIndex={0}
-      role="tab"
-      aria-selected={panel === tab}
-      onClick={() => isActive && selectPanel(tab)}
-      onKeyDown={(e) => {
-        if (
-          isActive &&
-          (e.key === "Enter" || e.key === " ")
-        ) {
-          selectPanel(tab);
-        }
-      }}
-      className={clsx(
-        "fantasy-btn text-sm px-3 py-1 mx-1",
-        panel === tab && isActive && "fantasy-glow scale-110"
-      )}
-      disabled={!isActive}
-    >
-      {tab[0].toUpperCase() + tab.slice(1)}
-    </button>
-  ))}
-</nav>
+      <nav
+        className="h-12 flex items-center justify-center gap-1 px-2 rounded-t-2xl z-30 select-none"
+        role="tablist"
+      >
+        {(["listen", "read", "about", "journal"] as const).map((tab) => (
+          <button
+            key={tab}
+            tabIndex={0}
+            role="tab"
+            aria-selected={panel === tab}
+            onClick={() => isActive && selectPanel(tab)}
+            onKeyDown={(e) => {
+              if (
+                isActive &&
+                (e.key === "Enter" || e.key === " ")
+              ) {
+                selectPanel(tab);
+              }
+            }}
+            className={clsx(
+              "fantasy-btn text-sm px-3 py-1 mx-1",
+              panel === tab && isActive && "fantasy-glow scale-110"
+            )}
+            disabled={!isActive}
+          >
+            {tab[0].toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </nav>
 
       {/* --- Main Image + Floating Controls --- */}
-      {project.image && (
+      {project.id === "Les Fragments (2025)" ? (
+        // Show animated SVG for Fragments
         <div className="relative flex-1 flex items-center justify-center">
           <div
             className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
             style={{
               boxShadow: "0 8px 42px 0 #e5c06c44",
               borderRadius: "25px",
+              background: "rgba(229,192,108,0.06)",
             }}
           >
-            <Image
-              src={project.image}
-              alt={project.title}
-              fill
-              style={{
-                objectFit: "cover",
-                objectPosition: "center",
-                opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
-                borderRadius: 25,
-                border: "none",
-                boxShadow: "0 8px 42px 0 #e5c06c2a",
-              }}
-              className="transition-opacity duration-300"
-              priority
-              sizes="(max-width: 600px) 80vw, 430px"
-            />
+            <AnimatedFragments />
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
-            {/* --- FLOATING CONTROLS --- */}
             {!panelOpen && isActive && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
                 <button
@@ -788,6 +822,82 @@ function Card({
             )}
           </div>
         </div>
+      ) : (
+        project.image && (
+          <div className="relative flex-1 flex items-center justify-center">
+            <div
+              className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
+              style={{
+                boxShadow: "0 8px 42px 0 #e5c06c44",
+                borderRadius: "25px",
+              }}
+            >
+              <Image
+                src={project.image}
+                alt={project.title}
+                fill
+                style={{
+                  objectFit: "cover",
+                  objectPosition: "center",
+                  opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
+                  borderRadius: 25,
+                  border: "none",
+                  boxShadow: "0 8px 42px 0 #e5c06c2a",
+                }}
+                className="transition-opacity duration-300"
+                priority
+                sizes="(max-width: 600px) 80vw, 430px"
+              />
+              <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
+              {!panelOpen && isActive && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
+                  <button
+                    onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                    aria-label="Toggle theme"
+                    className="fantasy-btn p-1.5"
+                    type="button"
+                  >
+                    {theme === "light" ? <Moon size={16} /> : <SUN3 size={16} />}
+                  </button>
+                  <button
+                    onClick={togglePlayPause}
+                    aria-label={isPlaying ? "Pause" : "Play"}
+                    className="fantasy-btn p-1.5"
+                    type="button"
+                  >
+                    {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  </button>
+                  <a
+                    href="https://instagram.com/migu.exe"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="fantasy-btn p-1.5"
+                  >
+                    <Instagram size={16} />
+                  </a>
+                  <button
+                    onClick={handleShare}
+                    aria-label="Share"
+                    className="fantasy-btn p-1.5 relative"
+                    type="button"
+                  >
+                    <Share2 size={16} />
+                    <span
+                      className={clsx(
+                        "absolute left-10 top-1/2 -translate-y-1/2 bg-yellow-900 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
+                        copied ? "opacity-100" : "opacity-0 pointer-events-none"
+                      )}
+                      style={{ transition: "opacity 0.5s" }}
+                    >
+                      Copied!
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )
       )}
 
       {/* --- Title, Currently Playing, Playlist --- */}
