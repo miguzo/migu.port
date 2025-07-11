@@ -760,69 +760,84 @@ function Card({
         ))}
       </nav>
 
-      {/* --- Main Image + Floating Controls --- */}
-      {project.id === "Les Fragments (2025)" ? (
-        // Show animated SVG for Fragments
-        <div className="relative flex-1 flex items-center justify-center">
-          <div
-            className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
-            style={{
-              boxShadow: "0 8px 42px 0 #e5c06c44",
-              borderRadius: "25px",
-              background: "rgba(229,192,108,0.06)",
-            }}
+{project.id === "Les Fragments (2025)" ? (
+  <div className="relative flex-1 flex items-center justify-center">
+    <div
+      className="w-[64vw] max-w-[330px] sm:w-[77%] sm:max-w-[unset] mx-auto h-[62vw] sm:h-[78%] relative"
+      style={{
+        boxShadow: "0 8px 42px 0 #e5c06c44",
+        borderRadius: "25px",
+        background: "rgba(229,192,108,0.06)",
+      }}
+    >
+      <Image
+        src="/next/image/FragmentsUp.png"
+        alt={project.title}
+        fill
+        style={{
+          objectFit: "cover",
+          objectPosition: "center",
+          opacity: panel === "listen" && !panelOpen ? 1 : 0.17,
+          borderRadius: 25,
+          border: "none",
+          boxShadow: "0 8px 42px 0 #e5c06c2a",
+        }}
+        className="transition-opacity duration-300"
+        priority
+        sizes="(max-width: 600px) 80vw, 430px"
+      />
+      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
+      {!panelOpen && isActive && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
+          <button
+            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+            aria-label="Toggle theme"
+            className="fantasy-btn p-1.5"
+            type="button"
           >
-            <AnimatedFragments />
-            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-t from-transparent to-yellow-900/20 pointer-events-none rounded-t-2xl" />
-            {!panelOpen && isActive && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-40">
-                <button
-                  onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                  aria-label="Toggle theme"
-                  className="fantasy-btn p-1.5"
-                  type="button"
-                >
-                  {theme === "light" ? <Moon size={16} /> : <SUN3 size={16} />}
-                </button>
-                <button
-                  onClick={togglePlayPause}
-                  aria-label={isPlaying ? "Pause" : "Play"}
-                  className="fantasy-btn p-1.5"
-                  type="button"
-                >
-                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                </button>
-                <a
-                  href="https://instagram.com/migu.exe"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="fantasy-btn p-1.5"
-                >
-                  <Instagram size={16} />
-                </a>
-                <button
-                  onClick={handleShare}
-                  aria-label="Share"
-                  className="fantasy-btn p-1.5 relative"
-                  type="button"
-                >
-                  <Share2 size={16} />
-                  <span
-                    className={clsx(
-                      "absolute left-10 top-1/2 -translate-y-1/2 bg-yellow-900 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
-                      copied ? "opacity-100" : "opacity-0 pointer-events-none"
-                    )}
-                    style={{ transition: "opacity 0.5s" }}
-                  >
-                    Copied!
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
+            {theme === "light" ? <Moon size={16} /> : <SUN3 size={16} />}
+          </button>
+          <button
+            onClick={togglePlayPause}
+            aria-label={isPlaying ? "Pause" : "Play"}
+            className="fantasy-btn p-1.5"
+            type="button"
+          >
+            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+          </button>
+          <a
+            href="https://instagram.com/migu.exe"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="fantasy-btn p-1.5"
+          >
+            <Instagram size={16} />
+          </a>
+          <button
+            onClick={handleShare}
+            aria-label="Share"
+            className="fantasy-btn p-1.5 relative"
+            type="button"
+          >
+            <Share2 size={16} />
+            <span
+              className={clsx(
+                "absolute left-10 top-1/2 -translate-y-1/2 bg-yellow-900 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap z-50 transition-opacity duration-500",
+                copied ? "opacity-100" : "opacity-0 pointer-events-none"
+              )}
+              style={{ transition: "opacity 0.5s" }}
+            >
+              Copied!
+            </span>
+          </button>
         </div>
-      ) : (
+      )}
+    </div>
+  </div>
+) : (
+  // ...other cards
+
         project.image && (
           <div className="relative flex-1 flex items-center justify-center">
             <div
