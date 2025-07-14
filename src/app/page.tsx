@@ -578,52 +578,6 @@ function PanelOverlay({
   );
 }
 
-// --- ANIMATED FRAGMENTS SVG ---
-// Replace the image with this component for "Les Fragments (2025)"
-function AnimatedFragments() {
-  return (
-    <motion.svg
-      viewBox="0 0 640 640"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.9, ease: "easeOut" }}
-    >
-      {/* Example animated fragments */}
-      <motion.circle
-        cx="320"
-        cy="320"
-        r="160"
-        fill="#e5c06c"
-        initial={{ scale: 0.8, opacity: 0.7 }}
-        animate={{ scale: [0.8, 1.05, 1], opacity: [0.7, 0.9, 0.75] }}
-        transition={{ duration: 2.4, repeat: Infinity, repeatType: "reverse" }}
-      />
-      <motion.path
-        d="M220,390 Q320,220 420,390"
-        stroke="#a8852c"
-        strokeWidth="13"
-        fill="none"
-        initial={{ pathLength: 0.5, opacity: 0.4 }}
-        animate={{ pathLength: [0.5, 1, 0.75], opacity: [0.4, 1, 0.7] }}
-        transition={{ duration: 2.1, repeat: Infinity, repeatType: "reverse" }}
-      />
-      <motion.circle
-        cx="320"
-        cy="320"
-        r="120"
-        fill="#19191b"
-        initial={{ opacity: 0.7 }}
-        animate={{ opacity: [0.7, 0.5, 0.7] }}
-        transition={{ duration: 1.9, repeat: Infinity, repeatType: "reverse" }}
-      />
-      {/* Add more animated SVG shapes if you want! */}
-    </motion.svg>
-  );
-}
-
 // --- CARD COMPONENT ---
 function Card({
   project,
