@@ -27,10 +27,10 @@ export default function Home() {
       >
         <div
           style={{
-            width: "min(84vw,430px)",
-            height: "min(80vw,500px)",
-            borderRadius: 24,
-            boxShadow: "0 8px 42px 0 #e5c06c44",
+           // width: "min(84vw,430px)",
+           // height: "min(80vw,500px)",
+            //borderRadius: 24,
+            //boxShadow: "0 8px 42px 0 #e5c06c44",
             background: "rgba(229,192,108,0.06)",
             position: "relative",
             overflow: "hidden",
