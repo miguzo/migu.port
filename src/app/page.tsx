@@ -19,7 +19,7 @@ export default function Home() {
         <title>Victor Clavelly</title>
       </Head>
       <main
-        className="fixed inset-0 flex justify-center bg-[#19191b]" // no items-center!
+        className="fixed inset-0 flex justify-center bg-[#19191b]"
         style={{
           minHeight: "100vh",
           minWidth: "100vw",
@@ -31,20 +31,40 @@ export default function Home() {
             width: "min(98vw, 430px)",
             height: "min(85vh, calc(98vw * 1.44), 620px)", // adjust 1.44 to your PNG aspect ratio
             maxHeight: "620px",
-            marginTop: "1vh",  // <-- move frame down a bit from the top (adjust as needed)
+            marginTop: "1vh", // spacing from the top
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
+          {/* --- Background image behind the frame --- */}
           <Image
-            src="/next/image/NewCardFrame.png"
-            alt="Main Visual"
+            src="/next/image/FragmentsUp.png" // <--- put your actual path here
+            alt="Fragments Background"
             fill
             style={{
-              objectFit: "contain",
+              objectFit: "cover",      // fill the area; use "contain" if you want it never cropped
+              objectPosition: "center",
+              zIndex: 1,
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+            priority
+            sizes="(max-width: 600px) 98vw, 430px"
+          />
+
+          {/* --- Frame PNG on top --- */}
+          <Image
+            src="/next/image/NewCardFrame.png"
+            alt="Main Visual Frame"
+            fill
+            style={{
+              objectFit: "contain",    // frame never cropped
               objectPosition: "center",
               background: "transparent",
+              zIndex: 2,
+              pointerEvents: "none",
+              userSelect: "none",
             }}
             priority
             sizes="(max-width: 600px) 98vw, 430px"
