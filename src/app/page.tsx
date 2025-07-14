@@ -18,26 +18,46 @@ export default function Home() {
       <Head>
         <title>Victor Clavelly</title>
       </Head>
-     <main
-  className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
-  style={{ minHeight: "100vh", minWidth: "100vw" }}
->
-  <div className="relative w-full max-w-[430px] h-[570px] sm:w-[410px] md:w-[430px] md:h-[620px]">
-    <Image
-      src="/next/image/NewCardFrame.png"
-      alt="Main Visual"
-      fill
-      style={{
-        objectFit: "cover", // Use "cover" if you want it to fill the card area!
-        objectPosition: "center",
-        background: "transparent",
-      }}
-      priority
-      sizes="(max-width: 600px) 80vw, 430px"
-    />
-    {/* If you want to overlay content, you can add it here */}
-  </div>
-</main>
+      <main
+        className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
+        style={{
+          minHeight: "100vh",
+          minWidth: "100vw",
+        }}
+      >
+        <div
+          className="
+            relative
+            w-full
+            max-w-[430px]
+            h-[78vw]      // makes it large on mobile (78% of viewport width = 292px on 375px screen)
+            max-h-[620px] // caps height on larger screens
+            sm:h-[540px]
+            md:h-[620px]
+            flex
+            items-center
+            justify-center
+          "
+          style={{
+            background: "transparent",
+          }}
+        >
+          <Image
+            src="/next/image/NewCardFrame.png"
+            alt="Main Visual"
+            fill
+            style={{
+              objectFit: "contain",
+              objectPosition: "center",
+              background: "transparent",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+            priority
+            sizes="(max-width: 600px) 90vw, 430px"
+          />
+        </div>
+      </main>
     </>
   );
 }
