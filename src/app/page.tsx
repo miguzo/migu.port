@@ -21,7 +21,8 @@ const projects: Project[] = [
 
 export default function Home() {
   // --- State for current project/card UI, etc.
-  const [projectIdx, setProjectIdx] = useState(0);
+  const [projectIdx] = useState(0);
+
   const [currentTracks, setCurrentTracks] = useState<Track[]>(projects[0].tracks);
   const [panel, setPanel] = useState<Panel>("listen");
   const [panelOpen, setPanelOpen] = useState(false);
