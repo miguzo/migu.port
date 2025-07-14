@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Card, { Project, Track, Panel } from "@/components/Card";
+import Card from "@/components/Card";
+import type { Project, Track, Panel } from "@/types";
+// ...the rest of your page code...
+
+// ...the rest of your page code...
+
 
 // --- Your data, just like before
 const projects: Project[] = [
