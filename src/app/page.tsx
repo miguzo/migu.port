@@ -44,7 +44,7 @@ export default function Home() {
   fill
   style={{
     objectFit: "contain",
-    objectPosition: "center 30%",   // <--- Add this line, tweak % as needed!
+    objectPosition: "center 25%",   // <--- Add this line, tweak % as needed!
     transform: "scale(0.5)",
     zIndex: 1,
     pointerEvents: "none",
