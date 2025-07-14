@@ -26,36 +26,40 @@ export default function Home() {
         }}
       >
         <div
-          className="
-            relative
-            w-full
-            max-w-[430px]
-            h-[78vw]      // makes it large on mobile (78% of viewport width = 292px on 375px screen)
-            max-h-[620px] // caps height on larger screens
-            sm:h-[540px]
-            md:h-[620px]
-            flex
-            items-center
-            justify-center
-          "
           style={{
-            background: "transparent",
+            position: "relative",
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Image
-            src="/next/image/NewCardFrame.png"
-            alt="Main Visual"
-            fill
+          <div
             style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              background: "transparent",
-              pointerEvents: "none",
-              userSelect: "none",
+              position: "relative",
+              width: "min(96vw, 430px)",
+              height: "auto",
+              maxHeight: "86vh",    // Key: no taller than 86% of the viewport
+              aspectRatio: "430/620", // Replace with your real image aspect!
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            priority
-            sizes="(max-width: 600px) 90vw, 430px"
-          />
+          >
+            <Image
+              src="/next/image/NewCardFrame.png"
+              alt="Main Visual"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                background: "transparent",
+              }}
+              priority
+              sizes="(max-width: 600px) 95vw, 430px"
+            />
+          </div>
         </div>
       </main>
     </>
