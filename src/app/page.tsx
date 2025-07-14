@@ -38,12 +38,13 @@ export default function Home() {
           }}
         >
           {/* --- Background image behind the frame --- */}
-       <Image
+<Image
   src="/next/image/FragmentsUp.png"
   alt="Fragments Background"
   fill
   style={{
     objectFit: "contain",
+    objectPosition: "center 30%",   // <--- Add this line, tweak % as needed!
     transform: "scale(0.5)",
     zIndex: 1,
     pointerEvents: "none",
