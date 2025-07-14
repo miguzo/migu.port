@@ -53,7 +53,7 @@ export default function Home() {
         >
           {/* --- Background image behind the frame --- */}
           <Image
-            src="/next/image/FragmentsUp.png"
+            src="/next/image/Fragments.png"
             alt="Fragments Background"
             fill
             style={{
