@@ -13,12 +13,12 @@ export default function Home() {
     };
   }, []);
 
-  // Button hitbox positions (in % for 375x667 aspect, as measured above)
+  // Your exact button positions
   const topButtonPositions = [
-    { left: "6.4%", top: "6.9%", width: "14.7%", height: "4.9%" },   // 1st
-    { left: "24.3%", top: "6.9%", width: "14.7%", height: "4.9%" },  // 2nd
-    { left: "42.4%", top: "6.9%", width: "14.7%", height: "4.9%" },  // 3rd
-    { left: "60.3%", top: "6.9%", width: "14.7%", height: "4.9%" },  // 4th
+    { left: "18.5%", top: "11%", width: "14.7%", height: "4.9%" },   // 1st
+    { left: "34.5%", top: "11%", width: "14.7%", height: "4.9%" },   // 2nd
+    { left: "51%", top: "11%", width: "14.7%", height: "4.9%" },     // 3rd
+    { left: "67.5%", top: "11%", width: "14.7%", height: "4.9%" },   // 4th
   ];
   const bottomButton = {
     left: "22.9%",
@@ -43,9 +43,9 @@ export default function Home() {
           style={{
             position: "relative",
             width: "min(98vw, 430px)",
-            height: "min(85vh, calc(98vw * 1.44), 620px)", // adjust 1.44 to your PNG aspect ratio
+            height: "min(85vh, calc(98vw * 1.44), 620px)",
             maxHeight: "620px",
-            marginTop: "1vh", // spacing from the top
+            marginTop: "1vh",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -53,7 +53,7 @@ export default function Home() {
         >
           {/* --- Background image behind the frame --- */}
           <Image
-            src="/next/image/Fragments.png"
+            src="/next/image/FragmentsUp.png"
             alt="Fragments Background"
             fill
             style={{
@@ -98,8 +98,8 @@ export default function Home() {
                 border: "none",
                 cursor: "pointer",
                 zIndex: 10,
-                // Uncomment this next line to debug (shows a red overlay)
-                // background: "rgba(255,0,0,0.18)"
+                // Uncomment next line to debug (see hitboxes)
+                // background: "rgba(255,0,0,0.16)"
               }}
               onClick={() => alert(`Top Button ${i + 1} clicked!`)}
             />
@@ -118,8 +118,8 @@ export default function Home() {
               border: "none",
               cursor: "pointer",
               zIndex: 10,
-              // Uncomment this next line to debug (shows a red overlay)
-              // background: "rgba(255,0,0,0.18)"
+              // Uncomment to debug
+              // background: "rgba(255,0,0,0.16)"
             }}
             onClick={() => alert("Bottom Button clicked!")}
           />
