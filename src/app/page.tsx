@@ -38,20 +38,18 @@ export default function Home() {
           }}
         >
           {/* --- Background image behind the frame --- */}
-          <Image
-            src="/next/image/FragmentsUp.png" // <--- put your actual path here
-            alt="Fragments Background"
-            fill
-            style={{
-              objectFit: "cover",      // fill the area; use "contain" if you want it never cropped
-              objectPosition: "center",
-              zIndex: 1,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-            priority
-            sizes="(max-width: 600px) 98vw, 430px"
-          />
+       <Image
+  src="/next/image/FragmentsUp.png"
+  alt="Fragments Background"
+  fill
+  style={{
+    objectFit: "contain",
+    transform: "scale(0.5)",
+    zIndex: 1,
+    pointerEvents: "none",
+    userSelect: "none",
+  }}
+/>
 
           {/* --- Frame PNG on top --- */}
           <Image
