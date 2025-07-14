@@ -36,30 +36,30 @@ export default function Home() {
           }}
         >
           <div
-            style={{
-              position: "relative",
-              width: "min(96vw, 430px)",
-              height: "auto",
-              maxHeight: "86vh",    // Key: no taller than 86% of the viewport
-              aspectRatio: "430/620", // Replace with your real image aspect!
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Image
-              src="/next/image/NewCardFrame.png"
-              alt="Main Visual"
-              fill
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                background: "transparent",
-              }}
-              priority
-              sizes="(max-width: 600px) 95vw, 430px"
-            />
-          </div>
+  style={{
+    position: "relative",
+    width: "min(98vw, 430px)", // Slightly bigger max width on mobile
+    height: "min(85vh, calc(98vw * 1.44), 620px)", // 1.44 = 430/298, or use your PNG's ratio
+    maxHeight: "620px", // Cap on large screens
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  <Image
+    src="/next/image/NewCardFrame.png"
+    alt="Main Visual"
+    fill
+    style={{
+      objectFit: "contain",
+      objectPosition: "center",
+      background: "transparent",
+    }}
+    priority
+    sizes="(max-width: 600px) 98vw, 430px"
+  />
+</div>
+
         </div>
       </main>
     </>
