@@ -37,7 +37,7 @@ export default function Home() {
           }}
         >
           <Image
-            src="/next/image/FragmentsUp.png"
+            src="/next/image/NewCardFrame.png"
             alt="Main Visual"
             fill
             style={{
