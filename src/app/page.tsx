@@ -29,9 +29,9 @@ export default function Home() {
           style={{
             width: "min(84vw,430px)",
             height: "min(80vw,500px)",
-            //borderRadius: 24,
-            //boxShadow: "0 8px 42px 0 #e5c06c44",
-            background: "rgba(229,192,108,0.06)",
+            // borderRadius: 24,
+            // boxShadow: "0 8px 42px 0 #e5c06c44",
+            background: "transparent",  // <--- This line changed!
             position: "relative",
             overflow: "hidden",
           }}
@@ -41,9 +41,10 @@ export default function Home() {
             alt="Main Visual"
             fill
             style={{
-              objectFit: "cover",
+              objectFit: "contain",     // <--- Better for PNGs, no crop!
               objectPosition: "center",
               borderRadius: 24,
+              background: "transparent", // <--- Extra-safe!
             }}
             priority
             sizes="(max-width: 600px) 80vw, 430px"
