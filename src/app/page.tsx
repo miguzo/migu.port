@@ -31,7 +31,7 @@ export default function Home() {
             width: "min(98vw, 430px)",
             height: "min(85vh, calc(98vw * 1.44), 620px)", // adjust 1.44 to your PNG aspect ratio
             maxHeight: "620px",
-            marginTop: "5vh",  // <-- move frame down a bit from the top (adjust as needed)
+            marginTop: "3vh",  // <-- move frame down a bit from the top (adjust as needed)
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
