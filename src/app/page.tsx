@@ -65,14 +65,14 @@ export default function Home() {
         project={currentProject}
         isActive={true}
         panel={panel}
-        panelOpen={panelOpen}
+     //   panelOpen={panelOpen}
         playTrack={playTrack}
         currentTracks={currentTracks}
         isPlaying={isPlaying}
         theme={theme}
         togglePlayPause={togglePlayPause}
         setTheme={setTheme}
-        selectPanel={selectPanel}
+     //   selectPanel={selectPanel}
         onCardTouchStart={() => {}}
         onCardTouchMove={() => {}}
         onCardTouchEnd={() => {}}
