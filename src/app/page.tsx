@@ -28,7 +28,7 @@ const topButtonPositions = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
   { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project (inactive now)
+  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project (unused)
 ];
 const bottomButton = {
   left: "24%",
@@ -37,7 +37,7 @@ const bottomButton = {
   height: "8.7%",
 };
 
-// Only one project for now!
+// PROJECTS DATA (only one for now)
 const projects = [
   {
     bg: "/next/image/Fragments.png",
@@ -58,16 +58,63 @@ const projects = [
   },
 ];
 
+// All images and audio that need preloading
+const getPreloadAssets = () => {
+  const images = [
+    projects[0].bg,
+    "/next/image/NewCardFrameEmpty.png",
+    ...projects[0].playlist.map((t) => t.titleImg),
+    ...BUTTON_IMAGES.map((b) => b.on),
+    ...BUTTON_IMAGES.map((b) => b.off),
+  ];
+  const audios = [
+    ...projects[0].playlist.map((t) => t.src),
+    "/sounds/Button.mp3",
+  ];
+  return { images, audios };
+};
+
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
 
-  // Project & track
-  const [projectIdx] = useState(0); // Always 0 for now
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const [projectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
 
-  // Play button sound
+  // Preload logic
+  useEffect(() => {
+    let isMounted = true;
+    const { images, audios } = getPreloadAssets();
+    let loaded = 0;
+    const total = images.length + audios.length;
+
+    function checkDone() {
+      loaded++;
+      if (isMounted && loaded >= total) setIsLoaded(true);
+    }
+
+    images.forEach((src) => {
+      const img = new window.Image();
+      img.onload = img.onerror = checkDone;
+      img.src = src;
+    });
+
+    audios.forEach((src) => {
+      const audio = new window.Audio();
+      audio.oncanplaythrough = audio.onerror = checkDone;
+      audio.preload = "auto";
+      audio.src = src;
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Button click sound
   function playButtonSound() {
     const audio = buttonAudioRef.current;
     if (!audio) return;
@@ -75,6 +122,7 @@ export default function Home() {
     audio.play().catch(() => {});
   }
 
+  // Button handlers
   function handlePlay() {
     if (pressedIdx === 0) return;
     playButtonSound();
@@ -99,7 +147,6 @@ export default function Home() {
       setPressedIdx(null);
     }, 1000);
   }
-  // No next project now!
   function goToNextTrack() {
     const playlist = projects[projectIdx].playlist;
     const nextIdx = (trackIdx + 1) % playlist.length;
@@ -110,7 +157,7 @@ export default function Home() {
     audio.currentTime = 0;
   }
 
-  // ---- Track changed: update audio, DO NOT AUTOPLAY
+  // Update audio src on track change (do not autoplay)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -118,7 +165,7 @@ export default function Home() {
     audio.load();
   }, [projectIdx, trackIdx]);
 
-  // ---- Auto next when song ends
+  // Auto next when song ends
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -142,9 +189,22 @@ export default function Home() {
     };
   }, []);
 
-  // --- RENDER ---
+  // Render
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
+
+  if (!isLoaded) {
+    return (
+      <main
+        className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
+        style={{ minHeight: "100vh", minWidth: "100vw" }}
+      >
+        <span style={{ color: "#fff", fontSize: 24, fontFamily: "monospace" }}>
+          Loading...
+        </span>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -273,7 +333,6 @@ export default function Home() {
             onClick={handleNextTrack}
             tabIndex={0}
           />
-          {/* 4th button can be left empty or for future use */}
 
           {/* --- Bottom Button (optional) --- */}
           <button
