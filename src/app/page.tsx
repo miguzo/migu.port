@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
+// Map ON/OFF images for each button
 const BUTTON_IMAGES = [
   {
     on: "/next/image/Button 1 ON.png",
@@ -22,12 +23,14 @@ const BUTTON_IMAGES = [
   },
 ];
 
+// Playlist, each with song + background
 const playlist = [
   { src: "/music/Fragments.mp3", bg: "/next/image/Fragments.png" },
   { src: "/music/Fragments.mp3", bg: "/next/image/Card2.png" },
   { src: "/music/Fragments.mp3", bg: "/next/image/Card3.png" },
 ];
 
+// Button positions as before
 const topButtonPositions = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
@@ -43,14 +46,23 @@ const bottomButton = {
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const buttonAudioRef = useRef<HTMLAudioElement>(null);
   const [trackIdx, setTrackIdx] = useState(0);
-
-  // null means NO button is ON; 0=Play, 1=Pause, 2=Restart, 3=Next
+  // 0: Play, 1: Pause, 2: Restart, 3: Next, null: none pressed
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
+
+  // Play button click sound
+  function playButtonSound() {
+    const audio = buttonAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play();
+  }
 
   // Audio Logic
   function handlePlay() {
     if (pressedIdx === 0) return;
+    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.play();
@@ -58,54 +70,62 @@ export default function Home() {
   }
   function handlePause() {
     if (pressedIdx === 1) return;
+    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
     setPressedIdx(1);
   }
   function handleRestart() {
+    if (pressedIdx === 2) return;
+    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = 0;
     audio.play();
-    setPressedIdx(2); // Momentary ON for Restart
-    setTimeout(() => setPressedIdx(null), 300); // 0.3 sec after, none pressed
+    setPressedIdx(2); // Show Restart ON
+    setTimeout(() => {
+      setPressedIdx(0); // After 1s, Play ON
+    }, 1000);
   }
   function handleNext() {
-    setPressedIdx(3); // Momentary ON for Next
-    goToNextTrack();
-    setTimeout(() => setPressedIdx(null), 300); // 0.3 sec after, none pressed
+    playButtonSound();
+    setPressedIdx(3); // Show Next ON
+    setTimeout(() => {
+      goToNextTrack();
+      setPressedIdx(null); // After 1s, nothing ON
+    }, 1000);
   }
   function goToNextTrack() {
     const nextIdx = (trackIdx + 1) % playlist.length;
     setTrackIdx(nextIdx);
-    setTimeout(() => {
-      const audio = audioRef.current;
-      if (!audio) return;
-      audio.src = playlist[nextIdx].src;
-      audio.currentTime = 0;
-      audio.play();
-      setPressedIdx(0); // Play is ON after Next (unless you want it to go to null)
-    }, 0);
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
   }
 
-  // When trackIdx changes, load new track (and play if Play or Next)
+  // When trackIdx changes, load new track (no autoplay after "Next")
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.src = playlist[trackIdx].src;
     audio.load();
-    if (pressedIdx === 0 || pressedIdx === 3) {
-      audio.play();
-    }
+    // Don't auto-play on track change, only when Play or Restart pressed
     // eslint-disable-next-line
   }, [trackIdx]);
 
-  // Listen for end of track to go to next automatically
+  // Listen for end of track to go to next automatically (same logic as pressing "Next")
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onEnded = () => goToNextTrack();
+    const onEnded = () => {
+      setPressedIdx(3);
+      setTimeout(() => {
+        goToNextTrack();
+        setPressedIdx(null);
+      }, 1000);
+    };
     audio.addEventListener("ended", onEnded);
     return () => audio.removeEventListener("ended", onEnded);
   }, [trackIdx]);
@@ -172,7 +192,7 @@ export default function Home() {
             sizes="(max-width: 600px) 98vw, 430px"
           />
 
-          {/* --- Render Button PNGs (always render, ON/OFF decided by state) --- */}
+          {/* --- Render Button PNGs --- */}
           {BUTTON_IMAGES.map((img, idx) => (
             <Image
               key={idx}
@@ -182,7 +202,7 @@ export default function Home() {
               style={{
                 objectFit: "contain",
                 objectPosition: "center",
-                zIndex: 11,
+                zIndex: 11, // above frame
                 pointerEvents: "none",
                 userSelect: "none",
               }}
@@ -259,12 +279,17 @@ export default function Home() {
               cursor: "pointer",
               zIndex: 20,
             }}
-            onClick={() => alert("Bottom Button clicked!")}
+            onClick={() => {
+              playButtonSound();
+              alert("Bottom Button clicked!");
+            }}
             tabIndex={0}
           />
 
-          {/* --- Hidden audio player --- */}
+          {/* --- Hidden audio player (music) --- */}
           <audio ref={audioRef} hidden src={playlist[trackIdx].src} />
+          {/* --- Hidden button sound effect --- */}
+          <audio ref={buttonAudioRef} src="/sounds/Button.mp3" hidden />
         </div>
       </main>
     </>
