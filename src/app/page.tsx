@@ -3,20 +3,32 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// BUTTON IMAGES
+// BUTTON IMAGES (edit these if you change your filenames!)
 const BUTTON_IMAGES = [
-  { on: "/next/image/Button 1 ON.png", off: "/next/image/Button 1 Off.png" },
-  { on: "/next/image/Button 2 ON.png", off: "/next/image/Button 2 Off.png" },
-  { on: "/next/image/Button 3 ON.png", off: "/next/image/Button 3 Off.png" },
-  { on: "/next/image/Button 4 On.png", off: "/next/image/Button 4 Off.png" },
+  {
+    on: "/next/image/Button 1 ON.png",
+    off: "/next/image/Button 1 Off.png",
+  },
+  {
+    on: "/next/image/Button 2 ON.png",
+    off: "/next/image/Button 2 Off.png",
+  },
+  {
+    on: "/next/image/Button 3 ON.png",
+    off: "/next/image/Button 3 Off.png",
+  },
+  {
+    on: "/next/image/Button 4 On.png",
+    off: "/next/image/Button 4 Off.png",
+  },
 ];
 
 // BUTTON ZONES
 const topButtonPositions = [
-  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },
-  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },
-  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" },
+  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
+  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
+  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
+  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
 ];
 const bottomButton = {
   left: "24%",
@@ -25,112 +37,120 @@ const bottomButton = {
   height: "8.7%",
 };
 
-// PROJECTS DATA
+// PROJECTS DATA (edit as needed)
 const projects = [
   {
     bg: "/next/image/Fragments.png",
     playlist: [
-      { src: "/music/1.Hunters.mp3", titleImg: "/next/image/1Hunters.png" },
-      { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2Doublecross.png" },
-      { src: "/music/3.The Rabbit.mp3", titleImg: "/next/image/3Rabbit.png" },
+      {
+        src: "/music/1.Hunters.mp3",
+        titleImg: "/next/image/1Hunters.png",
+      },
+      {
+        src: "/music/2.Double Crossed.mp3",
+        titleImg: "/next/image/2Doublecross.png",
+      },
+      {
+        src: "/music/3.The Rabbit.mp3",
+        titleImg: "/next/image/3Rabbit.png",
+      },
     ],
   },
   {
     bg: "/next/image/OtherProjectBG.png",
     playlist: [
-      { src: "/music/4.NewSong.mp3", titleImg: "/next/image/4NewSong.png" },
-      { src: "/music/5.NextOne.mp3", titleImg: "/next/image/5NextOne.png" },
+      {
+        src: "/music/4.NewSong.mp3",
+        titleImg: "/next/image/4NewSong.png",
+      },
+      {
+        src: "/music/5.NextOne.mp3",
+        titleImg: "/next/image/5NextOne.png",
+      },
     ],
   },
-];
-
-const BUTTON_SOUND = "/sounds/Button.mp3";
-const ALL_IMAGES = [
-  ...BUTTON_IMAGES.flatMap(img => [img.on, img.off]),
-  ...projects.flatMap(project => [
-    project.bg,
-    ...project.playlist.map(song => song.titleImg),
-  ]),
-  "/next/image/NewCardFrameEmpty.png",
-];
-
-const ALL_AUDIO = [
-  ...projects.flatMap(project => project.playlist.map(song => song.src)),
-  BUTTON_SOUND,
 ];
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
 
+  // PROJECT & TRACK index
   const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
+
+  // pressedIdx: 0: Play, 1: Pause, 2: Next Track, 3: Next Project, null: none pressed
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
 
-  // PRELOAD state: is everything ready?
+  // --- DEBUG LOGGING FOR iPHONE ---
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [preloaded, setPreloaded] = useState(false);
-  const [userInteracted, setUserInteracted] = useState(false);
 
-  // ---- PRELOAD everything ----
-useEffect(() => {
-  let loaded = 0;
-  // Preload images
-  ALL_IMAGES.forEach(src => {
-    const img = new window.Image();
-    img.onload = () => {
-      loaded++;
-      if (loaded >= ALL_IMAGES.length + ALL_AUDIO.length) setPreloaded(true);
-    };
-    img.onerror = () => {
-      loaded++;
-      if (loaded >= ALL_IMAGES.length + ALL_AUDIO.length) setPreloaded(true);
-    };
-    img.src = src;
-  });
+  // All assets to preload:
+  const ALL_IMAGES = [
+    ...BUTTON_IMAGES.flatMap(btn => [btn.on, btn.off]),
+    "/next/image/Fragments.png",
+    "/next/image/OtherProjectBG.png",
+    "/next/image/1Hunters.png",
+    "/next/image/2Doublecross.png",
+    "/next/image/3Rabbit.png",
+    "/next/image/4NewSong.png",
+    "/next/image/5NextOne.png",
+    "/next/image/NewCardFrameEmpty.png",
+    // Add more if needed
+  ];
+  const ALL_AUDIO = [
+    "/sounds/Button.mp3",
+    "/music/1.Hunters.mp3",
+    "/music/2.Double Crossed.mp3",
+    "/music/3.The Rabbit.mp3",
+    "/music/4.NewSong.mp3",
+    "/music/5.NextOne.mp3",
+  ];
 
-  // Preload audio: fetch all, load into Audio objects
-  ALL_AUDIO.forEach(src => {
-    const audio = new window.Audio(src);
-    audio.oncanplaythrough = () => {
-      loaded++;
-      if (loaded >= ALL_IMAGES.length + ALL_AUDIO.length) setPreloaded(true);
-    };
-    audio.onerror = () => {
-      loaded++;
-      if (loaded >= ALL_IMAGES.length + ALL_AUDIO.length) setPreloaded(true);
-    };
-  });
-  // eslint-disable-next-line
-}, []);
+  // Preload assets on mount
+  useEffect(() => {
+    let loaded = 0;
+    const total = ALL_IMAGES.length + ALL_AUDIO.length;
 
-  // ---- UNLOCK AUDIO (first tap) ----
-  function unlockAllAudio() {
-    // "Touch" each audio to unlock on iOS/Android (do this muted)
-    ALL_AUDIO.forEach(src => {
-      const a = new window.Audio(src);
-      a.muted = true;
-      a.play().catch(() => {});
-      setTimeout(() => { a.pause(); a.currentTime = 0; }, 100);
+    function log(msg: string) {
+      setDebugLogs(prev => [...prev, msg]);
+    }
+
+    ALL_IMAGES.forEach(src => {
+      const img = new window.Image();
+      img.onload = () => {
+        loaded++;
+        log(`Loaded image: ${src} (${loaded}/${total})`);
+        if (loaded >= total) setPreloaded(true);
+      };
+      img.onerror = () => {
+        loaded++;
+        log(`❌ Failed to load image: ${src} (${loaded}/${total})`);
+        if (loaded >= total) setPreloaded(true);
+      };
+      img.src = src;
     });
-    // Also unlock our refs
-    if (audioRef.current) {
-      audioRef.current.muted = true;
-      audioRef.current.play().catch(() => {});
-      setTimeout(() => { audioRef.current!.pause(); audioRef.current!.currentTime = 0; audioRef.current!.muted = false; }, 100);
-    }
-    if (buttonAudioRef.current) {
-      buttonAudioRef.current.muted = true;
-      buttonAudioRef.current.play().catch(() => {});
-      setTimeout(() => { buttonAudioRef.current!.pause(); buttonAudioRef.current!.currentTime = 0; buttonAudioRef.current!.muted = false; }, 100);
-    }
-    setUserInteracted(true);
-  }
+
+    ALL_AUDIO.forEach(src => {
+      const audio = new window.Audio(src);
+      audio.oncanplaythrough = () => {
+        loaded++;
+        log(`Loaded audio: ${src} (${loaded}/${total})`);
+        if (loaded >= total) setPreloaded(true);
+      };
+      audio.onerror = () => {
+        loaded++;
+        log(`❌ Failed to load audio: ${src} (${loaded}/${total})`);
+        if (loaded >= total) setPreloaded(true);
+      };
+    });
+  }, []);
 
   // ---- BUTTON SOUND ----
   function playButtonSound() {
     const audio = buttonAudioRef.current;
     if (!audio) return;
-    audio.pause();
     audio.currentTime = 0;
     audio.play().catch(() => {});
   }
@@ -138,6 +158,7 @@ useEffect(() => {
   // --- BUTTON HANDLERS ---
   function handlePlay() {
     if (pressedIdx === 0) return;
+    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.play();
@@ -145,20 +166,23 @@ useEffect(() => {
   }
   function handlePause() {
     if (pressedIdx === 1) return;
+    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
     setPressedIdx(1);
   }
   function handleNextTrack() {
-    setPressedIdx(2);
+    playButtonSound();
+    setPressedIdx(2); // Button 3 ON (momentary)
     setTimeout(() => {
       goToNextTrack();
       setPressedIdx(null);
     }, 1000);
   }
   function handleNextProject() {
-    setPressedIdx(3);
+    playButtonSound();
+    setPressedIdx(3); // Button 4 ON (momentary)
     setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
@@ -208,190 +232,197 @@ useEffect(() => {
     };
   }, []);
 
-  // --- RENDER ---
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
-  // ----- PRELOADER -----
-  if (!preloaded || !userInteracted) {
-    return (
-      <main
-        className="fixed inset-0 flex items-center justify-center bg-black z-[9999]"
-        style={{ minHeight: "100vh", minWidth: "100vw" }}
-        onClick={() => preloaded && !userInteracted && unlockAllAudio()}
-        onTouchStart={() => preloaded && !userInteracted && unlockAllAudio()}
-      >
-        {/* Replace below with your logo or animation! */}
-        <div style={{ color: "#e5c06c", fontFamily: "Cinzel, serif", fontSize: 32 }}>
-          {preloaded ? "Touch to Start" : "Loading..."}
-        </div>
-      </main>
-    );
-  }
-
-  // ----- MAIN APP -----
+  // --- RENDER ---
   return (
     <>
+      {/* DEBUG LOG WINDOW FOR iPHONE */}
+      {!preloaded && (
+        <pre
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            maxHeight: 160,
+            zIndex: 9999,
+            background: "#19191be0",
+            color: "#ffe082",
+            fontSize: 11,
+            overflow: "auto",
+            pointerEvents: "auto",
+            margin: 0,
+          }}
+        >
+          {debugLogs.join("\n") || "Loading..."}
+        </pre>
+      )}
+
       <Head>
         <title>Victor Clavelly</title>
       </Head>
-      <main
-        className="fixed inset-0 flex justify-center bg-[#19191b]"
-        style={{ minHeight: "100vh", minWidth: "100vw" }}
-      >
-        <div
-          style={{
-            position: "relative",
-            width: "min(98vw, 430px)",
-            height: "min(85vh, calc(98vw * 1.44), 620px)",
-            maxHeight: "620px",
-            marginTop: "1vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+      {/* Hide rest of site while not preloaded */}
+      {!preloaded ? null : (
+        <main
+          className="fixed inset-0 flex justify-center bg-[#19191b]"
+          style={{ minHeight: "100vh", minWidth: "100vw" }}
         >
-          {/* --- PROJECT BACKGROUND IMAGE --- */}
-          <Image
-            src={project.bg}
-            alt="Project Background"
-            fill
+          <div
             style={{
-              objectFit: "contain",
-              objectPosition: "center 25%",
-              transform: "scale(0.5)",
-              zIndex: 1,
-              pointerEvents: "none",
-              userSelect: "none",
+              position: "relative",
+              width: "min(98vw, 430px)",
+              height: "min(85vh, calc(98vw * 1.44), 620px)",
+              maxHeight: "620px",
+              marginTop: "1vh",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            priority
-          />
-
-          {/* --- FRAME (empty, without buttons) --- */}
-          <Image
-            src="/next/image/NewCardFrameEmpty.png"
-            alt="Main Visual Frame"
-            fill
-            style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              background: "transparent",
-              zIndex: 2,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-            priority
-            sizes="(max-width: 600px) 98vw, 430px"
-          />
-
-          {/* --- TITLE IMAGE (always shown, on top of frame) --- */}
-          <Image
-            src={currentTrack.titleImg}
-            alt="Song Title"
-            fill
-            style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              zIndex: 15,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-            priority
-          />
-
-          {/* --- RENDER BUTTON PNGs --- */}
-          {BUTTON_IMAGES.map((img, idx) => (
+          >
+            {/* --- PROJECT BACKGROUND IMAGE --- */}
             <Image
-              key={idx}
-              src={pressedIdx === idx ? img.on : img.off}
-              alt={`Button ${idx + 1}`}
+              src={project.bg}
+              alt="Project Background"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center 25%",
+                transform: "scale(0.5)",
+                zIndex: 1,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority
+            />
+
+            {/* --- FRAME (empty, without buttons) --- */}
+            <Image
+              src="/next/image/NewCardFrameEmpty.png"
+              alt="Main Visual Frame"
               fill
               style={{
                 objectFit: "contain",
                 objectPosition: "center",
-                zIndex: 11,
+                background: "transparent",
+                zIndex: 2,
                 pointerEvents: "none",
                 userSelect: "none",
               }}
-              priority={idx === 0}
+              priority
+              sizes="(max-width: 600px) 98vw, 430px"
             />
-          ))}
 
-          {/* --- TRANSPARENT BUTTON HOTZONES --- */}
-          <button
-            aria-label="Play"
-            style={{
-              ...topButtonPositions[0],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 0 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => { playButtonSound(); handlePlay(); }}
-            tabIndex={0}
-          />
-          <button
-            aria-label="Pause"
-            style={{
-              ...topButtonPositions[1],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 1 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => { playButtonSound(); handlePause(); }}
-            tabIndex={0}
-          />
-          <button
-            aria-label="Next Track"
-            style={{
-              ...topButtonPositions[2],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 2 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => { playButtonSound(); handleNextTrack(); }}
-            tabIndex={0}
-          />
-          <button
-            aria-label="Next Project"
-            style={{
-              ...topButtonPositions[3],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 3 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => { playButtonSound(); handleNextProject(); }}
-            tabIndex={0}
-          />
+            {/* --- TITLE IMAGE (always shown, on top of frame) --- */}
+            <Image
+              src={currentTrack.titleImg}
+              alt="Song Title"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 15,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority
+            />
 
-          {/* --- Bottom Button (optional) --- */}
-          <button
-            aria-label="Bottom Button"
-            style={{
-              ...bottomButton,
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => { playButtonSound(); alert("Bottom Button clicked!"); }}
-            tabIndex={0}
-          />
+            {/* --- BUTTON PNGS --- */}
+            {BUTTON_IMAGES.map((img, idx) => (
+              <Image
+                key={idx}
+                src={pressedIdx === idx ? img.on : img.off}
+                alt={`Button ${idx + 1}`}
+                fill
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 11,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }}
+                priority={idx === 0}
+              />
+            ))}
 
-          {/* --- Hidden audio player for music --- */}
-          <audio ref={audioRef} hidden src={currentTrack.src} />
-          {/* --- Hidden audio player for button click --- */}
-          <audio ref={buttonAudioRef} hidden src={BUTTON_SOUND} preload="auto" />
-        </div>
-      </main>
+            {/* --- TRANSPARENT BUTTON HOTZONES --- */}
+            <button
+              aria-label="Play"
+              style={{
+                ...topButtonPositions[0],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 0 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handlePlay}
+              tabIndex={0}
+            />
+            <button
+              aria-label="Pause"
+              style={{
+                ...topButtonPositions[1],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 1 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handlePause}
+              tabIndex={0}
+            />
+            <button
+              aria-label="Next Track"
+              style={{
+                ...topButtonPositions[2],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 2 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handleNextTrack}
+              tabIndex={0}
+            />
+            <button
+              aria-label="Next Project"
+              style={{
+                ...topButtonPositions[3],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 3 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handleNextProject}
+              tabIndex={0}
+            />
+
+            {/* --- Bottom Button (optional) --- */}
+            <button
+              aria-label="Bottom Button"
+              style={{
+                ...bottomButton,
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                zIndex: 20,
+              }}
+              onClick={() => alert("Bottom Button clicked!")}
+              tabIndex={0}
+            />
+
+            {/* --- Hidden audio player for music --- */}
+            <audio ref={audioRef} hidden src={currentTrack.src} />
+            {/* --- Hidden audio player for button click --- */}
+            <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
+          </div>
+        </main>
+      )}
     </>
   );
 }
