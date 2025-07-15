@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// BUTTON IMAGES
 const BUTTON_IMAGES = [
   {
     on: "/next/image/Button 1 ON.png",
@@ -23,12 +22,11 @@ const BUTTON_IMAGES = [
   },
 ];
 
-// BUTTON ZONES
 const topButtonPositions = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
   { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project (unused)
+  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
 ];
 const bottomButton = {
   left: "24%",
@@ -37,7 +35,6 @@ const bottomButton = {
   height: "8.7%",
 };
 
-// PROJECTS DATA (only one for now)
 const projects = [
   {
     bg: "/next/image/Fragments.png",
@@ -58,73 +55,76 @@ const projects = [
   },
 ];
 
-// All images and audio that need preloading
-const getPreloadAssets = () => {
-  const images = [
-    projects[0].bg,
-    "/next/image/NewCardFrameEmpty.png",
-    ...projects[0].playlist.map((t) => t.titleImg),
+function getPreloadAssets() {
+  return [
     ...BUTTON_IMAGES.map((b) => b.on),
     ...BUTTON_IMAGES.map((b) => b.off),
-    "/Loading.png", // preload splash!
-  ];
-  const audios = [
-    ...projects[0].playlist.map((t) => t.src),
+    "/next/image/NewCardFrameEmpty.png",
+    "/next/image/Loading.png",
+    ...projects.flatMap((p) => [p.bg, ...p.playlist.map((t) => t.titleImg)]),
+    ...projects.flatMap((p) => p.playlist.map((t) => t.src)),
     "/sounds/Button.mp3",
   ];
-  return { images, audios };
-};
+}
+function preloadAllAssets(assets: string[]) {
+  return Promise.all(
+    assets.map((url) => {
+      if (url.endsWith(".png") || url.endsWith(".jpg") || url.endsWith(".jpeg")) {
+        return new Promise((resolve) => {
+          const img = new window.Image();
+          img.onload = resolve;
+          img.onerror = resolve;
+          img.src = url;
+        });
+      } else if (url.endsWith(".mp3") || url.endsWith(".wav") || url.endsWith(".ogg")) {
+        return new Promise((resolve) => {
+          const audio = new window.Audio();
+          audio.oncanplaythrough = resolve;
+          audio.onerror = resolve;
+          audio.src = url;
+        });
+      } else {
+        return Promise.resolve();
+      }
+    })
+  );
+}
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
 
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [splashDone, setSplashDone] = useState(false);
+  // Splash State
+  const [ready, setReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [fadeSplash, setFadeSplash] = useState(false);
 
-  const [projectIdx] = useState(0);
+  // Main UI State
+  const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
 
-  // Preload logic (robust to missing files)
+  // Title transition logic: Only switch image when the next one is loaded
+  const [titleImgSrc, setTitleImgSrc] = useState(projects[0].playlist[0].titleImg);
+  const lastTrack = useRef({ projectIdx: 0, trackIdx: 0 });
+
   useEffect(() => {
-    let isMounted = true;
-    const { images, audios } = getPreloadAssets();
-    let loaded = 0;
-    const total = images.length + audios.length;
-
-    function checkDone() {
-      loaded++;
-      if (isMounted && loaded >= total) setIsLoaded(true);
-    }
-
-    images.forEach((src) => {
+    if (
+      projectIdx !== lastTrack.current.projectIdx ||
+      trackIdx !== lastTrack.current.trackIdx
+    ) {
+      const nextImg = projects[projectIdx].playlist[trackIdx].titleImg;
+      // Preload new image before swapping
       const img = new window.Image();
-      img.onload = checkDone;
-      img.onerror = checkDone; // On error, also count as loaded!
-      img.src = src;
-    });
+      img.onload = () => setTitleImgSrc(nextImg);
+      img.onerror = () => setTitleImgSrc(nextImg); // even on error, swap
+      img.src = nextImg;
+      lastTrack.current = { projectIdx, trackIdx };
+    }
+    // eslint-disable-next-line
+  }, [projectIdx, trackIdx]);
 
-    audios.forEach((src) => {
-      const audio = new window.Audio();
-      audio.oncanplaythrough = checkDone;
-      audio.onerror = checkDone; // On error, also count as loaded!
-      audio.preload = "auto";
-      audio.src = src;
-    });
-
-    // Set a fallback timeout in case something hangs
-    const failSafe = setTimeout(() => {
-      if (isMounted) setIsLoaded(true);
-    }, 4000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(failSafe);
-    };
-  }, []);
-
-  // Button click sound
+  // BUTTON SOUND
   function playButtonSound() {
     const audio = buttonAudioRef.current;
     if (!audio) return;
@@ -132,7 +132,6 @@ export default function Home() {
     audio.play().catch(() => {});
   }
 
-  // Button handlers
   function handlePlay() {
     if (pressedIdx === 0) return;
     playButtonSound();
@@ -157,6 +156,15 @@ export default function Home() {
       setPressedIdx(null);
     }, 1000);
   }
+  function handleNextProject() {
+    playButtonSound();
+    setPressedIdx(3);
+    setTimeout(() => {
+      setProjectIdx((p) => (p + 1) % projects.length);
+      setTrackIdx(0);
+      setPressedIdx(null);
+    }, 1000);
+  }
   function goToNextTrack() {
     const playlist = projects[projectIdx].playlist;
     const nextIdx = (trackIdx + 1) % playlist.length;
@@ -167,7 +175,7 @@ export default function Home() {
     audio.currentTime = 0;
   }
 
-  // Update audio src on track change (do not autoplay)
+  // Track/project change: update audio, DO NOT AUTOPLAY
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -199,33 +207,20 @@ export default function Home() {
     };
   }, []);
 
-  // Render SPLASH if loading or until click
-  if (!isLoaded || !splashDone) {
-    return (
-      <main
-        className="fixed inset-0 flex items-center justify-center bg-[#19191b] select-none"
-        style={{ minHeight: "100vh", minWidth: "100vw", cursor: isLoaded ? "pointer" : "wait" }}
-        onClick={() => isLoaded && setSplashDone(true)}
-        onTouchEnd={() => isLoaded && setSplashDone(true)}
-      >
-        <Image
-          src="/Loading.png"
-          alt="Splash"
-          fill
-          style={{
-            objectFit: "contain",
-            objectPosition: "center",
-            pointerEvents: "none",
-            userSelect: "none",
-            zIndex: 999,
-          }}
-          priority
-        />
-      </main>
-    );
+  // PRELOAD LOGIC
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    preloadAllAssets(getPreloadAssets()).then(() => setReady(true));
+  }, []);
+
+  // Splash fade out
+  function dismissSplash() {
+    if (ready) {
+      setFadeSplash(true);
+      setTimeout(() => setShowSplash(false), 600);
+    }
   }
 
-  // Main UI
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -234,150 +229,216 @@ export default function Home() {
       <Head>
         <title>Victor Clavelly</title>
       </Head>
-      <main
-        className="fixed inset-0 flex justify-center bg-[#19191b]"
-        style={{ minHeight: "100vh", minWidth: "100vw" }}
-      >
+
+      {showSplash && (
         <div
+          onClick={dismissSplash}
+          onTouchEnd={dismissSplash}
           style={{
-            position: "relative",
-            width: "min(98vw, 430px)",
-            height: "min(85vh, calc(98vw * 1.44), 620px)",
-            maxHeight: "620px",
-            marginTop: "1vh",
+            position: "fixed",
+            inset: 0,
+            background: "#19191b",
+            zIndex: 10000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            cursor: ready ? "pointer" : "default",
+            opacity: fadeSplash ? 0 : 1,
+            transition: "opacity 0.55s cubic-bezier(.4,.13,.35,1)",
           }}
         >
-          {/* --- PROJECT BACKGROUND IMAGE --- */}
           <Image
-            src={project.bg}
-            alt="Project Background"
-            fill
-            style={{
-              objectFit: "contain",
-              objectPosition: "center 25%",
-              transform: "scale(0.5)",
-              zIndex: 1,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-            priority
-          />
-
-          {/* --- FRAME (empty, without buttons) --- */}
-          <Image
-            src="/next/image/NewCardFrameEmpty.png"
-            alt="Main Visual Frame"
+            src="/next/image/Loading.png"
+            alt="Splash"
             fill
             style={{
               objectFit: "contain",
               objectPosition: "center",
-              background: "transparent",
-              zIndex: 2,
               pointerEvents: "none",
               userSelect: "none",
+              zIndex: 10001,
+              transition: "opacity 0.5s",
             }}
             priority
-            sizes="(max-width: 600px) 98vw, 430px"
           />
+          {!ready && (
+            <span
+              style={{
+                color: "#aaa",
+                position: "absolute",
+                bottom: "12vh",
+                width: "100%",
+                textAlign: "center",
+                fontFamily: "monospace",
+                letterSpacing: 1,
+                fontSize: 18,
+                opacity: 0.75,
+              }}
+            >
+              Loading...
+            </span>
+          )}
+        </div>
+      )}
 
-          {/* --- TITLE IMAGE (always shown, on top of frame) --- */}
-          <Image
-            src={currentTrack.titleImg}
-            alt="Song Title"
-            fill
+      {!showSplash && (
+        <main
+          className="fixed inset-0 flex justify-center bg-[#19191b]"
+          style={{ minHeight: "100vh", minWidth: "100vw" }}
+        >
+          <div
             style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              zIndex: 15,
-              pointerEvents: "none",
-              userSelect: "none",
+              position: "relative",
+              width: "min(98vw, 430px)",
+              height: "min(85vh, calc(98vw * 1.44), 620px)",
+              maxHeight: "620px",
+              marginTop: "1vh",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            priority
-          />
-
-          {/* --- RENDER BUTTON PNGs --- */}
-          {BUTTON_IMAGES.map((img, idx) => (
+          >
+            {/* Background */}
             <Image
-              key={idx}
-              src={pressedIdx === idx ? img.on : img.off}
-              alt={`Button ${idx + 1}`}
+              src={project.bg}
+              alt="Project Background"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center 25%",
+                transform: "scale(0.5)",
+                zIndex: 1,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority
+            />
+
+            {/* Frame */}
+            <Image
+              src="/next/image/NewCardFrameEmpty.png"
+              alt="Main Visual Frame"
               fill
               style={{
                 objectFit: "contain",
                 objectPosition: "center",
-                zIndex: 11,
+                background: "transparent",
+                zIndex: 2,
                 pointerEvents: "none",
                 userSelect: "none",
               }}
-              priority={idx === 0}
+              priority
+              sizes="(max-width: 600px) 98vw, 430px"
             />
-          ))}
 
-          {/* --- TRANSPARENT BUTTON HOTZONES --- */}
-          <button
-            aria-label="Play"
-            style={{
-              ...topButtonPositions[0],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 0 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={handlePlay}
-            tabIndex={0}
-          />
-          <button
-            aria-label="Pause"
-            style={{
-              ...topButtonPositions[1],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 1 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={handlePause}
-            tabIndex={0}
-          />
-          <button
-            aria-label="Next Track"
-            style={{
-              ...topButtonPositions[2],
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: pressedIdx === 2 ? "default" : "pointer",
-              zIndex: 20,
-            }}
-            onClick={handleNextTrack}
-            tabIndex={0}
-          />
+            {/* --- TITLE IMAGE: no fade, just swap after load --- */}
+            <Image
+              src={titleImgSrc}
+              alt="Song Title"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 15,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority
+            />
 
-          {/* --- Bottom Button (optional) --- */}
-          <button
-            aria-label="Bottom Button"
-            style={{
-              ...bottomButton,
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => alert("Bottom Button clicked!")}
-            tabIndex={0}
-          />
+            {/* Button PNGs */}
+            {BUTTON_IMAGES.map((img, idx) => (
+              <Image
+                key={idx}
+                src={pressedIdx === idx ? img.on : img.off}
+                alt={`Button ${idx + 1}`}
+                fill
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 11,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }}
+                priority={idx === 0}
+              />
+            ))}
 
-          {/* --- Hidden audio player for music --- */}
-          <audio ref={audioRef} hidden src={currentTrack.src} />
-          {/* --- Hidden audio player for button click --- */}
-          <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
-        </div>
-      </main>
+            {/* Hotzones */}
+            <button
+              aria-label="Play"
+              style={{
+                ...topButtonPositions[0],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 0 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handlePlay}
+              tabIndex={0}
+            />
+            <button
+              aria-label="Pause"
+              style={{
+                ...topButtonPositions[1],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 1 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handlePause}
+              tabIndex={0}
+            />
+            <button
+              aria-label="Next Track"
+              style={{
+                ...topButtonPositions[2],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 2 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handleNextTrack}
+              tabIndex={0}
+            />
+            <button
+              aria-label="Next Project"
+              style={{
+                ...topButtonPositions[3],
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: pressedIdx === 3 ? "default" : "pointer",
+                zIndex: 20,
+              }}
+              onClick={handleNextProject}
+              tabIndex={0}
+            />
+
+            {/* Bottom Button (optional) */}
+            <button
+              aria-label="Bottom Button"
+              style={{
+                ...bottomButton,
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                zIndex: 20,
+              }}
+              onClick={() => alert("Bottom Button clicked!")}
+              tabIndex={0}
+            />
+
+            {/* Hidden audio players */}
+            <audio ref={audioRef} hidden src={currentTrack.src} />
+            <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
+          </div>
+        </main>
+      )}
     </>
   );
 }
