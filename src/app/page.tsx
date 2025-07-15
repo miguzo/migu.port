@@ -6,15 +6,15 @@ import Head from "next/head";
 // Each song has an audio src and a bg image
 const playlist = [
   {
-    src: "/music/track1.mp3",
+    src: "/music/Fragments.mp3",
     bg: "/next/image/Fragments.png",
   },
   {
-    src: "/music/track2.mp3",
+    src: "/music/Fragments.mp3",
     bg: "/next/image/Card2.png",
   },
   {
-    src: "/music/track3.mp3",
+    src: "/music/Fragments.mp3",
     bg: "/next/image/Card3.png",
   },
 ];
