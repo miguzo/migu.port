@@ -3,10 +3,20 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
+// Each song has an audio src and a bg image
 const playlist = [
-  "/music/Fragments.mp3",
-  "/music/Fragments.mp3",
-  "/music/Fragments.mp3",
+  {
+    src: "/music/track1.mp3",
+    bg: "/next/image/Fragments.png",
+  },
+  {
+    src: "/music/track2.mp3",
+    bg: "/next/image/Card2.png",
+  },
+  {
+    src: "/music/track3.mp3",
+    bg: "/next/image/Card3.png",
+  },
 ];
 
 export default function Home() {
@@ -35,26 +45,29 @@ export default function Home() {
     if (!audio) return;
     audio.currentTime = 0;
     audio.play();
-    setPlayerState("play"); // After restart, we're in play state
+    setPlayerState("play");
   }
   function handleNext() {
+    goToNextTrack();
+  }
+  function goToNextTrack() {
     const nextIdx = (trackIdx + 1) % playlist.length;
     setTrackIdx(nextIdx);
     setTimeout(() => {
       const audio = audioRef.current;
       if (!audio) return;
-      audio.src = playlist[nextIdx];
+      audio.src = playlist[nextIdx].src;
       audio.currentTime = 0;
       audio.play();
       setPlayerState("play");
     }, 0);
   }
 
-  // When trackIdx changes, load new track (but don't auto-play unless Next is pressed)
+  // When trackIdx changes, load new track (but don't auto-play unless Next/Play is pressed)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.src = playlist[trackIdx];
+    audio.src = playlist[trackIdx].src;
     audio.load();
     if (playerState === "play") {
       audio.play();
@@ -62,14 +75,24 @@ export default function Home() {
     // eslint-disable-next-line
   }, [trackIdx]);
 
-  // Style for "pressed" buttons (for demo; replace with better style or images!)
+  // Listen for end of track to go to next automatically
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onEnded = () => goToNextTrack();
+    audio.addEventListener("ended", onEnded);
+    return () => audio.removeEventListener("ended", onEnded);
+    // eslint-disable-next-line
+  }, [trackIdx]);
+
+  // Style for "pressed" buttons (for demo)
   const pressedStyle = {
     outline: "2px solid #e5c06c",
     filter: "brightness(1.2)",
     boxShadow: "0 0 12px #e5c06cbb",
   };
 
-  // Your button positions
+  // Button positions
   const topButtonPositions = [
     { left: "18.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Play
     { left: "34.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Pause
@@ -113,10 +136,10 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* --- Background images --- */}
+          {/* --- Track-specific background --- */}
           <Image
-            src="/next/image/FragmentsUp.png"
-            alt="Fragments Background"
+            src={playlist[trackIdx].bg}
+            alt="Track Background"
             fill
             style={{
               objectFit: "contain",
@@ -127,6 +150,8 @@ export default function Home() {
               userSelect: "none",
             }}
           />
+
+          {/* --- Frame PNG on top --- */}
           <Image
             src="/next/image/NewCardFrame.png"
             alt="Main Visual Frame"
@@ -216,7 +241,7 @@ export default function Home() {
           />
 
           {/* --- Hidden audio player --- */}
-          <audio ref={audioRef} hidden src={playlist[trackIdx]} />
+          <audio ref={audioRef} hidden src={playlist[trackIdx].src} />
         </div>
       </main>
     </>
