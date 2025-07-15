@@ -153,7 +153,7 @@ export default function Home() {
 
           {/* --- Frame PNG on top --- */}
           <Image
-            src="/next/image/NewCardFrame.png"
+            src="/next/image/NewCardFrame2.png"
             alt="Main Visual Frame"
             fill
             style={{
