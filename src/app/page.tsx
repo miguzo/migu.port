@@ -92,18 +92,18 @@ export default function Home() {
     boxShadow: "0 0 12px #e5c06cbb",
   };
 
-  // Button positions
+  // --- UPDATED Button positions ---
   const topButtonPositions = [
-    { left: "18.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Play
-    { left: "34.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Pause
-    { left: "51%", top: "11%", width: "14.7%", height: "4.9%" },   // Restart
-    { left: "67.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Next
+    { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },   // Play
+    { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },   // Pause
+    { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },   // Restart
+    { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" },   // Next
   ];
   const bottomButton = {
-    left: "22.9%",
-    top: "78.4%",
-    width: "53.3%",
-    height: "8.2%",
+    left: "24%",
+    top: "76%",
+    width: "52%",
+    height: "8.7%",
   };
 
   useEffect(() => {
