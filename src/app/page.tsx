@@ -55,37 +55,24 @@ const projects = [
   },
 ];
 
-function getPreloadAssets() {
+function getPreloadImages() {
   return [
     ...BUTTON_IMAGES.map((b) => b.on),
     ...BUTTON_IMAGES.map((b) => b.off),
     "/next/image/NewCardFrameEmpty.png",
     "/next/image/Loading.png",
     ...projects.flatMap((p) => [p.bg, ...p.playlist.map((t) => t.titleImg)]),
-    ...projects.flatMap((p) => p.playlist.map((t) => t.src)),
-    "/sounds/Button.mp3",
   ];
 }
-function preloadAllAssets(assets: string[]) {
+function preloadImages(imgs: string[]) {
   return Promise.all(
-    assets.map((url) => {
-      if (url.endsWith(".png") || url.endsWith(".jpg") || url.endsWith(".jpeg")) {
-        return new Promise((resolve) => {
-          const img = new window.Image();
-          img.onload = resolve;
-          img.onerror = resolve;
-          img.src = url;
-        });
-      } else if (url.endsWith(".mp3") || url.endsWith(".wav") || url.endsWith(".ogg")) {
-        return new Promise((resolve) => {
-          const audio = new window.Audio();
-          audio.oncanplaythrough = resolve;
-          audio.onerror = resolve;
-          audio.src = url;
-        });
-      } else {
-        return Promise.resolve();
-      }
+    imgs.map((url) => {
+      return new Promise((resolve) => {
+        const img = new window.Image();
+        img.onload = resolve;
+        img.onerror = resolve;
+        img.src = url;
+      });
     })
   );
 }
@@ -114,17 +101,15 @@ export default function Home() {
       trackIdx !== lastTrack.current.trackIdx
     ) {
       const nextImg = projects[projectIdx].playlist[trackIdx].titleImg;
-      // Preload new image before swapping
       const img = new window.Image();
       img.onload = () => setTitleImgSrc(nextImg);
-      img.onerror = () => setTitleImgSrc(nextImg); // even on error, swap
+      img.onerror = () => setTitleImgSrc(nextImg);
       img.src = nextImg;
       lastTrack.current = { projectIdx, trackIdx };
     }
-    // eslint-disable-next-line
   }, [projectIdx, trackIdx]);
 
-  // BUTTON SOUND
+  // BUTTON SOUND (safe to play after user interaction)
   function playButtonSound() {
     const audio = buttonAudioRef.current;
     if (!audio) return;
@@ -207,10 +192,10 @@ export default function Home() {
     };
   }, []);
 
-  // PRELOAD LOGIC
+  // PRELOAD LOGIC: only preload images!
   useEffect(() => {
     if (typeof window === "undefined") return;
-    preloadAllAssets(getPreloadAssets()).then(() => setReady(true));
+    preloadImages(getPreloadImages()).then(() => setReady(true));
   }, []);
 
   // Splash fade out
@@ -261,23 +246,6 @@ export default function Home() {
             }}
             priority
           />
-          {!ready && (
-            <span
-              style={{
-                color: "#aaa",
-                position: "absolute",
-                bottom: "12vh",
-                width: "100%",
-                textAlign: "center",
-                fontFamily: "monospace",
-                letterSpacing: 1,
-                fontSize: 18,
-                opacity: 0.75,
-              }}
-            >
-              Loading...
-            </span>
-          )}
         </div>
       )}
 
@@ -433,7 +401,7 @@ export default function Home() {
               tabIndex={0}
             />
 
-            {/* Hidden audio players */}
+            {/* Hidden audio players (created only after splash!) */}
             <audio ref={audioRef} hidden src={currentTrack.src} />
             <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
           </div>
