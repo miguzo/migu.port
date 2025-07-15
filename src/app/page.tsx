@@ -84,7 +84,7 @@ export default function Home() {
   const [trackIdx, setTrackIdx] = useState(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
 
-  // Preload logic
+  // Preload logic (robust to missing files)
   useEffect(() => {
     let isMounted = true;
     const { images, audios } = getPreloadAssets();
@@ -98,19 +98,27 @@ export default function Home() {
 
     images.forEach((src) => {
       const img = new window.Image();
-      img.onload = img.onerror = checkDone;
+      img.onload = checkDone;
+      img.onerror = checkDone; // On error, also count as loaded!
       img.src = src;
     });
 
     audios.forEach((src) => {
       const audio = new window.Audio();
-      audio.oncanplaythrough = audio.onerror = checkDone;
+      audio.oncanplaythrough = checkDone;
+      audio.onerror = checkDone; // On error, also count as loaded!
       audio.preload = "auto";
       audio.src = src;
     });
 
+    // Set a fallback timeout in case something hangs
+    const failSafe = setTimeout(() => {
+      if (isMounted) setIsLoaded(true);
+    }, 4000);
+
     return () => {
       isMounted = false;
+      clearTimeout(failSafe);
     };
   }, []);
 
