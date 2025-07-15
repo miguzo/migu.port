@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// BUTTON IMAGES: each index for each button (play, pause, next track, next project)
+// BUTTON IMAGES
 const BUTTON_IMAGES = [
   {
     on: "/next/image/Button 1 ON.png",
@@ -40,7 +40,7 @@ const bottomButton = {
 // PROJECTS DATA
 const projects = [
   {
-    bg: "/next/image/Fragments.png", // Shared background for this project
+    bg: "/next/image/Fragments.png",
     playlist: [
       {
         src: "/music/1.Hunters.mp3",
@@ -57,7 +57,7 @@ const projects = [
     ],
   },
   {
-    bg: "/next/image/OtherProjectBG.png", // Next project's background
+    bg: "/next/image/OtherProjectBG.png",
     playlist: [
       {
         src: "/music/4.NewSong.mp3",
@@ -69,32 +69,29 @@ const projects = [
       },
     ],
   },
-  // Add more projects if you want!
 ];
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
 
-  // PROJECT & TRACK index
   const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
-
   // pressedIdx: 0: Play, 1: Pause, 2: Next Track, 3: Next Project, null: none pressed
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
 
   // ---- BUTTON SOUND ----
   function playButtonSound() {
-  const audio = buttonAudioRef.current;
-  if (!audio) return;
-  audio.currentTime = 0;
-  audio.play().catch(() => {});
-}
+    const audio = buttonAudioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
 
   // --- BUTTON HANDLERS ---
   function handlePlay() {
     if (pressedIdx === 0) return;
-    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.play();
@@ -102,25 +99,21 @@ export default function Home() {
   }
   function handlePause() {
     if (pressedIdx === 1) return;
-    playButtonSound();
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
     setPressedIdx(1);
   }
   function handleNextTrack() {
-    playButtonSound();
-    setPressedIdx(2); // Button 3 ON (momentary)
+    setPressedIdx(2);
     setTimeout(() => {
       goToNextTrack();
       setPressedIdx(null);
     }, 1000);
   }
   function handleNextProject() {
-    playButtonSound();
-    setPressedIdx(3); // Button 4 ON (momentary)
+    setPressedIdx(3);
     setTimeout(() => {
-      // Next project
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
@@ -143,7 +136,6 @@ export default function Home() {
     if (!audio) return;
     audio.src = projects[projectIdx].playlist[trackIdx].src;
     audio.load();
-    // Don't autoplay after switching track/project
   }, [projectIdx, trackIdx]);
 
   // ---- Auto next when song ends
@@ -262,6 +254,7 @@ export default function Home() {
           ))}
 
           {/* --- TRANSPARENT BUTTON HOTZONES --- */}
+          {/* Button 1: Play */}
           <button
             aria-label="Play"
             style={{
@@ -272,9 +265,13 @@ export default function Home() {
               cursor: pressedIdx === 0 ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handlePlay}
+            onClick={() => {
+              playButtonSound();
+              handlePlay();
+            }}
             tabIndex={0}
           />
+          {/* Button 2: Pause */}
           <button
             aria-label="Pause"
             style={{
@@ -285,9 +282,13 @@ export default function Home() {
               cursor: pressedIdx === 1 ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handlePause}
+            onClick={() => {
+              playButtonSound();
+              handlePause();
+            }}
             tabIndex={0}
           />
+          {/* Button 3: Next Track */}
           <button
             aria-label="Next Track"
             style={{
@@ -298,9 +299,13 @@ export default function Home() {
               cursor: pressedIdx === 2 ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handleNextTrack}
+            onClick={() => {
+              playButtonSound();
+              handleNextTrack();
+            }}
             tabIndex={0}
           />
+          {/* Button 4: Next Project */}
           <button
             aria-label="Next Project"
             style={{
@@ -311,7 +316,10 @@ export default function Home() {
               cursor: pressedIdx === 3 ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handleNextProject}
+            onClick={() => {
+              playButtonSound();
+              handleNextProject();
+            }}
             tabIndex={0}
           />
 
@@ -326,14 +334,17 @@ export default function Home() {
               cursor: "pointer",
               zIndex: 20,
             }}
-            onClick={() => alert("Bottom Button clicked!")}
+            onClick={() => {
+              playButtonSound();
+              alert("Bottom Button clicked!");
+            }}
             tabIndex={0}
           />
 
           {/* --- Hidden audio player for music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
           {/* --- Hidden audio player for button click --- */}
-          <audio ref={buttonAudioRef} hidden src="/music/Button.mp3" preload="auto" />
+          <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
         </div>
       </main>
     </>
