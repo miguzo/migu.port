@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// Button PNGs (ON/OFF state)
+// BUTTON IMAGES: each index for each button (play, pause, next track, next project)
 const BUTTON_IMAGES = [
   {
     on: "/next/image/Button 1 ON.png",
@@ -23,31 +23,12 @@ const BUTTON_IMAGES = [
   },
 ];
 
-// Your playlist: song, background, handwritten PNG
-const playlist = [
-  {
-    src: "/music/1.Hunters.mp3",
-    bg: "/next/image/Fragments.png",
-    titleImg: "/next/image/1.Hunters.png",
-  },
-  {
-    src: "/music/2.Double Crossed.mp3",
-    bg: "/next/image/Card2.png",
-    titleImg: "/next/image/2Doublecross.png",
-  },
-  {
-    src: "/music/3.The Rabbit.mp3",
-    bg: "/next/image/Card3.png",
-    titleImg: "/next/image/3Rabbit.png",
-  },
-];
-
-// Button positions
+// BUTTON ZONES
 const topButtonPositions = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
-  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Restart
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next
+  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
+  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
 ];
 const bottomButton = {
   left: "24%",
@@ -56,14 +37,53 @@ const bottomButton = {
   height: "8.7%",
 };
 
+// PROJECTS DATA
+const projects = [
+  {
+    bg: "/next/image/Fragments.png", // Shared background for this project
+    playlist: [
+      {
+        src: "/music/1.Hunters.mp3",
+        titleImg: "/next/image/1.Hunters.png",
+      },
+      {
+        src: "/music/2.Double Crossed.mp3",
+        titleImg: "/next/image/2Doublecross.png",
+      },
+      {
+        src: "/music/3.The Rabbit.mp3",
+        titleImg: "/next/image/3Rabbit.png",
+      },
+    ],
+  },
+  {
+    bg: "/next/image/OtherProjectBG.png", // Next project's background
+    playlist: [
+      {
+        src: "/music/4.NewSong.mp3",
+        titleImg: "/next/image/4NewSong.png",
+      },
+      {
+        src: "/music/5.NextOne.mp3",
+        titleImg: "/next/image/5NextOne.png",
+      },
+    ],
+  },
+  // Add more projects if you want!
+];
+
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
+
+  // PROJECT & TRACK index
+  const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
-  // 0: Play, 1: Pause, 2: Restart, 3: Next, null: none pressed
+
+  // pressedIdx: 0: Play, 1: Pause, 2: Next Track, 3: Next Project, null: none pressed
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
 
-  // Play button click sound
+  // ---- BUTTON SOUND ----
   function playButtonSound() {
     const audio = buttonAudioRef.current;
     if (!audio) return;
@@ -71,7 +91,7 @@ export default function Home() {
     audio.play();
   }
 
-  // Audio Logic
+  // --- BUTTON HANDLERS ---
   function handlePlay() {
     if (pressedIdx === 0) return;
     playButtonSound();
@@ -88,27 +108,27 @@ export default function Home() {
     audio.pause();
     setPressedIdx(1);
   }
-  function handleRestart() {
-    if (pressedIdx === 2) return;
+  function handleNextTrack() {
     playButtonSound();
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.currentTime = 0;
-    audio.play();
-    setPressedIdx(2); // Show Restart ON
-    setTimeout(() => {
-      setPressedIdx(0); // After 1s, Play ON
-    }, 1000);
-  }
-  function handleNext() {
-    playButtonSound();
-    setPressedIdx(3); // Show Next ON
+    setPressedIdx(2); // Button 3 ON (momentary)
     setTimeout(() => {
       goToNextTrack();
-      setPressedIdx(null); // After 1s, nothing ON
+      setPressedIdx(null);
+    }, 1000);
+  }
+  function handleNextProject() {
+    playButtonSound();
+    setPressedIdx(3); // Button 4 ON (momentary)
+    setTimeout(() => {
+      // Next project
+      const nextProject = (projectIdx + 1) % projects.length;
+      setProjectIdx(nextProject);
+      setTrackIdx(0);
+      setPressedIdx(null);
     }, 1000);
   }
   function goToNextTrack() {
+    const playlist = projects[projectIdx].playlist;
     const nextIdx = (trackIdx + 1) % playlist.length;
     setTrackIdx(nextIdx);
     const audio = audioRef.current;
@@ -117,21 +137,21 @@ export default function Home() {
     audio.currentTime = 0;
   }
 
-  // When trackIdx changes, load new track (no autoplay after "Next")
+  // ---- Track or project changed: update audio, DO NOT AUTOPLAY
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.src = playlist[trackIdx].src;
+    audio.src = projects[projectIdx].playlist[trackIdx].src;
     audio.load();
-    // Don't auto-play on track change, only when Play or Restart pressed
-  }, [trackIdx]);
+    // Don't autoplay after switching track/project
+  }, [projectIdx, trackIdx]);
 
-  // Listen for end of track to go to next automatically (same logic as pressing "Next")
+  // ---- Auto next when song ends
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     const onEnded = () => {
-      setPressedIdx(3);
+      setPressedIdx(2);
       setTimeout(() => {
         goToNextTrack();
         setPressedIdx(null);
@@ -139,7 +159,7 @@ export default function Home() {
     };
     audio.addEventListener("ended", onEnded);
     return () => audio.removeEventListener("ended", onEnded);
-  }, [trackIdx]);
+  }, [projectIdx, trackIdx]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -149,6 +169,10 @@ export default function Home() {
       document.body.style.overscrollBehavior = "";
     };
   }, []);
+
+  // --- RENDER ---
+  const project = projects[projectIdx];
+  const currentTrack = project.playlist[trackIdx];
 
   return (
     <>
@@ -171,10 +195,10 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* --- Track-specific background --- */}
+          {/* --- PROJECT BACKGROUND IMAGE --- */}
           <Image
-            src={playlist[trackIdx].bg}
-            alt="Track Background"
+            src={project.bg}
+            alt="Project Background"
             fill
             style={{
               objectFit: "contain",
@@ -184,9 +208,10 @@ export default function Home() {
               pointerEvents: "none",
               userSelect: "none",
             }}
+            priority
           />
 
-          {/* --- Frame (empty, without buttons) --- */}
+          {/* --- FRAME (empty, without buttons) --- */}
           <Image
             src="/next/image/NewCardFrameEmpty.png"
             alt="Main Visual Frame"
@@ -203,26 +228,22 @@ export default function Home() {
             sizes="(max-width: 600px) 98vw, 430px"
           />
 
-          {/* --- Song title PNG always visible --- */}
+          {/* --- TITLE IMAGE (always shown, on top of frame) --- */}
           <Image
-            src={playlist[trackIdx].titleImg}
+            src={currentTrack.titleImg}
             alt="Song Title"
-            fill={false}
-            width={220}
-            height={48}
+            fill
             style={{
-              position: "absolute",
-              left: "27%",
-              top: "74.5%",
-              zIndex: 30,
+              objectFit: "contain",
+              objectPosition: "center",
+              zIndex: 15,
               pointerEvents: "none",
               userSelect: "none",
-              objectFit: "contain",
             }}
             priority
           />
 
-          {/* --- Render Button PNGs --- */}
+          {/* --- RENDER BUTTON PNGs --- */}
           {BUTTON_IMAGES.map((img, idx) => (
             <Image
               key={idx}
@@ -232,7 +253,7 @@ export default function Home() {
               style={{
                 objectFit: "contain",
                 objectPosition: "center",
-                zIndex: 11, // above frame
+                zIndex: 11,
                 pointerEvents: "none",
                 userSelect: "none",
               }}
@@ -240,8 +261,7 @@ export default function Home() {
             />
           ))}
 
-          {/* --- Transparent Button Hotzones --- */}
-          {/* Play */}
+          {/* --- TRANSPARENT BUTTON HOTZONES --- */}
           <button
             aria-label="Play"
             style={{
@@ -255,7 +275,6 @@ export default function Home() {
             onClick={handlePlay}
             tabIndex={0}
           />
-          {/* Pause */}
           <button
             aria-label="Pause"
             style={{
@@ -269,9 +288,8 @@ export default function Home() {
             onClick={handlePause}
             tabIndex={0}
           />
-          {/* Restart */}
           <button
-            aria-label="Restart"
+            aria-label="Next Track"
             style={{
               ...topButtonPositions[2],
               position: "absolute",
@@ -280,12 +298,11 @@ export default function Home() {
               cursor: pressedIdx === 2 ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handleRestart}
+            onClick={handleNextTrack}
             tabIndex={0}
           />
-          {/* Next */}
           <button
-            aria-label="Next"
+            aria-label="Next Project"
             style={{
               ...topButtonPositions[3],
               position: "absolute",
@@ -294,11 +311,11 @@ export default function Home() {
               cursor: pressedIdx === 3 ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handleNext}
+            onClick={handleNextProject}
             tabIndex={0}
           />
 
-          {/* --- Bottom Button (no action yet) --- */}
+          {/* --- Bottom Button (optional) --- */}
           <button
             aria-label="Bottom Button"
             style={{
@@ -309,17 +326,14 @@ export default function Home() {
               cursor: "pointer",
               zIndex: 20,
             }}
-            onClick={() => {
-              playButtonSound();
-              alert("Bottom Button clicked!");
-            }}
+            onClick={() => alert("Bottom Button clicked!")}
             tabIndex={0}
           />
 
-          {/* --- Hidden audio player (music) --- */}
-          <audio ref={audioRef} hidden src={playlist[trackIdx].src} />
-          {/* --- Hidden button sound effect --- */}
-          <audio ref={buttonAudioRef} src="/sounds/Button.mp3" hidden />
+          {/* --- Hidden audio player for music --- */}
+          <audio ref={audioRef} hidden src={currentTrack.src} />
+          {/* --- Hidden audio player for button click --- */}
+          <audio ref={buttonAudioRef} hidden src="/music/Button.mp3" />
         </div>
       </main>
     </>
