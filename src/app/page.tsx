@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// Map ON/OFF images for each button
+// Button PNGs (ON/OFF state)
 const BUTTON_IMAGES = [
   {
     on: "/next/image/Button 1 ON.png",
@@ -23,14 +23,26 @@ const BUTTON_IMAGES = [
   },
 ];
 
-// Playlist, each with song + background
+// Your playlist: song, background, handwritten PNG
 const playlist = [
-  { src: "/music/Fragments.mp3", bg: "/next/image/Fragments.png" },
-  { src: "/music/Fragments.mp3", bg: "/next/image/Card2.png" },
-  { src: "/music/Fragments.mp3", bg: "/next/image/Card3.png" },
+  {
+    src: "/music/1.Hunters.mp3",
+    bg: "/next/image/Fragments.png",
+    titleImg: "/next/image/1.Hunters.png",
+  },
+  {
+    src: "/music/2.Double Crossed.mp3",
+    bg: "/next/image/Card2.png",
+    titleImg: "/next/image/2Doublecross.png",
+  },
+  {
+    src: "/music/3.The Rabbit.mp3",
+    bg: "/next/image/Card3.png",
+    titleImg: "/next/image/3Rabbit.png",
+  },
 ];
 
-// Button positions as before
+// Button positions
 const topButtonPositions = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
@@ -112,7 +124,6 @@ export default function Home() {
     audio.src = playlist[trackIdx].src;
     audio.load();
     // Don't auto-play on track change, only when Play or Restart pressed
-    // eslint-disable-next-line
   }, [trackIdx]);
 
   // Listen for end of track to go to next automatically (same logic as pressing "Next")
@@ -190,6 +201,25 @@ export default function Home() {
             }}
             priority
             sizes="(max-width: 600px) 98vw, 430px"
+          />
+
+          {/* --- Song title PNG always visible --- */}
+          <Image
+            src={playlist[trackIdx].titleImg}
+            alt="Song Title"
+            fill={false}
+            width={220}
+            height={48}
+            style={{
+              position: "absolute",
+              left: "27%",
+              top: "74.5%",
+              zIndex: 30,
+              pointerEvents: "none",
+              userSelect: "none",
+              objectFit: "contain",
+            }}
+            priority
           />
 
           {/* --- Render Button PNGs --- */}
