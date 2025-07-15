@@ -85,11 +85,11 @@ export default function Home() {
 
   // ---- BUTTON SOUND ----
   function playButtonSound() {
-    const audio = buttonAudioRef.current;
-    if (!audio) return;
-    audio.currentTime = 0;
-    audio.play();
-  }
+  const audio = buttonAudioRef.current;
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
 
   // --- BUTTON HANDLERS ---
   function handlePlay() {
@@ -333,7 +333,7 @@ export default function Home() {
           {/* --- Hidden audio player for music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
           {/* --- Hidden audio player for button click --- */}
-          <audio ref={buttonAudioRef} hidden src="/music/Button.mp3" />
+          <audio ref={buttonAudioRef} hidden src="/music/Button.mp3" preload="auto" />
         </div>
       </main>
     </>
