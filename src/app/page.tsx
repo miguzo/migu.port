@@ -66,6 +66,7 @@ const getPreloadAssets = () => {
     ...projects[0].playlist.map((t) => t.titleImg),
     ...BUTTON_IMAGES.map((b) => b.on),
     ...BUTTON_IMAGES.map((b) => b.off),
+    "/Loading.png", // preload splash!
   ];
   const audios = [
     ...projects[0].playlist.map((t) => t.src),
@@ -79,6 +80,7 @@ export default function Home() {
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
 
   const [projectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
@@ -197,22 +199,35 @@ export default function Home() {
     };
   }, []);
 
-  // Render
-  const project = projects[projectIdx];
-  const currentTrack = project.playlist[trackIdx];
-
-  if (!isLoaded) {
+  // Render SPLASH if loading or until click
+  if (!isLoaded || !splashDone) {
     return (
       <main
-        className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
-        style={{ minHeight: "100vh", minWidth: "100vw" }}
+        className="fixed inset-0 flex items-center justify-center bg-[#19191b] select-none"
+        style={{ minHeight: "100vh", minWidth: "100vw", cursor: isLoaded ? "pointer" : "wait" }}
+        onClick={() => isLoaded && setSplashDone(true)}
+        onTouchEnd={() => isLoaded && setSplashDone(true)}
       >
-        <span style={{ color: "#fff", fontSize: 24, fontFamily: "monospace" }}>
-          Loading...
-        </span>
+        <Image
+          src="/Loading.png"
+          alt="Splash"
+          fill
+          style={{
+            objectFit: "contain",
+            objectPosition: "center",
+            pointerEvents: "none",
+            userSelect: "none",
+            zIndex: 999,
+          }}
+          priority
+        />
       </main>
     );
   }
+
+  // Main UI
+  const project = projects[projectIdx];
+  const currentTrack = project.playlist[trackIdx];
 
   return (
     <>
