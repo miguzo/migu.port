@@ -44,7 +44,7 @@ const projects = [
     playlist: [
       {
         src: "/music/1.Hunters.mp3",
-        titleImg: "/next/image/1.Hunters.png",
+        titleImg: "/next/image/1Hunters.png",
       },
       {
         src: "/music/2.Double Crossed.mp3",
