@@ -5,9 +5,9 @@ import Image from "next/image";
 import Head from "next/head";
 
 const playlist = [
-  "/music/track1.mp3",
-  "/music/track2.mp3",
-  "/music/track3.mp3",
+  "/music/Fragments.mp3",
+  "/music/Fragments.mp3",
+  "/music/Fragments.mp3",
 ];
 
 export default function Home() {
