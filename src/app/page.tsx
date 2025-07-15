@@ -1,5 +1,4 @@
-"use client"
-
+"use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
@@ -13,27 +12,30 @@ const playlist = [
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [trackIdx, setTrackIdx] = useState(0);
+  const [playerState, setPlayerState] = useState<"play" | "pause" | "restart" | null>("pause");
 
-  // ... rest of your useEffect, image, and layout code ...
-
-  // --- HANDLERS ---
+  // Handlers
   function handlePlay() {
+    if (playerState === "play") return;
     const audio = audioRef.current;
     if (!audio) return;
-    // Play the current track (or first track)
-    audio.src = playlist[trackIdx] || playlist[0];
     audio.play();
+    setPlayerState("play");
   }
   function handlePause() {
+    if (playerState === "pause") return;
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
+    setPlayerState("pause");
   }
   function handleRestart() {
+    if (playerState === "restart") return;
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = 0;
     audio.play();
+    setPlayerState("play"); // After restart, we're in play state
   }
   function handleNext() {
     const nextIdx = (trackIdx + 1) % playlist.length;
@@ -44,15 +46,30 @@ export default function Home() {
       audio.src = playlist[nextIdx];
       audio.currentTime = 0;
       audio.play();
+      setPlayerState("play");
     }, 0);
   }
 
-  // Play track when trackIdx changes and user hits "Next"
+  // When trackIdx changes, load new track (but don't auto-play unless Next is pressed)
   useEffect(() => {
-    // Not auto-play unless user triggered "Next"
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src = playlist[trackIdx];
+    audio.load();
+    if (playerState === "play") {
+      audio.play();
+    }
+    // eslint-disable-next-line
   }, [trackIdx]);
 
-  // --- BUTTONS POSITIONS (same as before) ---
+  // Style for "pressed" buttons (for demo; replace with better style or images!)
+  const pressedStyle = {
+    outline: "2px solid #e5c06c",
+    filter: "brightness(1.2)",
+    boxShadow: "0 0 12px #e5c06cbb",
+  };
+
+  // Your button positions
   const topButtonPositions = [
     { left: "18.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Play
     { left: "34.5%", top: "11%", width: "14.7%", height: "4.9%" }, // Pause
@@ -65,6 +82,15 @@ export default function Home() {
     width: "53.3%",
     height: "8.2%",
   };
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.overscrollBehavior = "";
+    };
+  }, []);
 
   return (
     <>
@@ -87,7 +113,7 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* Background & Frame Images */}
+          {/* --- Background images --- */}
           <Image
             src="/next/image/FragmentsUp.png"
             alt="Fragments Background"
@@ -117,7 +143,7 @@ export default function Home() {
             sizes="(max-width: 600px) 98vw, 430px"
           />
 
-          {/* Invisible Top Buttons */}
+          {/* --- Top Buttons --- */}
           <button
             aria-label="Play"
             style={{
@@ -125,10 +151,12 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: "pointer",
+              cursor: playerState === "play" ? "default" : "pointer",
               zIndex: 10,
+              ...(playerState === "play" ? pressedStyle : {}),
             }}
             onClick={handlePlay}
+            tabIndex={0}
           />
           <button
             aria-label="Pause"
@@ -137,10 +165,12 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: "pointer",
+              cursor: playerState === "pause" ? "default" : "pointer",
               zIndex: 10,
+              ...(playerState === "pause" ? pressedStyle : {}),
             }}
             onClick={handlePause}
+            tabIndex={0}
           />
           <button
             aria-label="Restart"
@@ -151,8 +181,10 @@ export default function Home() {
               border: "none",
               cursor: "pointer",
               zIndex: 10,
+              ...(playerState === "restart" ? pressedStyle : {}),
             }}
             onClick={handleRestart}
+            tabIndex={0}
           />
           <button
             aria-label="Next"
@@ -165,9 +197,10 @@ export default function Home() {
               zIndex: 10,
             }}
             onClick={handleNext}
+            tabIndex={0}
           />
 
-          {/* Invisible Bottom Button (no action yet) */}
+          {/* --- Bottom Button (no action yet) --- */}
           <button
             aria-label="Bottom Button"
             style={{
@@ -179,9 +212,10 @@ export default function Home() {
               zIndex: 10,
             }}
             onClick={() => alert("Bottom Button clicked!")}
+            tabIndex={0}
           />
 
-          {/* Hidden audio player */}
+          {/* --- Hidden audio player --- */}
           <audio ref={audioRef} hidden src={playlist[trackIdx]} />
         </div>
       </main>
