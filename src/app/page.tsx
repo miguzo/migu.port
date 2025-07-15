@@ -3,79 +3,88 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// Map ON/OFF images for each button
-const BUTTON_IMAGES = [
-  {
-    on: "/next/image/Button 1 ON.png",
-    off: "/next/image/Button 1 Off.png",
-  },
-  {
-    on: "/next/image/Button 2 ON.png",
-    off: "/next/image/Button 2 Off.png",
-  },
-  {
-    on: "/next/image/Button 3 ON.png",
-    off: "/next/image/Button 3 Off.png",
-  },
-  {
-    on: "/next/image/Button 4 On.png",
-    off: "/next/image/Button 4 Off.png",
-  },
-];
-
-// Playlist, each with song + background
+// Each song has an audio src and a bg image
 const playlist = [
-  { src: "/music/Fragments.mp3", bg: "/next/image/Fragments.png" },
-  { src: "/music/Fragments.mp3", bg: "/next/image/Card2.png" },
-  { src: "/music/Fragments.mp3", bg: "/next/image/Card3.png" },
+  {
+    src: "/music/Fragments.mp3",
+    bg: "/next/image/Fragments.png",
+  },
+  {
+    src: "/music/Fragments.mp3",
+    bg: "/next/image/Card2.png",
+  },
+  {
+    src: "/music/Fragments.mp3",
+    bg: "/next/image/Card3.png",
+  },
 ];
 
-// Button positions as before
-const topButtonPositions = [
-  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
-  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
-  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Restart
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next
+// Button image paths (use your exported files here!)
+const buttonImgs = [
+  {
+    off: "/next/image/Button 1 Off.png",
+    on: "/next/image/Button 1 ON.png",
+  },
+  {
+    off: "/next/image/Button 2 Off.png",
+    on: "/next/image/Button 2 ON.png",
+  },
+  {
+    off: "/next/image/Button 3 Off.png",
+    on: "/next/image/Button 3 ON.png",
+  },
+  {
+    off: "/next/image/Button 4 Off.png",
+    on: "/next/image/Button 4 On.png",
+  },
 ];
-const bottomButton = {
-  left: "24%",
-  top: "76%",
-  width: "52%",
-  height: "8.7%",
-};
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [trackIdx, setTrackIdx] = useState(0);
-  // 0: Play, 1: Pause, 2: Restart, 3: Next
-  const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(1);
+  const restartTimeout = useRef<NodeJS.Timeout | null>(null);
+  const nextTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Audio Logic
+  const [trackIdx, setTrackIdx] = useState(0);
+
+  // "null" = none pressed; 0 = Play, 1 = Pause, 2 = Restart, 3 = Next
+  const [pressed, setPressed] = useState<null | 0 | 1 | 2 | 3>(null);
+
+  // --- Button Logic ---
+
   function handlePlay() {
-    if (pressedIdx === 0) return;
+    if (pressed === 0) return;
+    setPressed(0);
     const audio = audioRef.current;
     if (!audio) return;
     audio.play();
-    setPressedIdx(0);
   }
   function handlePause() {
-    if (pressedIdx === 1) return;
+    if (pressed === 1) return;
+    setPressed(1);
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
-    setPressedIdx(1);
   }
   function handleRestart() {
-    if (pressedIdx === 2) return;
+    // Momentarily ON for 1s then OFF (not latched)
+    setPressed(2);
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = 0;
     audio.play();
-    setPressedIdx(2);
+    if (restartTimeout.current) clearTimeout(restartTimeout.current);
+    restartTimeout.current = setTimeout(() => {
+      setPressed(null);
+    }, 1000);
   }
   function handleNext() {
+    // Momentarily ON for 1s then OFF (not latched)
+    setPressed(3);
     goToNextTrack();
-    setPressedIdx(3);
+    if (nextTimeout.current) clearTimeout(nextTimeout.current);
+    nextTimeout.current = setTimeout(() => {
+      setPressed(null);
+    }, 1000);
   }
   function goToNextTrack() {
     const nextIdx = (trackIdx + 1) % playlist.length;
@@ -86,18 +95,19 @@ export default function Home() {
       audio.src = playlist[nextIdx].src;
       audio.currentTime = 0;
       audio.play();
-      setPressedIdx(0); // Play is pressed after "Next"
+      setPressed(0); // Play ON after next track
     }, 0);
   }
 
-  // When trackIdx changes, load new track if PLAY or NEXT
+  // When trackIdx changes, load new track (but only play if Play or Next)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.src = playlist[trackIdx].src;
     audio.load();
-    if (pressedIdx === 0 || pressedIdx === 3) {
+    if (pressed === 0 || pressed === 3) {
       audio.play();
+      setPressed(0); // Set Play ON after Next
     }
     // eslint-disable-next-line
   }, [trackIdx]);
@@ -106,10 +116,33 @@ export default function Home() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onEnded = () => goToNextTrack();
+    const onEnded = () => handleNext();
     audio.addEventListener("ended", onEnded);
     return () => audio.removeEventListener("ended", onEnded);
+    // eslint-disable-next-line
   }, [trackIdx]);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (restartTimeout.current) clearTimeout(restartTimeout.current);
+      if (nextTimeout.current) clearTimeout(nextTimeout.current);
+    };
+  }, []);
+
+  // --- Button positions ---
+  const topButtonPositions = [
+    { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },   // Play
+    { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },   // Pause
+    { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },   // Restart
+    { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" },   // Next
+  ];
+  const bottomButton = {
+    left: "24%",
+    top: "76%",
+    width: "52%",
+    height: "8.7%",
+  };
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -120,7 +153,6 @@ export default function Home() {
     };
   }, []);
 
-  // For each top button, render the button PNG in ON/OFF state depending on which is pressed
   return (
     <>
       <Head>
@@ -157,7 +189,7 @@ export default function Home() {
             }}
           />
 
-          {/* --- Frame (empty, without buttons) --- */}
+          {/* --- Frame PNG on top --- */}
           <Image
             src="/next/image/NewCardFrameEmpty.png"
             alt="Main Visual Frame"
@@ -174,26 +206,28 @@ export default function Home() {
             sizes="(max-width: 600px) 98vw, 430px"
           />
 
-          {/* --- Render Button PNGs --- */}
-          {BUTTON_IMAGES.map((img, idx) => (
+          {/* --- Top Buttons images (off/on) */}
+          {topButtonPositions.map((btn, i) => (
             <Image
-              key={idx}
-              src={pressedIdx === idx ? img.on : img.off}
-              alt={`Button ${idx + 1}`}
+              key={i}
+              src={pressed === i ? buttonImgs[i].on : buttonImgs[i].off}
+              alt={`Button ${i + 1}`}
               fill
               style={{
+                position: "absolute",
+                left: btn.left,
+                top: btn.top,
+                width: btn.width,
+                height: btn.height,
                 objectFit: "contain",
-                objectPosition: "center",
-                zIndex: 11, // above frame
-                pointerEvents: "none",
+                zIndex: 5,
+                pointerEvents: "none", // image itself is not clickable, only invisible button below
                 userSelect: "none",
               }}
-              priority={idx === 0}
             />
           ))}
 
-          {/* --- Transparent Button Hotzones --- */}
-          {/* Play */}
+          {/* --- Top invisible buttons */}
           <button
             aria-label="Play"
             style={{
@@ -201,13 +235,12 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 0 ? "default" : "pointer",
-              zIndex: 20,
+              cursor: pressed === 0 ? "default" : "pointer",
+              zIndex: 10,
             }}
             onClick={handlePlay}
             tabIndex={0}
           />
-          {/* Pause */}
           <button
             aria-label="Pause"
             style={{
@@ -215,13 +248,12 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 1 ? "default" : "pointer",
-              zIndex: 20,
+              cursor: pressed === 1 ? "default" : "pointer",
+              zIndex: 10,
             }}
             onClick={handlePause}
             tabIndex={0}
           />
-          {/* Restart */}
           <button
             aria-label="Restart"
             style={{
@@ -229,13 +261,12 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 2 ? "default" : "pointer",
-              zIndex: 20,
+              cursor: "pointer",
+              zIndex: 10,
             }}
             onClick={handleRestart}
             tabIndex={0}
           />
-          {/* Next */}
           <button
             aria-label="Next"
             style={{
@@ -243,8 +274,8 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 3 ? "default" : "pointer",
-              zIndex: 20,
+              cursor: "pointer",
+              zIndex: 10,
             }}
             onClick={handleNext}
             tabIndex={0}
@@ -259,7 +290,7 @@ export default function Home() {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              zIndex: 20,
+              zIndex: 10,
             }}
             onClick={() => alert("Bottom Button clicked!")}
             tabIndex={0}
