@@ -33,7 +33,7 @@ const topButtonPositions: TopButtonPos[] = [
 const projects: Project[] = [
   {
     bg: "/next/image/Fragments/Fragments.png",
-    pageImg: "/next/image/FragmentsPAGE.png",
+    pageImg: "/next/image/Fragments/FragmentsPAGE.png",
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
       { src: "/music/Fragments/2DoubleCrossed.mp3", titleImg: "/next/image/Fragments/2Doublecross.png" },
@@ -46,17 +46,17 @@ const projects: Project[] = [
 
    {
     bg: "/next/image/Aggragate/Aggragate.png",
-    pageImg: "/next/image/FragmentsPAGE.png",
+    pageImg: "/next/image/Aggragate/AggragatePAGE.png",
     playlist: [
-      { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
-      { src: "/music/Aggragate/2AmongTheStorm.mp3", titleImg: "/next/image/Fragments/2Doublecross.png" },
-      { src: "/music/Aggragate/3Spectacle.mp3", titleImg: "/next/image/Fragments/3Walz.png" },
-      { src: "/music/Aggragate/4Arrest.mp3", titleImg: "/next/image/Fragments/4Rabbit.png" },
-      { src: "/music/Aggragate/5NoOnesEnnemy.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
-      { src: "/music/Aggragate/6PromessField.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
-      { src: "/music/Aggragate/7TheArena.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
-      { src: "/music/Aggragate/8ADisaster.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
-      { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+      { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Aggragate/1HighRiver.png" },
+      { src: "/music/Aggragate/2AmongTheStorm.mp3", titleImg: "/next/image/Aggragate/2AmongTheStorm.png" },
+      { src: "/music/Aggragate/3Spectacle.mp3", titleImg: "/next/image/Aggragate/3Spectacle.png" },
+      { src: "/music/Aggragate/4Arrest.mp3", titleImg: "/next/image/Aggragate/4Arrest.png" },
+      { src: "/music/Aggragate/5NoOnesEnnemy.mp3", titleImg: "/next/image/Aggragate/5NoOnesEnnemy.png" },
+      { src: "/music/Aggragate/6PromessField.mp3", titleImg: "/next/image/Aggragate/6PromessField.png" },
+      { src: "/music/Aggragate/7TheArena.mp3", titleImg: "/next/image/Aggragate/7TheArena.png" },
+      { src: "/music/Aggragate/8ADisaster.mp3", titleImg: "/next/image/Aggragate/8ADisaster.png" },
+      { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Aggragate/9OfRustAndMirror.png" },
 
     
     ],
