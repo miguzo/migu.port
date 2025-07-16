@@ -32,14 +32,32 @@ const topButtonPositions: TopButtonPos[] = [
 
 const projects: Project[] = [
   {
-    bg: "/next/image/Fragments.png",
+    bg: "/next/image/Fragments/Fragments.png",
     pageImg: "/next/image/FragmentsPAGE.png",
     playlist: [
-      { src: "/music/1Lidge.mp3", titleImg: "/next/image/1Lidge.png" },
-      { src: "/music/2DoubleCrossed.mp3", titleImg: "/next/image/2Doublecross.png" },
-      { src: "/music/3Walz.mp3", titleImg: "/next/image/3Walz.png" },
-      { src: "/music/4TheRabbit.mp3", titleImg: "/next/image/4Rabbit.png" },
-      { src: "/music/5Orphan.mp3", titleImg: "/next/image/5Orphan.png" },
+      { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
+      { src: "/music/Fragments/2DoubleCrossed.mp3", titleImg: "/next/image/Fragments/2Doublecross.png" },
+      { src: "/music/Fragments/3Walz.mp3", titleImg: "/next/image/Fragments/3Walz.png" },
+      { src: "/music/Fragments/4TheRabbit.mp3", titleImg: "/next/image/Fragments/4Rabbit.png" },
+      { src: "/music/Fragments/5Orphan.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+    
+    ],
+  },
+
+   {
+    bg: "/next/image/Aggragate/Aggragate.png",
+    pageImg: "/next/image/FragmentsPAGE.png",
+    playlist: [
+      { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
+      { src: "/music/Aggragate/2AmongTheStorm.mp3", titleImg: "/next/image/Fragments/2Doublecross.png" },
+      { src: "/music/Aggragate/3Spectacle.mp3", titleImg: "/next/image/Fragments/3Walz.png" },
+      { src: "/music/Aggragate/4Arrest.mp3", titleImg: "/next/image/Fragments/4Rabbit.png" },
+      { src: "/music/Aggragate/5NoOnesEnnemy.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+      { src: "/music/Aggragate/6PromessField.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+      { src: "/music/Aggragate/7TheArena.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+      { src: "/music/Aggragate/8ADisaster.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+      { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
+
     
     ],
   },
