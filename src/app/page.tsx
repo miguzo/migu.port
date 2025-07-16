@@ -54,7 +54,7 @@ function preloadImage(src: string) {
 }
 function preloadHowl(src: string) {
   return new Promise<void>((resolve, reject) => {
-    const sound = new Howl({
+    new Howl({
       src: [src],
       preload: true,
       html5: true,
@@ -159,7 +159,7 @@ export default function Home() {
       const nextIdx = (trackIdx + 1) % projects[projectIdx].playlist.length;
       setTrackIdx(nextIdx);
       audioRef.current?.pause();
-      audioRef.current && (audioRef.current.currentTime = 0);
+      if (audioRef.current) audioRef.current.currentTime = 0;
       setPressedIdx(null);
     }, 600);
   }
@@ -202,7 +202,7 @@ export default function Home() {
         const nextIdx = (trackIdx + 1) % projects[projectIdx].playlist.length;
         setTrackIdx(nextIdx);
         audioRef.current?.pause();
-        audioRef.current && (audioRef.current.currentTime = 0);
+        if (audioRef.current) audioRef.current.currentTime = 0;
         setPressedIdx(null);
       }, 600);
     };
@@ -229,6 +229,8 @@ export default function Home() {
     <>
       <Head>
         <title>Victor Clavelly</title>
+        {/* iOS/Android orientation lock (best-effort, not guaranteed on all browsers) */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait" />
       </Head>
       <main
         className="fixed inset-0 flex justify-center bg-[#19191b]"
@@ -460,9 +462,6 @@ export default function Home() {
             onClick={handlePageBtn}
             tabIndex={0}
           />
-
-          {/* --- Bottom Button (if needed, can remove this) --- */}
-          {/* <button ... /> */}
 
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
