@@ -2,154 +2,120 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
+import { Howl } from "howler";
 
-// 5 BUTTON IMAGES
-const BUTTON_IMAGES = [
+// --- TYPES for TypeScript ---
+type ButtonImage = { on: string; off: string };
+type TopButtonPos = { left: string; top: string; width: string; height: string };
+type Project = {
+  bg: string;
+  pageImg: string;
+  playlist: { src: string; titleImg: string }[];
+};
+
+// --- DATA ---
+const BUTTON_IMAGES: ButtonImage[] = [
   { on: "/next/image/Button 1 ON.png", off: "/next/image/Button 1 Off.png" },
   { on: "/next/image/Button 2 ON.png", off: "/next/image/Button 2 Off.png" },
   { on: "/next/image/Button 3 ON.png", off: "/next/image/Button 3 Off.png" },
   { on: "/next/image/Button 4 On.png", off: "/next/image/Button 4 Off.png" },
-  { on: "/next/image/Button 5 ON.png", off: "/next/image/Button 5 Off.png" },
+  { on: "/next/image/Button 5 On.png", off: "/next/image/Button 5 Off.png" },
 ];
 
-// 5 BUTTON HOTZONE POSITIONS
-const topButtonPositions = [
-  { left: "14.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
-  { left: "29.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
-  { left: "43.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
-  { left: "57.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
-  { left: "72.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Show Project Panel
+const topButtonPositions: TopButtonPos[] = [
+  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
+  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
+  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
+  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
+  { left: "24%", top: "76%", width: "52%", height: "8.7%" },     // 5th Button
 ];
-const bottomButton = {
-  left: "24%",
-  top: "76%",
-  width: "52%",
-  height: "8.7%",
-};
 
-const projects: {
-  bg: string;
-  panelImg: string;
-  playlist: { src: string; titleImg: string }[];
-}[] = [
+const projects: Project[] = [
   {
     bg: "/next/image/Fragments.png",
-    panelImg: "/next/image/FragmentsPAGE.png",
+    pageImg: "/next/image/FragmentsPAGE.png",
     playlist: [
       { src: "/music/1.Hunters.mp3", titleImg: "/next/image/1Hunters.png" },
       { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2Doublecross.png" },
       { src: "/music/3.The Rabbit.mp3", titleImg: "/next/image/3Rabbit.png" },
     ],
   },
-  // ...more projects if needed
+  // Add more projects if needed
 ];
 
+// --- PRELOAD all assets: images + sounds (Howler for audio) ---
+function preloadImage(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => resolve();
+    img.onerror = () => reject();
+    img.src = src;
+  });
+}
+function preloadHowl(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const sound = new Howl({
+      src: [src],
+      preload: true,
+      html5: true,
+      onload: () => resolve(),
+      onloaderror: () => reject(),
+    });
+  });
+}
+
 export default function Home() {
+  // --- State ---
   const audioRef = useRef<HTMLAudioElement>(null);
-  const buttonAudioRef = useRef<HTMLAudioElement>(null);
-  const panelOnAudioRef = useRef<HTMLAudioElement>(null);
-  const panelOffAudioRef = useRef<HTMLAudioElement>(null);
-
-  const [projectIdx, setProjectIdx] = useState(0);
-  const [trackIdx, setTrackIdx] = useState(0);
+  const [projectIdx, setProjectIdx] = useState<number>(0);
+  const [trackIdx, setTrackIdx] = useState<number>(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
-  const [showPanel5, setShowPanel5] = useState(false);
+  const [pageOpen, setPageOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  function playButtonSound() {
-    const audio = buttonAudioRef.current;
-    if (!audio) return;
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }
-  function playPanelOn() {
-    const audio = panelOnAudioRef.current;
-    if (!audio) return;
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }
-  function playPanelOff() {
-    const audio = panelOffAudioRef.current;
-    if (!audio) return;
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }
+  // --- Preloaded Howler instances (for sound effects) ---
+  const buttonSound = useRef<Howl | null>(null);
+  const pageOnSound = useRef<Howl | null>(null);
+  const pageOffSound = useRef<Howl | null>(null);
 
-  // --- BUTTON HANDLERS ---
-  function handlePlay() {
-    if (pressedIdx === 0) return;
-    playButtonSound();
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.play();
-    setPressedIdx(0);
-  }
-  function handlePause() {
-    if (pressedIdx === 1) return;
-    playButtonSound();
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.pause();
-    setPressedIdx(1);
-  }
-  function handleNextTrack() {
-    playButtonSound();
-    setPressedIdx(2);
-    setTimeout(() => {
-      goToNextTrack();
-      setPressedIdx(null);
-    }, 700);
-  }
-  function handleNextProject() {
-    playButtonSound();
-    setPressedIdx(3);
-    setTimeout(() => {
-      const nextProject = (projectIdx + 1) % projects.length;
-      setProjectIdx(nextProject);
-      setTrackIdx(0);
-      setPressedIdx(null);
-    }, 700);
-  }
-  function handleButton5() {
-    playButtonSound();
-    playPanelOn();
-    setPressedIdx(4);
-    setShowPanel5(true);
-    setTimeout(() => setPressedIdx(null), 300);
-  }
-
-  function goToNextTrack() {
-    const playlist = projects[projectIdx].playlist;
-    const nextIdx = (trackIdx + 1) % playlist.length;
-    setTrackIdx(nextIdx);
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.pause();
-    audio.currentTime = 0;
-  }
-
-  // Track/project changed: update audio (don't autoplay)
+  // --- PRELOAD all assets before showing app ---
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.src = projects[projectIdx].playlist[trackIdx].src;
-    audio.load();
-  }, [projectIdx, trackIdx]);
+    async function doPreload() {
+      // Gather all image and sound URLs
+      const imageList: string[] = [
+        ...BUTTON_IMAGES.flatMap(btn => [btn.on, btn.off]),
+        ...projects.flatMap(proj => [
+          proj.bg,
+          proj.pageImg,
+          ...proj.playlist.map(track => track.titleImg),
+        ]),
+        "/next/image/Loading.png",
+        "/next/image/NewCardFrameEmpty.png",
+      ];
+      const audioList: string[] = [
+        "/sounds/Button.mp3",
+        "/sounds/PageON.mp3",
+        "/sounds/PageOFF.mp3",
+        ...projects.flatMap(proj => proj.playlist.map(track => track.src)),
+      ];
 
-  // Auto-next when song ends
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onEnded = () => {
-      setPressedIdx(2);
-      setTimeout(() => {
-        goToNextTrack();
-        setPressedIdx(null);
-      }, 700);
-    };
-    audio.addEventListener("ended", onEnded);
-    return () => audio.removeEventListener("ended", onEnded);
-  }, [projectIdx, trackIdx]);
+      // Preload everything (no logs, just fast!)
+      await Promise.all([
+        ...imageList.map(src => preloadImage(src).catch(() => {})),
+        ...audioList.map(src => preloadHowl(src).catch(() => {})),
+      ]);
 
+      // Load Howlers for FX
+      buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
+      pageOnSound.current = new Howl({ src: ["/sounds/PageON.mp3"], html5: true });
+      pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
+
+      setLoading(false);
+    }
+    doPreload();
+  }, []);
+
+  // --- BODY LOCK (no scroll on mobile/desktop) ---
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -159,6 +125,103 @@ export default function Home() {
     };
   }, []);
 
+  // --- AUDIO logic ---
+  function playButtonFx() {
+    buttonSound.current?.stop();
+    buttonSound.current?.play();
+  }
+  function playPageOnFx() {
+    pageOnSound.current?.stop();
+    pageOnSound.current?.play();
+  }
+  function playPageOffFx() {
+    pageOffSound.current?.stop();
+    pageOffSound.current?.play();
+  }
+
+  function handlePlay() {
+    if (pressedIdx === 0 || pageOpen) return;
+    playButtonFx();
+    audioRef.current?.play();
+    setPressedIdx(0);
+  }
+  function handlePause() {
+    if (pressedIdx === 1 || pageOpen) return;
+    playButtonFx();
+    audioRef.current?.pause();
+    setPressedIdx(1);
+  }
+  function handleNextTrack() {
+    if (pageOpen) return;
+    playButtonFx();
+    setPressedIdx(2);
+    setTimeout(() => {
+      const nextIdx = (trackIdx + 1) % projects[projectIdx].playlist.length;
+      setTrackIdx(nextIdx);
+      audioRef.current?.pause();
+      audioRef.current && (audioRef.current.currentTime = 0);
+      setPressedIdx(null);
+    }, 600);
+  }
+  function handleNextProject() {
+    if (pageOpen) return;
+    playButtonFx();
+    setPressedIdx(3);
+    setTimeout(() => {
+      const nextProject = (projectIdx + 1) % projects.length;
+      setProjectIdx(nextProject);
+      setTrackIdx(0);
+      setPressedIdx(null);
+    }, 600);
+  }
+  function handlePageBtn() {
+    if (pageOpen) return;
+    playPageOnFx();
+    setPageOpen(true);
+  }
+  function handlePageClose() {
+    playPageOffFx();
+    setPageOpen(false);
+  }
+
+  // --- MUSIC src update when track/project changes ---
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
+    audioRef.current.load();
+    // Don't autoplay!
+  }, [projectIdx, trackIdx]);
+
+  // --- Auto next when song ends ---
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onEnded = () => {
+      setPressedIdx(2);
+      setTimeout(() => {
+        const nextIdx = (trackIdx + 1) % projects[projectIdx].playlist.length;
+        setTrackIdx(nextIdx);
+        audioRef.current?.pause();
+        audioRef.current && (audioRef.current.currentTime = 0);
+        setPressedIdx(null);
+      }, 600);
+    };
+    audio.addEventListener("ended", onEnded);
+    return () => audio.removeEventListener("ended", onEnded);
+  }, [projectIdx, trackIdx]);
+
+  // --- TITLE: only hide previous when new is loaded (no fade) ---
+  const [titleLoaded, setTitleLoaded] = useState(true);
+  const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
+  useEffect(() => {
+    setTitleLoaded(false);
+  }, [projectIdx, trackIdx]);
+  function handleTitleLoad() {
+    setTitleLoaded(true);
+    setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+  }
+
+  // --- RENDER ---
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -183,7 +246,38 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* --- PROJECT BACKGROUND IMAGE --- */}
+          {/* --- Loading Overlay (always above!) --- */}
+          {loading && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "#111",
+                zIndex: 10000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "opacity 0.6s",
+              }}
+            >
+              <Image
+                src="/next/image/Loading.png"
+                alt="splash"
+                width={430}
+                height={620}
+                priority
+                style={{
+                  width: "min(98vw, 430px)",
+                  height: "auto",
+                  objectFit: "contain",
+                  maxHeight: "620px",
+                  maxWidth: "430px",
+                }}
+              />
+            </div>
+          )}
+
+          {/* --- Project BG --- */}
           <Image
             src={project.bg}
             alt="Project Background"
@@ -199,7 +293,7 @@ export default function Home() {
             priority
           />
 
-          {/* --- FRAME (empty, without buttons) --- */}
+          {/* --- Frame (empty) --- */}
           <Image
             src="/next/image/NewCardFrameEmpty.png"
             alt="Main Visual Frame"
@@ -213,46 +307,62 @@ export default function Home() {
               userSelect: "none",
             }}
             priority
-            sizes="(max-width: 600px) 98vw, 430px"
           />
 
-          {/* --- TITLE IMAGE (always shown, on top of frame) --- */}
+          {/* --- Title image --- */}
+          {(!titleLoaded && (
+            <Image
+              src={prevTitleImg}
+              alt="Song Title"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 15,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority
+            />
+          ))}
           <Image
             src={currentTrack.titleImg}
             alt="Song Title"
             fill
+            onLoad={handleTitleLoad}
             style={{
               objectFit: "contain",
               objectPosition: "center",
-              zIndex: 15,
+              zIndex: 16,
               pointerEvents: "none",
               userSelect: "none",
+              visibility: titleLoaded ? "visible" : "hidden",
             }}
             priority
           />
 
-          {/* --- PANEL (Button 5) - one per project --- */}
-          {showPanel5 && project.panelImg && (
+          {/* --- PAGE OVERLAY: always same size as frame --- */}
+          {pageOpen && (
             <div
               style={{
                 position: "absolute",
-                inset: 0,
-                zIndex: 25,
-                pointerEvents: "auto",
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 30,
                 cursor: "pointer",
               }}
-              onClick={() => {
-                setShowPanel5(false);
-                playPanelOff();
-              }}
+              onClick={handlePageClose}
             >
               <Image
-                src={project.panelImg}
-                alt="Panel"
+                src={project.pageImg}
+                alt="Project Page"
                 fill
                 style={{
                   objectFit: "contain",
                   objectPosition: "center",
+                  zIndex: 31,
                   pointerEvents: "none",
                   userSelect: "none",
                 }}
@@ -261,7 +371,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* --- RENDER BUTTON PNGs (now 5) --- */}
+          {/* --- Render Button PNGs --- */}
           {BUTTON_IMAGES.map((img, idx) => (
             <Image
               key={idx}
@@ -279,7 +389,8 @@ export default function Home() {
             />
           ))}
 
-          {/* --- TRANSPARENT BUTTON HOTZONES (now 5) --- */}
+          {/* --- Button Hotzones (top + 5th) --- */}
+          {/* 1 - Play */}
           <button
             aria-label="Play"
             style={{
@@ -287,12 +398,13 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 0 ? "default" : "pointer",
+              cursor: pageOpen || pressedIdx === 0 ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handlePlay}
             tabIndex={0}
           />
+          {/* 2 - Pause */}
           <button
             aria-label="Pause"
             style={{
@@ -300,12 +412,13 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 1 ? "default" : "pointer",
+              cursor: pageOpen || pressedIdx === 1 ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handlePause}
             tabIndex={0}
           />
+          {/* 3 - Next Track */}
           <button
             aria-label="Next Track"
             style={{
@@ -313,12 +426,13 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 2 ? "default" : "pointer",
+              cursor: pageOpen || pressedIdx === 2 ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handleNextTrack}
             tabIndex={0}
           />
+          {/* 4 - Next Project */}
           <button
             aria-label="Next Project"
             style={{
@@ -326,48 +440,32 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 3 ? "default" : "pointer",
+              cursor: pageOpen || pressedIdx === 3 ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handleNextProject}
             tabIndex={0}
           />
+          {/* 5 - Page Button */}
           <button
-            aria-label="Panel"
+            aria-label="Show Project Page"
             style={{
               ...topButtonPositions[4],
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pressedIdx === 4 ? "default" : "pointer",
+              cursor: pageOpen ? "default" : "pointer",
               zIndex: 20,
             }}
-            onClick={handleButton5}
+            onClick={handlePageBtn}
             tabIndex={0}
           />
 
-          {/* --- Bottom Button (optional) --- */}
-          <button
-            aria-label="Bottom Button"
-            style={{
-              ...bottomButton,
-              position: "absolute",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-            onClick={() => alert("Bottom Button clicked!")}
-            tabIndex={0}
-          />
+          {/* --- Bottom Button (if needed, can remove this) --- */}
+          {/* <button ... /> */}
 
-          {/* --- Hidden audio player for music --- */}
+          {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
-          {/* --- Hidden audio player for button click --- */}
-          <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
-          {/* --- Panel open/close SFX --- */}
-          <audio ref={panelOnAudioRef} hidden src="/sounds/PageON.mp3" preload="auto" />
-          <audio ref={panelOffAudioRef} hidden src="/sounds/PageOFF.mp3" preload="auto" />
         </div>
       </main>
     </>
