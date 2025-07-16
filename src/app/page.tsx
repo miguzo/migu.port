@@ -4,7 +4,7 @@ import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
 
-// --- TYPES for TypeScript ---
+// --- TYPES ---
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
 type Project = {
@@ -43,7 +43,7 @@ const projects: Project[] = [
   // Add more projects if needed
 ];
 
-// --- PRELOAD all assets: images + sounds (Howler for audio) ---
+// --- PRELOAD HELPERS ---
 function preloadImage(src: string) {
   return new Promise<void>((resolve, reject) => {
     const img = new window.Image();
@@ -72,16 +72,16 @@ export default function Home() {
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
   const [pageOpen, setPageOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
 
-  // --- Preloaded Howler instances (for sound effects) ---
+  // --- SFX
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
-  // --- PRELOAD all assets before showing app ---
+  // --- PRELOAD ---
   useEffect(() => {
     async function doPreload() {
-      // Gather all image and sound URLs
       const imageList: string[] = [
         ...BUTTON_IMAGES.flatMap(btn => [btn.on, btn.off]),
         ...projects.flatMap(proj => [
@@ -99,13 +99,11 @@ export default function Home() {
         ...projects.flatMap(proj => proj.playlist.map(track => track.src)),
       ];
 
-      // Preload everything (no logs, just fast!)
       await Promise.all([
         ...imageList.map(src => preloadImage(src).catch(() => {})),
         ...audioList.map(src => preloadHowl(src).catch(() => {})),
       ]);
 
-      // Load Howlers for FX
       buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
       pageOnSound.current = new Howl({ src: ["/sounds/PageON.mp3"], html5: true });
       pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
@@ -115,7 +113,7 @@ export default function Home() {
     doPreload();
   }, []);
 
-  // --- BODY LOCK (no scroll on mobile/desktop) ---
+  // --- BODY LOCK
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -189,7 +187,6 @@ export default function Home() {
     if (!audioRef.current) return;
     audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
     audioRef.current.load();
-    // Don't autoplay!
   }, [projectIdx, trackIdx]);
 
   // --- Auto next when song ends ---
@@ -229,7 +226,6 @@ export default function Home() {
     <>
       <Head>
         <title>Victor Clavelly</title>
-        {/* iOS/Android orientation lock (best-effort, not guaranteed on all browsers) */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait" />
       </Head>
       <main
@@ -248,8 +244,8 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* --- Loading Overlay (always above!) --- */}
-          {loading && (
+          {/* --- Loading Splash: overlays everything until user clicks/taps --- */}
+          {(loading || !splashDone) && (
             <div
               style={{
                 position: "fixed",
@@ -259,7 +255,11 @@ export default function Home() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                cursor: loading ? "default" : "pointer",
                 transition: "opacity 0.6s",
+              }}
+              onClick={() => {
+                if (!loading) setSplashDone(true);
               }}
             >
               <Image
@@ -274,6 +274,8 @@ export default function Home() {
                   objectFit: "contain",
                   maxHeight: "620px",
                   maxWidth: "430px",
+                  userSelect: "none",
+                  pointerEvents: "none",
                 }}
               />
             </div>
@@ -378,7 +380,7 @@ export default function Home() {
             <Image
               key={idx}
               src={pressedIdx === idx ? img.on : img.off}
-              alt={`Button ${idx + 1}`}
+              alt=""
               fill
               style={{
                 objectFit: "contain",
