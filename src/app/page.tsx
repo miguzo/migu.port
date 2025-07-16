@@ -35,11 +35,11 @@ const projects: Project[] = [
     bg: "/next/image/Fragments.png",
     pageImg: "/next/image/FragmentsPAGE.png",
     playlist: [
-      { src: "/music/1.Lidge.mp3", titleImg: "/next/image/1.Lidge.png" },
-      { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2.Doublecross.png" },
-      { src: "/music/3.Walz.mp3", titleImg: "/next/image/3.Walz.png" },
-      { src: "/music/4.The Rabbit.mp3", titleImg: "/next/image/4.Rabbit.png" },
-      { src: "/music/5.Orphan.mp3", titleImg: "/next/image/5.Orphan.png" },
+      { src: "/music/1Lidge.mp3", titleImg: "/next/image/1Lidge.png" },
+      { src: "/music/2DoubleCrossed.mp3", titleImg: "/next/image/2Doublecross.png" },
+      { src: "/music/3Walz.mp3", titleImg: "/next/image/3Walz.png" },
+      { src: "/music/4TheRabbit.mp3", titleImg: "/next/image/4Rabbit.png" },
+      { src: "/music/5Orphan.mp3", titleImg: "/next/image/5Orphan.png" },
     
     ],
   },
