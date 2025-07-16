@@ -5,26 +5,11 @@ import Head from "next/head";
 
 // 5 BUTTON IMAGES
 const BUTTON_IMAGES = [
-  {
-    on: "/next/image/Button 1 ON.png",
-    off: "/next/image/Button 1 Off.png",
-  },
-  {
-    on: "/next/image/Button 2 ON.png",
-    off: "/next/image/Button 2 Off.png",
-  },
-  {
-    on: "/next/image/Button 3 ON.png",
-    off: "/next/image/Button 3 Off.png",
-  },
-  {
-    on: "/next/image/Button 4 On.png",
-    off: "/next/image/Button 4 Off.png",
-  },
-  {
-    on: "/next/image/Button 5 ON.png",
-    off: "/next/image/Button 5 Off.png",
-  },
+  { on: "/next/image/Button 1 ON.png", off: "/next/image/Button 1 Off.png" },
+  { on: "/next/image/Button 2 ON.png", off: "/next/image/Button 2 Off.png" },
+  { on: "/next/image/Button 3 ON.png", off: "/next/image/Button 3 Off.png" },
+  { on: "/next/image/Button 4 On.png", off: "/next/image/Button 4 Off.png" },
+  { on: "/next/image/Button 5 ON.png", off: "/next/image/Button 5 Off.png" },
 ];
 
 // 5 BUTTON HOTZONE POSITIONS
@@ -42,49 +27,48 @@ const bottomButton = {
   height: "8.7%",
 };
 
-// PROJECT DATA: Each project now has a panelImg
 const projects: {
   bg: string;
-  panelImg: string; // <-- Project-wide panel
-  playlist: {
-    src: string;
-    titleImg: string;
-  }[];
+  panelImg: string;
+  playlist: { src: string; titleImg: string }[];
 }[] = [
   {
     bg: "/next/image/Fragments.png",
-    panelImg: "/next/image/FragmentsPAGE.png", // only one per project!
+    panelImg: "/next/image/FragmentsPAGE.png",
     playlist: [
-      {
-        src: "/music/1.Hunters.mp3",
-        titleImg: "/next/image/1Hunters.png",
-      },
-      {
-        src: "/music/2.Double Crossed.mp3",
-        titleImg: "/next/image/2Doublecross.png",
-      },
-      {
-        src: "/music/3.The Rabbit.mp3",
-        titleImg: "/next/image/3Rabbit.png",
-      },
+      { src: "/music/1.Hunters.mp3", titleImg: "/next/image/1Hunters.png" },
+      { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2Doublecross.png" },
+      { src: "/music/3.The Rabbit.mp3", titleImg: "/next/image/3Rabbit.png" },
     ],
   },
-  // ...more projects
+  // ...more projects if needed
 ];
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const buttonAudioRef = useRef<HTMLAudioElement>(null);
+  const panelOnAudioRef = useRef<HTMLAudioElement>(null);
+  const panelOffAudioRef = useRef<HTMLAudioElement>(null);
 
   const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
-
-  // For Button 5 overlay (panel)
   const [showPanel5, setShowPanel5] = useState(false);
 
   function playButtonSound() {
     const audio = buttonAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+  function playPanelOn() {
+    const audio = panelOnAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+  function playPanelOff() {
+    const audio = panelOffAudioRef.current;
     if (!audio) return;
     audio.currentTime = 0;
     audio.play().catch(() => {});
@@ -127,6 +111,7 @@ export default function Home() {
   }
   function handleButton5() {
     playButtonSound();
+    playPanelOn();
     setPressedIdx(4);
     setShowPanel5(true);
     setTimeout(() => setPressedIdx(null), 300);
@@ -256,7 +241,10 @@ export default function Home() {
                 pointerEvents: "auto",
                 cursor: "pointer",
               }}
-              onClick={() => setShowPanel5(false)}
+              onClick={() => {
+                setShowPanel5(false);
+                playPanelOff();
+              }}
             >
               <Image
                 src={project.panelImg}
@@ -377,6 +365,9 @@ export default function Home() {
           <audio ref={audioRef} hidden src={currentTrack.src} />
           {/* --- Hidden audio player for button click --- */}
           <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
+          {/* --- Panel open/close SFX --- */}
+          <audio ref={panelOnAudioRef} hidden src="/sounds/PageON.mp3" preload="auto" />
+          <audio ref={panelOffAudioRef} hidden src="/sounds/PageOFF.mp3" preload="auto" />
         </div>
       </main>
     </>
