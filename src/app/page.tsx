@@ -32,7 +32,7 @@ const topButtonPositions: TopButtonPos[] = [
 
 const projects: Project[] = [
   {
-    bg: "/next/image/Fragments/Fragments.png",
+    bg: "/next/image/Fragments/Portrait.png",
     pageImg: "/next/image/Fragments/FragmentsPAGE.png",
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
@@ -111,7 +111,7 @@ export default function Home() {
           ...proj.playlist.map(track => track.titleImg),
         ]),
         "/next/image/Loading.png",
-        "/next/image/NewCardFrameEmpty.png",
+        "/next/image/CardFrame.png",
       ];
       const audioList: string[] = [
         "/sounds/Button.mp3",
@@ -320,7 +320,7 @@ export default function Home() {
 
           {/* --- Frame (empty) --- */}
           <Image
-            src="/next/image/NewCardFrameEmpty.png"
+            src="/next/image/CardFrame.png"
             alt="Main Visual Frame"
             fill
             style={{
