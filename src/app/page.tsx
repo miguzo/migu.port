@@ -19,7 +19,7 @@ const BUTTON_IMAGES: ButtonImage[] = [
   { on: "/next/image/Button 2 ON.png", off: "/next/image/Button 2 Off.png" },
   { on: "/next/image/Button 3 ON.png", off: "/next/image/Button 3 Off.png" },
   { on: "/next/image/Button 4 On.png", off: "/next/image/Button 4 Off.png" },
-  { on: "/next/image/Button5On.png", off: "/next/image/Buttonnimp5Off.png" },
+  { on: "/next/image/Button5On.png", off: "/next/image/Button5Off.png" },
 ];
 
 const topButtonPositions: TopButtonPos[] = [
