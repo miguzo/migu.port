@@ -19,7 +19,7 @@ const BUTTON_IMAGES: ButtonImage[] = [
   { on: "/next/image/Button 2 ON.png", off: "/next/image/Button 2 Off.png" },
   { on: "/next/image/Button 3 ON.png", off: "/next/image/Button 3 Off.png" },
   { on: "/next/image/Button 4 On.png", off: "/next/image/Button 4 Off.png" },
-  { on: "/next/image/Button5On.png", off: "/next/image/Button5Off.png" },
+  { on: "/next/image/Button5On.png", off: "/next/image/Buttonnimp5Off.png" },
 ];
 
 const topButtonPositions: TopButtonPos[] = [
@@ -35,9 +35,12 @@ const projects: Project[] = [
     bg: "/next/image/Fragments.png",
     pageImg: "/next/image/FragmentsPAGE.png",
     playlist: [
-      { src: "/music/1.Hunters.mp3", titleImg: "/next/image/1Hunters.png" },
-      { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2Doublecross.png" },
-      { src: "/music/3.The Rabbit.mp3", titleImg: "/next/image/3Rabbit.png" },
+      { src: "/music/1.Lidge.mp3", titleImg: "/next/image/1.Lidge.png" },
+      { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2.Doublecross.png" },
+      { src: "/music/3.Walz.mp3", titleImg: "/next/image/3.Walz.png" },
+      { src: "/music/4.The Rabbit.mp3", titleImg: "/next/image/4.Rabbit.png" },
+      { src: "/music/5.Orphan.mp3", titleImg: "/next/image/5.Orphan.png" },
+    
     ],
   },
   // Add more projects if needed
