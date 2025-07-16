@@ -3,110 +3,94 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
 
-// --- Types ---
-type ButtonImage = { on: string; off: string };
-type ButtonPos = { left: string; top: string; width: string; height: string };
-type Track = { src: string; titleImg: string };
-type Project = { bg: string; playlist: Track[] };
-
-// --- Constants with Types ---
-const BUTTON_IMAGES: ButtonImage[] = [
-  { on: "/next/image/Button 1 ON.png", off: "/next/image/Button 1 Off.png" },
-  { on: "/next/image/Button 2 ON.png", off: "/next/image/Button 2 Off.png" },
-  { on: "/next/image/Button 3 ON.png", off: "/next/image/Button 3 Off.png" },
-  { on: "/next/image/Button 4 On.png",  off: "/next/image/Button 4 Off.png" },
+// 5 BUTTON IMAGES
+const BUTTON_IMAGES = [
+  {
+    on: "/next/image/Button 1 ON.png",
+    off: "/next/image/Button 1 Off.png",
+  },
+  {
+    on: "/next/image/Button 2 ON.png",
+    off: "/next/image/Button 2 Off.png",
+  },
+  {
+    on: "/next/image/Button 3 ON.png",
+    off: "/next/image/Button 3 Off.png",
+  },
+  {
+    on: "/next/image/Button 4 On.png",
+    off: "/next/image/Button 4 Off.png",
+  },
+  {
+    on: "/next/image/Button 5 ON.png",
+    off: "/next/image/Button 5 Off.png",
+  },
 ];
 
-const topButtonPositions: ButtonPos[] = [
-  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
-  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
-  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
+// 5 BUTTON HOTZONE POSITIONS
+const topButtonPositions = [
+  { left: "14.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
+  { left: "29.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
+  { left: "43.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
+  { left: "57.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
+  { left: "72.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Show Project Panel
 ];
-
-const bottomButton: ButtonPos = {
+const bottomButton = {
   left: "24%",
   top: "76%",
   width: "52%",
   height: "8.7%",
 };
 
-const projects: Project[] = [
+// PROJECT DATA: Each project now has a panelImg
+const projects: {
+  bg: string;
+  panelImg: string; // <-- Project-wide panel
+  playlist: {
+    src: string;
+    titleImg: string;
+  }[];
+}[] = [
   {
     bg: "/next/image/Fragments.png",
+    panelImg: "/next/image/FragmentsPAGE.png", // only one per project!
     playlist: [
-      { src: "/music/1.Hunters.mp3", titleImg: "/next/image/1Hunters.png" },
-      { src: "/music/2.Double Crossed.mp3", titleImg: "/next/image/2Doublecross.png" },
-      { src: "/music/3.The Rabbit.mp3", titleImg: "/next/image/3Rabbit.png" },
+      {
+        src: "/music/1.Hunters.mp3",
+        titleImg: "/next/image/1Hunters.png",
+      },
+      {
+        src: "/music/2.Double Crossed.mp3",
+        titleImg: "/next/image/2Doublecross.png",
+      },
+      {
+        src: "/music/3.The Rabbit.mp3",
+        titleImg: "/next/image/3Rabbit.png",
+      },
     ],
   },
-  // You can add more projects later!
+  // ...more projects
 ];
-
-// --- Preload images utility (typed) ---
-function getPreloadImages(): string[] {
-  // All button images, frame, background, title images, splash image
-  const images = [
-    ...BUTTON_IMAGES.flatMap(img => [img.on, img.off]),
-    "/next/image/NewCardFrameEmpty.png",
-    "/next/image/Loading.png",
-    ...projects.map(p => p.bg),
-    ...projects.flatMap(p => p.playlist.map(t => t.titleImg)),
-  ];
-  return Array.from(new Set(images));
-}
-function preloadImages(imgs: string[]): Promise<void> {
-  return Promise.all(
-    imgs.map(
-      src =>
-        new Promise<void>(resolve => {
-          const img = new window.Image();
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = src;
-        })
-    )
-  ).then(() => {});
-}
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const buttonAudioRef = useRef<HTMLAudioElement>(null);
 
-  // Splash states
-  const [ready, setReady] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-  const [fadeSplash, setFadeSplash] = useState(false);
-
-  // Player states
   const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
-  const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3>(null);
+  const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
 
-  // Title image logic
-  const [titleImgSrc, setTitleImgSrc] = useState(projects[0].playlist[0].titleImg);
-  const lastTrack = useRef<{projectIdx: number, trackIdx: number}>({ projectIdx: 0, trackIdx: 0 });
+  // For Button 5 overlay (panel)
+  const [showPanel5, setShowPanel5] = useState(false);
 
-  useEffect(() => {
-    if (
-      projectIdx !== lastTrack.current.projectIdx ||
-      trackIdx !== lastTrack.current.trackIdx
-    ) {
-      const nextImg = projects[projectIdx].playlist[trackIdx].titleImg;
-      const img = new window.Image();
-      img.onload = () => setTitleImgSrc(nextImg);
-      img.onerror = () => setTitleImgSrc(nextImg);
-      img.src = nextImg;
-      lastTrack.current = { projectIdx, trackIdx };
-    }
-  }, [projectIdx, trackIdx]);
-
-  // Button Sound: create new audio object every press (fixes iOS bug)
   function playButtonSound() {
-    const sfx = new window.Audio("/sounds/Button.mp3");
-    sfx.play().catch(() => {});
-    sfx.onended = () => { sfx.remove?.(); };
+    const audio = buttonAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }
 
+  // --- BUTTON HANDLERS ---
   function handlePlay() {
     if (pressedIdx === 0) return;
     playButtonSound();
@@ -129,17 +113,25 @@ export default function Home() {
     setTimeout(() => {
       goToNextTrack();
       setPressedIdx(null);
-    }, 1000);
+    }, 700);
   }
   function handleNextProject() {
     playButtonSound();
     setPressedIdx(3);
     setTimeout(() => {
-      setProjectIdx((p) => (p + 1) % projects.length);
+      const nextProject = (projectIdx + 1) % projects.length;
+      setProjectIdx(nextProject);
       setTrackIdx(0);
       setPressedIdx(null);
-    }, 1000);
+    }, 700);
   }
+  function handleButton5() {
+    playButtonSound();
+    setPressedIdx(4);
+    setShowPanel5(true);
+    setTimeout(() => setPressedIdx(null), 300);
+  }
+
   function goToNextTrack() {
     const playlist = projects[projectIdx].playlist;
     const nextIdx = (trackIdx + 1) % playlist.length;
@@ -150,7 +142,7 @@ export default function Home() {
     audio.currentTime = 0;
   }
 
-  // Update audio src on track/project change (no autoplay)
+  // Track/project changed: update audio (don't autoplay)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -167,13 +159,12 @@ export default function Home() {
       setTimeout(() => {
         goToNextTrack();
         setPressedIdx(null);
-      }, 1000);
+      }, 700);
     };
     audio.addEventListener("ended", onEnded);
     return () => audio.removeEventListener("ended", onEnded);
   }, [projectIdx, trackIdx]);
 
-  // Body overflow
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -183,20 +174,6 @@ export default function Home() {
     };
   }, []);
 
-  // PRELOAD (images only)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    preloadImages(getPreloadImages()).then(() => setReady(true));
-  }, []);
-
-  // Fade out splash
-  function dismissSplash() {
-    if (ready) {
-      setFadeSplash(true);
-      setTimeout(() => setShowSplash(false), 600);
-    }
-  }
-
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -205,40 +182,6 @@ export default function Home() {
       <Head>
         <title>Victor Clavelly</title>
       </Head>
-      {/* --- Splash overlay always renders, app is mounted behind --- */}
-      <div
-        onClick={dismissSplash}
-        onTouchEnd={dismissSplash}
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "#19191b",
-          zIndex: 10000,
-          display: showSplash ? "flex" : "none",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: ready ? "pointer" : "default",
-          opacity: fadeSplash ? 0 : 1,
-          transition: "opacity 0.55s cubic-bezier(.4,.13,.35,1)",
-        }}
-      >
-        <Image
-          src="/next/image/Loading.png"
-          alt="Splash"
-          fill
-          style={{
-            objectFit: "contain",
-            objectPosition: "center",
-            pointerEvents: "none",
-            userSelect: "none",
-            zIndex: 10001,
-            transition: "opacity 0.5s",
-          }}
-          priority
-        />
-      </div>
-
-      {/* --- Main App UI always mounted, only covered by splash --- */}
       <main
         className="fixed inset-0 flex justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw" }}
@@ -255,7 +198,7 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* --- BG --- */}
+          {/* --- PROJECT BACKGROUND IMAGE --- */}
           <Image
             src={project.bg}
             alt="Project Background"
@@ -271,7 +214,7 @@ export default function Home() {
             priority
           />
 
-          {/* --- Frame --- */}
+          {/* --- FRAME (empty, without buttons) --- */}
           <Image
             src="/next/image/NewCardFrameEmpty.png"
             alt="Main Visual Frame"
@@ -288,9 +231,9 @@ export default function Home() {
             sizes="(max-width: 600px) 98vw, 430px"
           />
 
-          {/* --- TITLE IMAGE --- */}
+          {/* --- TITLE IMAGE (always shown, on top of frame) --- */}
           <Image
-            src={titleImgSrc}
+            src={currentTrack.titleImg}
             alt="Song Title"
             fill
             style={{
@@ -303,7 +246,34 @@ export default function Home() {
             priority
           />
 
-          {/* --- Buttons PNGs --- */}
+          {/* --- PANEL (Button 5) - one per project --- */}
+          {showPanel5 && project.panelImg && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 25,
+                pointerEvents: "auto",
+                cursor: "pointer",
+              }}
+              onClick={() => setShowPanel5(false)}
+            >
+              <Image
+                src={project.panelImg}
+                alt="Panel"
+                fill
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }}
+                priority
+              />
+            </div>
+          )}
+
+          {/* --- RENDER BUTTON PNGs (now 5) --- */}
           {BUTTON_IMAGES.map((img, idx) => (
             <Image
               key={idx}
@@ -321,7 +291,7 @@ export default function Home() {
             />
           ))}
 
-          {/* --- HOTZONE BUTTONS --- */}
+          {/* --- TRANSPARENT BUTTON HOTZONES (now 5) --- */}
           <button
             aria-label="Play"
             style={{
@@ -374,8 +344,21 @@ export default function Home() {
             onClick={handleNextProject}
             tabIndex={0}
           />
+          <button
+            aria-label="Panel"
+            style={{
+              ...topButtonPositions[4],
+              position: "absolute",
+              background: "transparent",
+              border: "none",
+              cursor: pressedIdx === 4 ? "default" : "pointer",
+              zIndex: 20,
+            }}
+            onClick={handleButton5}
+            tabIndex={0}
+          />
 
-          {/* Bottom Button (optional) */}
+          {/* --- Bottom Button (optional) --- */}
           <button
             aria-label="Bottom Button"
             style={{
@@ -390,8 +373,10 @@ export default function Home() {
             tabIndex={0}
           />
 
-          {/* Hidden audio for music */}
+          {/* --- Hidden audio player for music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
+          {/* --- Hidden audio player for button click --- */}
+          <audio ref={buttonAudioRef} hidden src="/sounds/Button.mp3" preload="auto" />
         </div>
       </main>
     </>
