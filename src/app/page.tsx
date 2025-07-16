@@ -309,8 +309,8 @@ export default function Home() {
             fill
             style={{
               objectFit: "contain",
-              objectPosition: "center 25%",
-              transform: "scale(0.5)",
+              objectPosition: "center",
+             // transform: "scale(0.5)",
               zIndex: 1,
               pointerEvents: "none",
               userSelect: "none",
