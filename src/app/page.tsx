@@ -60,6 +60,15 @@ const projects: Project[] = [
       { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Aggragate/9OfRustAndMirror.png" },
     ],
   },
+   {
+    bg: "/next/image/St4r/St4r.png",
+    pageImg: "/next/image/Aggragate/AggragatePAGE.png",
+    frameImg: "/next/image/St4r/St4rCF.png",
+    playlist: [
+      { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
+  
+    ],
+  },
 ];
 
 // --- PRELOAD HELPERS ---
