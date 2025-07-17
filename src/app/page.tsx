@@ -90,7 +90,8 @@ export default function Home() {
   const [projectIdx, setProjectIdx] = useState<number>(0);
   const [trackIdx, setTrackIdx] = useState<number>(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
-  const [pageOpen, setPageOpen] = useState(false);
+  const [pageOpen, setPageOpen] = useState(true);
+  const [pageSeen, setPageSeen] = useState(() => projects.map(() => false));
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
@@ -281,6 +282,23 @@ export default function Home() {
       setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
       setIsFadingTitle(false);
     }, 350); // match fade duration
+
+    // On first mount, mark the first project as seen
+useEffect(() => {
+  setPageSeen(seen => seen.map((s, i) => (i === 0 ? true : s)));
+}, []);
+
+// Whenever the project changes, auto-open overlay if not yet seen
+useEffect(() => {
+  if (!pageSeen[projectIdx]) {
+    setPageOpen(true);
+    setPageSeen(seen =>
+      seen.map((s, i) => (i === projectIdx ? true : s))
+    );
+  }
+  // eslint-disable-next-line
+}, [projectIdx]);
+
   }
 
   // --- RENDER ---
