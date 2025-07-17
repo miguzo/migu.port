@@ -94,8 +94,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
 
-  const [playlistFading, setPlaylistFading] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0); // 0 to 1
+
+  // --- FADE overlay state for playlist change
+  const [playlistFadeState, setPlaylistFadeState] = useState<"idle" | "fadingOut" | "fadingIn">("idle");
 
   // --- SFX
   const buttonSound = useRef<Howl | null>(null);
@@ -122,9 +125,17 @@ export default function Home() {
         ...projects.flatMap(proj => proj.playlist.map(track => track.src)),
       ];
 
+      const total = imageList.length + audioList.length;
+      let loaded = 0;
+
+      function inc() {
+        loaded += 1;
+        setLoadingProgress(loaded / total);
+      }
+
       await Promise.all([
-        ...imageList.map(src => preloadImage(src).catch(() => {})),
-        ...audioList.map(src => preloadHowl(src).catch(() => {})),
+        ...imageList.map(src => preloadImage(src).then(inc).catch(inc)),
+        ...audioList.map(src => preloadHowl(src).then(inc).catch(inc)),
       ]);
 
       buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
@@ -185,19 +196,20 @@ export default function Home() {
     }, 600);
   }
   function handleNextProject() {
-    if (pageOpen) return;
+    if (pageOpen || playlistFadeState !== "idle") return;
     playButtonFx();
     setPressedIdx(3);
-    setPlaylistFading(true);
+    setPlaylistFadeState("fadingOut");
     setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
+      setPlaylistFadeState("fadingIn");
       setTimeout(() => {
-        setPlaylistFading(false);
+        setPlaylistFadeState("idle");
         setPressedIdx(null);
-      }, 300); // Fade in duration
-    }, 300); // Fade out duration
+      }, 1500); // fade-in duration
+    }, 1500); // fade-out duration
   }
   function handlePageBtn() {
     if (pageOpen) return;
@@ -260,6 +272,21 @@ export default function Home() {
         className="fixed inset-0 flex justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw" }}
       >
+        {/* --- Playlist FADE Overlay: covers full screen --- */}
+        {playlistFadeState !== "idle" && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "black",
+              opacity: playlistFadeState === "fadingOut" ? 1 : 0,
+              pointerEvents: "auto",
+              transition: "opacity 1.5s cubic-bezier(.7,0,.3,1)",
+              zIndex: 10001,
+            }}
+          />
+        )}
+
         <div
           style={{
             position: "relative",
@@ -314,6 +341,29 @@ export default function Home() {
                   pointerEvents: "none",
                 }}
               />
+
+              {/* Minimal loading bar */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  bottom: 0,
+                  height: 4,
+                  width: "100%",
+                  background: "rgba(255,255,255,0.06)",
+                  zIndex: 10001,
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.round(loadingProgress * 100)}%`,
+                    background: "#FFEB8A",
+                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
+                    borderRadius: 2,
+                  }}
+                />
+              </div>
             </div>
           )}
 
@@ -436,7 +486,7 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pageOpen || pressedIdx === 0 ? "default" : "pointer",
+                cursor: pageOpen || pressedIdx === 0 ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handlePlay}
@@ -497,21 +547,6 @@ export default function Home() {
 
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
-
-          {/* --- Playlist Fade Overlay --- */}
-          {playlistFading && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "black",
-                opacity: playlistFading ? 1 : 0,
-                transition: "opacity 0.3s",
-                zIndex: 999,
-                pointerEvents: "none",
-              }}
-            />
-          )}
         </div>
       </main>
     </>
