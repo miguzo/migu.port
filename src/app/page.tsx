@@ -93,14 +93,19 @@ export default function Home() {
   const [pageOpen, setPageOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
-
   const [splashFading, setSplashFading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0); // 0 to 1
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // --- FADE overlay state for playlist change
-  const [playlistFadeState, setPlaylistFadeState] = useState<"idle" | "fadingOut" | "fadingIn">("idle");
+  // --- Crossfade overlay for playlist switch ---
+  const [playlistFade, setPlaylistFade] = useState<{ visible: boolean; opacity: number }>({ visible: false, opacity: 0 });
+  const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // --- SFX
+  // --- Crossfade for title image ---
+  const [titleLoaded, setTitleLoaded] = useState(true);
+  const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
+  const [isFadingTitle, setIsFadingTitle] = useState(false);
+
+  // --- SFX ---
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
@@ -147,7 +152,14 @@ export default function Home() {
     doPreload();
   }, []);
 
-  // --- BODY LOCK
+  // --- Cleanup fadeTimeout ---
+  useEffect(() => {
+    return () => {
+      if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+    };
+  }, []);
+
+  // --- BODY LOCK ---
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -195,22 +207,34 @@ export default function Home() {
       setPressedIdx(null);
     }, 600);
   }
+
+  // --- Smooth cinematic playlist fade + switch ---
   function handleNextProject() {
-    if (pageOpen || playlistFadeState !== "idle") return;
+    if (pageOpen || playlistFade.visible) return;
     playButtonFx();
     setPressedIdx(3);
-    setPlaylistFadeState("fadingOut");
-    setTimeout(() => {
+
+    // Fade to black
+    setPlaylistFade({ visible: true, opacity: 0 });
+    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10); // CSS delay
+
+    // Wait 1.5s, switch, then fade back in
+    if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+    fadeTimeout.current = setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
-      setPlaylistFadeState("fadingIn");
-      setTimeout(() => {
-        setPlaylistFadeState("idle");
+
+      setPlaylistFade({ visible: true, opacity: 1 });
+      setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 30);
+
+      fadeTimeout.current = setTimeout(() => {
+        setPlaylistFade({ visible: false, opacity: 0 });
         setPressedIdx(null);
-      }, 1500); // fade-in duration
-    }, 1500); // fade-out duration
+      }, 1500);
+    }, 1500);
   }
+
   function handlePageBtn() {
     if (pageOpen) return;
     playPageOnFx();
@@ -246,16 +270,17 @@ export default function Home() {
     return () => audio.removeEventListener("ended", onEnded);
   }, [projectIdx, trackIdx]);
 
-  // --- TITLE: fix for changing playlist ---
-  const [titleLoaded, setTitleLoaded] = useState(true);
-  const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
+  // --- Crossfade logic for title image ---
   useEffect(() => {
+    setIsFadingTitle(true);
     setTitleLoaded(false);
-    setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
   }, [projectIdx, trackIdx]);
   function handleTitleLoad() {
     setTitleLoaded(true);
-    setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+    setTimeout(() => {
+      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+      setIsFadingTitle(false);
+    }, 350); // match fade duration
   }
 
   // --- RENDER ---
@@ -273,13 +298,13 @@ export default function Home() {
         style={{ minHeight: "100vh", minWidth: "100vw" }}
       >
         {/* --- Playlist FADE Overlay: covers full screen --- */}
-        {playlistFadeState !== "idle" && (
+        {playlistFade.visible && (
           <div
             style={{
               position: "fixed",
               inset: 0,
               background: "black",
-              opacity: playlistFadeState === "fadingOut" ? 1 : 0,
+              opacity: playlistFade.opacity,
               pointerEvents: "auto",
               transition: "opacity 1.5s cubic-bezier(.7,0,.3,1)",
               zIndex: 10001,
@@ -398,22 +423,25 @@ export default function Home() {
             priority
           />
 
-          {/* --- Title image --- */}
-          {(!titleLoaded && (
-            <Image
-              src={prevTitleImg}
-              alt="Song Title"
-              fill
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                zIndex: 15,
-                pointerEvents: "none",
-                userSelect: "none",
-              }}
-              priority
-            />
-          ))}
+          {/* --- Title image CROSSFADE --- */}
+          {/* Previous title */}
+          <Image
+            src={prevTitleImg}
+            alt="Previous Song Title"
+            fill
+            style={{
+              objectFit: "contain",
+              objectPosition: "center",
+              zIndex: 15,
+              pointerEvents: "none",
+              userSelect: "none",
+              opacity: isFadingTitle ? 1 : 0,
+              transition: "opacity 0.35s",
+              position: "absolute",
+            }}
+            priority
+          />
+          {/* Current/new title */}
           <Image
             src={currentTrack.titleImg}
             alt="Song Title"
@@ -425,7 +453,9 @@ export default function Home() {
               zIndex: 16,
               pointerEvents: "none",
               userSelect: "none",
-              visibility: titleLoaded ? "visible" : "hidden",
+              opacity: titleLoaded ? 1 : 0,
+              transition: "opacity 0.35s",
+              position: "absolute",
             }}
             priority
           />
@@ -486,7 +516,7 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-                cursor: pageOpen || pressedIdx === 0 ? "default" : "pointer",
+              cursor: pageOpen || pressedIdx === 0 ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handlePlay}
