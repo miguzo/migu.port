@@ -60,7 +60,6 @@ const projects: Project[] = [
       { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Aggragate/9OfRustAndMirror.png" },
     ],
   },
-  // Add more projects if needed
 ];
 
 // --- PRELOAD HELPERS ---
@@ -170,6 +169,62 @@ export default function Home() {
     };
   }, []);
 
+  // --- MUSIC src update when track/project changes ---
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
+    audioRef.current.load();
+  }, [projectIdx, trackIdx]);
+
+  // --- Auto next when song ends ---
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onEnded = () => {
+      setPressedIdx(2);
+      setTimeout(() => {
+        const nextIdx = (trackIdx + 1) % projects[projectIdx].playlist.length;
+        setTrackIdx(nextIdx);
+        audioRef.current?.pause();
+        if (audioRef.current) audioRef.current.currentTime = 0;
+        setPressedIdx(null);
+      }, 600);
+    };
+    audio.addEventListener("ended", onEnded);
+    return () => audio.removeEventListener("ended", onEnded);
+  }, [projectIdx, trackIdx]);
+
+  // --- Crossfade logic for title image ---
+  useEffect(() => {
+    setIsFadingTitle(true);
+    setTitleLoaded(false);
+  }, [projectIdx, trackIdx]);
+  function handleTitleLoad() {
+    setTitleLoaded(true);
+    setTimeout(() => {
+      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+      setIsFadingTitle(false);
+    }, 350); // match fade duration
+  }
+
+  // --- PAGE OVERLAY SEEN LOGIC (top-level, not in any function) ---
+
+  // On first mount, mark the first project as seen
+  useEffect(() => {
+    setPageSeen(seen => seen.map((s, i) => (i === 0 ? true : s)));
+  }, []);
+
+  // Whenever the project changes, auto-open overlay if not yet seen
+  useEffect(() => {
+    if (!pageSeen[projectIdx]) {
+      setPageOpen(true);
+      setPageSeen(seen =>
+        seen.map((s, i) => (i === projectIdx ? true : s))
+      );
+    }
+    // eslint-disable-next-line
+  }, [projectIdx]);
+
   // --- AUDIO logic ---
   function playButtonFx() {
     buttonSound.current?.stop();
@@ -208,18 +263,14 @@ export default function Home() {
       setPressedIdx(null);
     }, 600);
   }
-
-  // --- Smooth cinematic playlist fade + switch ---
   function handleNextProject() {
     if (pageOpen || playlistFade.visible) return;
     playButtonFx();
     setPressedIdx(3);
 
-    // Fade to black
     setPlaylistFade({ visible: true, opacity: 0 });
-    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10); // CSS delay
+    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
 
-    // Wait 1.5s, switch, then fade back in
     if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
     fadeTimeout.current = setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
@@ -235,7 +286,6 @@ export default function Home() {
       }, 1500);
     }, 1500);
   }
-
   function handlePageBtn() {
     if (pageOpen) return;
     playPageOnFx();
@@ -244,61 +294,6 @@ export default function Home() {
   function handlePageClose() {
     playPageOffFx();
     setPageOpen(false);
-  }
-
-  // --- MUSIC src update when track/project changes ---
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
-    audioRef.current.load();
-  }, [projectIdx, trackIdx]);
-
-  // --- Auto next when song ends ---
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onEnded = () => {
-      setPressedIdx(2);
-      setTimeout(() => {
-        const nextIdx = (trackIdx + 1) % projects[projectIdx].playlist.length;
-        setTrackIdx(nextIdx);
-        audioRef.current?.pause();
-        if (audioRef.current) audioRef.current.currentTime = 0;
-        setPressedIdx(null);
-      }, 600);
-    };
-    audio.addEventListener("ended", onEnded);
-    return () => audio.removeEventListener("ended", onEnded);
-  }, [projectIdx, trackIdx]);
-
-  // --- Crossfade logic for title image ---
-  useEffect(() => {
-    setIsFadingTitle(true);
-    setTitleLoaded(false);
-  }, [projectIdx, trackIdx]);
-  function handleTitleLoad() {
-    setTitleLoaded(true);
-    setTimeout(() => {
-      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
-      setIsFadingTitle(false);
-    }, 350); // match fade duration
-
-    // On first mount, mark the first project as seen
-useEffect(() => {
-  setPageSeen(seen => seen.map((s, i) => (i === 0 ? true : s)));
-}, []);
-
-// Whenever the project changes, auto-open overlay if not yet seen
-useEffect(() => {
-  if (!pageSeen[projectIdx]) {
-    setPageOpen(true);
-    setPageSeen(seen =>
-      seen.map((s, i) => (i === projectIdx ? true : s))
-    );
-  }
-  // eslint-disable-next-line
-}, [projectIdx]);
-
   }
 
   // --- RENDER ---
