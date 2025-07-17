@@ -207,14 +207,11 @@ export default function Home() {
     }, 350); // match fade duration
   }
 
-  // --- PAGE OVERLAY SEEN LOGIC (top-level, not in any function) ---
-
-  // On first mount, mark the first project as seen
+  // --- PAGE OVERLAY SEEN LOGIC ---
   useEffect(() => {
     setPageSeen(seen => seen.map((s, i) => (i === 0 ? true : s)));
   }, []);
 
-  // Whenever the project changes, auto-open overlay if not yet seen
   useEffect(() => {
     if (!pageSeen[projectIdx]) {
       setPageOpen(true);
@@ -224,6 +221,29 @@ export default function Home() {
     }
     // eslint-disable-next-line
   }, [projectIdx]);
+
+  // --- Helper: fade out audio volume smoothly ---
+  function fadeOutAudio(duration = 1200) {
+    if (!audioRef.current) return Promise.resolve();
+    const audio = audioRef.current;
+    const initialVolume = audio.volume;
+    const steps = 12;
+    const stepTime = duration / steps;
+    return new Promise<void>((resolve) => {
+      let currStep = 0;
+      function fadeStep() {
+        currStep++;
+        audio.volume = initialVolume * (1 - currStep / steps);
+        if (currStep < steps) {
+          setTimeout(fadeStep, stepTime);
+        } else {
+          audio.volume = 0;
+          resolve();
+        }
+      }
+      fadeStep();
+    });
+  }
 
   // --- AUDIO logic ---
   function playButtonFx() {
@@ -263,7 +283,7 @@ export default function Home() {
       setPressedIdx(null);
     }, 600);
   }
-  function handleNextProject() {
+  async function handleNextProject() {
     if (pageOpen || playlistFade.visible) return;
     playButtonFx();
     setPressedIdx(3);
@@ -272,10 +292,17 @@ export default function Home() {
     setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
 
     if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+
+    // Start fading audio now, don't wait (do in parallel with overlay fade)
+    fadeOutAudio(1200);
+
     fadeTimeout.current = setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
+
+      // Restore volume for new track
+      if (audioRef.current) audioRef.current.volume = 1;
 
       setPlaylistFade({ visible: true, opacity: 1 });
       setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 30);
