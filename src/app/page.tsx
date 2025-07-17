@@ -10,6 +10,7 @@ type TopButtonPos = { left: string; top: string; width: string; height: string }
 type Project = {
   bg: string;
   pageImg: string;
+  frameImg: string;   // <-- NEW
   playlist: { src: string; titleImg: string }[];
 };
 
@@ -34,19 +35,19 @@ const projects: Project[] = [
   {
     bg: "/next/image/Fragments/Portrait.png",
     pageImg: "/next/image/Fragments/FragmentsPAGE.png",
+    frameImg: "/next/image/Fragments/FragmentsCF.png", // <-- NEW
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
       { src: "/music/Fragments/2DoubleCrossed.mp3", titleImg: "/next/image/Fragments/2Doublecross.png" },
       { src: "/music/Fragments/3Walz.mp3", titleImg: "/next/image/Fragments/3Walz.png" },
       { src: "/music/Fragments/4TheRabbit.mp3", titleImg: "/next/image/Fragments/4Rabbit.png" },
       { src: "/music/Fragments/5Orphan.mp3", titleImg: "/next/image/Fragments/5Orphan.png" },
-    
     ],
   },
-
- /*  {
+  {
     bg: "/next/image/Aggragate/Aggragate.png",
     pageImg: "/next/image/Aggragate/AggragatePAGE.png",
+    frameImg: "/next/image/Aggragate/AggragateCF.png", // <-- NEW
     playlist: [
       { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Aggragate/1HighRiver.png" },
       { src: "/music/Aggragate/2AmongTheStorm.mp3", titleImg: "/next/image/Aggragate/2AmongTheStorm.png" },
@@ -57,10 +58,8 @@ const projects: Project[] = [
       { src: "/music/Aggragate/7TheArena.mp3", titleImg: "/next/image/Aggragate/7TheArena.png" },
       { src: "/music/Aggragate/8ADisaster.mp3", titleImg: "/next/image/Aggragate/8ADisaster.png" },
       { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Aggragate/9OfRustAndMirror.png" },
-
-    
     ],
-  },  */
+  },
   // Add more projects if needed
 ];
 
@@ -108,10 +107,11 @@ export default function Home() {
         ...projects.flatMap(proj => [
           proj.bg,
           proj.pageImg,
+          proj.frameImg, // <-- NEW
           ...proj.playlist.map(track => track.titleImg),
         ]),
         "/next/image/Loading.png",
-        "/next/image/CardFrame.png",
+        // "/next/image/CardFrame.png", // Remove if not used anywhere else
       ];
       const audioList: string[] = [
         "/sounds/Button.mp3",
@@ -310,7 +310,6 @@ export default function Home() {
             style={{
               objectFit: "contain",
               objectPosition: "center",
-             // transform: "scale(0.5)",
               zIndex: 1,
               pointerEvents: "none",
               userSelect: "none",
@@ -318,9 +317,9 @@ export default function Home() {
             priority
           />
 
-          {/* --- Frame (empty) --- */}
+          {/* --- Frame (dynamic per project) --- */}
           <Image
-            src="/next/image/CardFrame.png"
+            src={project.frameImg} // <-- CHANGED to project-specific frame
             alt="Main Visual Frame"
             fill
             style={{
