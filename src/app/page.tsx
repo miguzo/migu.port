@@ -44,7 +44,7 @@ const projects: Project[] = [
     ],
   },
 
-   {
+ /*  {
     bg: "/next/image/Aggragate/Aggragate.png",
     pageImg: "/next/image/Aggragate/AggragatePAGE.png",
     playlist: [
@@ -60,7 +60,7 @@ const projects: Project[] = [
 
     
     ],
-  },
+  },  */
   // Add more projects if needed
 ];
 
