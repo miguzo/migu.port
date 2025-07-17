@@ -10,7 +10,7 @@ type TopButtonPos = { left: string; top: string; width: string; height: string }
 type Project = {
   bg: string;
   pageImg: string;
-  frameImg: string;   // <-- NEW
+  frameImg: string;
   playlist: { src: string; titleImg: string }[];
 };
 
@@ -35,7 +35,7 @@ const projects: Project[] = [
   {
     bg: "/next/image/Fragments/Portrait.png",
     pageImg: "/next/image/Fragments/FragmentsPAGE.png",
-    frameImg: "/next/image/Fragments/FragmentsCF.png", // <-- NEW
+    frameImg: "/next/image/Fragments/FragmentsCF.png",
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/1Lidge.png" },
       { src: "/music/Fragments/2DoubleCrossed.mp3", titleImg: "/next/image/Fragments/2Doublecross.png" },
@@ -47,7 +47,7 @@ const projects: Project[] = [
   {
     bg: "/next/image/Aggragate/Aggragate.png",
     pageImg: "/next/image/Aggragate/AggragatePAGE.png",
-    frameImg: "/next/image/Aggragate/AggragateCF.png", // <-- NEW
+    frameImg: "/next/image/Aggragate/AggragateCF.png",
     playlist: [
       { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Aggragate/1HighRiver.png" },
       { src: "/music/Aggragate/2AmongTheStorm.mp3", titleImg: "/next/image/Aggragate/2AmongTheStorm.png" },
@@ -94,6 +94,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
 
+  const [playlistFading, setPlaylistFading] = useState(false);
+  const [splashFading, setSplashFading] = useState(false);
+
   // --- SFX
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
@@ -107,11 +110,10 @@ export default function Home() {
         ...projects.flatMap(proj => [
           proj.bg,
           proj.pageImg,
-          proj.frameImg, // <-- NEW
+          proj.frameImg,
           ...proj.playlist.map(track => track.titleImg),
         ]),
         "/next/image/Loading.png",
-        // "/next/image/CardFrame.png", // Remove if not used anywhere else
       ];
       const audioList: string[] = [
         "/sounds/Button.mp3",
@@ -186,12 +188,16 @@ export default function Home() {
     if (pageOpen) return;
     playButtonFx();
     setPressedIdx(3);
+    setPlaylistFading(true);
     setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
-      setPressedIdx(null);
-    }, 600);
+      setTimeout(() => {
+        setPlaylistFading(false);
+        setPressedIdx(null);
+      }, 300); // Fade in duration
+    }, 300); // Fade out duration
   }
   function handlePageBtn() {
     if (pageOpen) return;
@@ -228,11 +234,12 @@ export default function Home() {
     return () => audio.removeEventListener("ended", onEnded);
   }, [projectIdx, trackIdx]);
 
-  // --- TITLE: only hide previous when new is loaded (no fade) ---
+  // --- TITLE: fix for changing playlist ---
   const [titleLoaded, setTitleLoaded] = useState(true);
   const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
   useEffect(() => {
     setTitleLoaded(false);
+    setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
   }, [projectIdx, trackIdx]);
   function handleTitleLoad() {
     setTitleLoaded(true);
@@ -277,10 +284,18 @@ export default function Home() {
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: loading ? "default" : "pointer",
-                transition: "opacity 0.6s",
+                transition: "opacity 0.5s",
+                opacity: splashFading ? 0 : 1,
               }}
               onClick={() => {
-                if (!loading) setSplashDone(true);
+                if (!loading) {
+                  setSplashFading(true);
+                  pageOffSound.current?.play();
+                  setTimeout(() => {
+                    setSplashDone(true);
+                    setSplashFading(false);
+                  }, 500);
+                }
               }}
             >
               <Image
@@ -319,7 +334,7 @@ export default function Home() {
 
           {/* --- Frame (dynamic per project) --- */}
           <Image
-            src={project.frameImg} // <-- CHANGED to project-specific frame
+            src={project.frameImg}
             alt="Main Visual Frame"
             fill
             style={{
@@ -414,7 +429,6 @@ export default function Home() {
           ))}
 
           {/* --- Button Hotzones (top + 5th) --- */}
-          {/* 1 - Play */}
           <button
             aria-label="Play"
             style={{
@@ -428,7 +442,6 @@ export default function Home() {
             onClick={handlePlay}
             tabIndex={0}
           />
-          {/* 2 - Pause */}
           <button
             aria-label="Pause"
             style={{
@@ -442,7 +455,6 @@ export default function Home() {
             onClick={handlePause}
             tabIndex={0}
           />
-          {/* 3 - Next Track */}
           <button
             aria-label="Next Track"
             style={{
@@ -456,7 +468,6 @@ export default function Home() {
             onClick={handleNextTrack}
             tabIndex={0}
           />
-          {/* 4 - Next Project */}
           <button
             aria-label="Next Project"
             style={{
@@ -470,7 +481,6 @@ export default function Home() {
             onClick={handleNextProject}
             tabIndex={0}
           />
-          {/* 5 - Page Button */}
           <button
             aria-label="Show Project Page"
             style={{
@@ -487,6 +497,21 @@ export default function Home() {
 
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
+
+          {/* --- Playlist Fade Overlay --- */}
+          {playlistFading && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "black",
+                opacity: playlistFading ? 1 : 0,
+                transition: "opacity 0.3s",
+                zIndex: 999,
+                pointerEvents: "none",
+              }}
+            />
+          )}
         </div>
       </main>
     </>
