@@ -232,37 +232,43 @@ export default function Home() {
   }
 
   // Change project: fade out, preload, then fade in
-  async function handleNextProject() {
-    if (pageOpen || playlistFade.visible || nextProjectLoading) return;
-    playButtonFx();
-    setPressedIdx(3);
-    setPlaylistFade({ visible: true, opacity: 0 });
-    setNextProjectLoading(true);
+async function handleNextProject() {
+  if (pageOpen || playlistFade.visible) return;
+  playButtonFx();
+  setPressedIdx(3);
+  setPlaylistFade({ visible: true, opacity: 0 });
+  setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
 
-    // Fade to black overlay
-    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
+  if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
 
-    if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+  await fadeOutAudio(1200); // fade l’audio si besoin (tu peux await)
 
-    // Fade out audio (start mute fade early)
-    fadeOutAudio(900);
+  const nextProject = (projectIdx + 1) % projects.length;
+  const p = projects[nextProject];
 
-    // PRELOAD all assets for next project WHILE black overlay is up
-    const nextIdx = (projectIdx + 1) % projects.length;
-    await preloadProject(nextIdx);
+  // Prélance préchargement (toutes les images du projet + titres + boutons + pageImg + mainImg + 1er titre audio)
+  const imagesToPreload = [
+    p.mainImg, p.pageImg,
+    ...p.buttons.flatMap(b => [b.on, b.off]),
+    ...p.playlist.map(t => t.titleImg),
+  ];
+  await Promise.all([
+    ...imagesToPreload.map(src => preloadImage(src).catch(() => {})),
+    preloadHowl(p.playlist[0].src).catch(() => {})
+  ]);
 
-    setProjectIdx(nextIdx);
-    setTrackIdx(0);
-    if (audioRef.current) audioRef.current.volume = 1;
+  // Puis seulement switch de projet
+  setProjectIdx(nextProject);
+  setTrackIdx(0);
+  if (audioRef.current) audioRef.current.volume = 1;
 
-    // Now fade in the new project once preloading is finished!
-    setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 100);
-    fadeTimeout.current = setTimeout(() => {
-      setPlaylistFade({ visible: false, opacity: 0 });
-      setPressedIdx(null);
-      setNextProjectLoading(false);
-    }, 1000);
-  }
+  // Puis fade out du noir après 100ms
+  setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 100);
+  fadeTimeout.current = setTimeout(() => {
+    setPlaylistFade({ visible: false, opacity: 0 });
+    setPressedIdx(null);
+  }, 1000);
+}
 
   // Fade out audio helper
   function fadeOutAudio(duration = 1200) {
