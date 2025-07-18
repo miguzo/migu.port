@@ -7,26 +7,24 @@ import { Howl } from "howler";
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
 type Project = {
-  bg: string;
   pageImg: string;
-  frameImg: string;
+  mainImg: string;
   buttons: ButtonImage[];
   playlist: { src: string; titleImg: string }[];
 };
 
 const topButtonPositions: TopButtonPos[] = [
-  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Play
-  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Pause
-  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Track
-  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" }, // Next Project
-  { left: "24%", top: "76%", width: "52%", height: "8.7%" },     // 5th Button
+  { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },
+  { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },
+  { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },
+  { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" },
+  { left: "24%", top: "76%", width: "52%", height: "8.7%" },
 ];
 
 const projects: Project[] = [
   {
-    bg: "/next/image/Fragments/Components/Fragments.png",
+    mainImg: "/next/image/Fragments/Components/FragmentsCF.png",
     pageImg: "/next/image/Fragments/Components/FragmentsPAGE.png",
-    frameImg: "/next/image/Fragments/Components/FragmentsCF.png",
     buttons: [
       { on: "/next/image/Fragments/Buttons/Button 1 ON.png", off: "/next/image/Fragments/Buttons/Button 1 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button 2 ON.png", off: "/next/image/Fragments/Buttons/Button 2 Off.png" },
@@ -43,9 +41,8 @@ const projects: Project[] = [
     ],
   },
   {
-    bg: "/next/image/Aggragate/Components/Aggragate.png",
+    mainImg: "/next/image/Aggragate/Components/AggragateCF.png",
     pageImg: "/next/image/Aggragate/Components/AggragatePAGE.png",
-    frameImg: "/next/image/Aggragate/Components/AggragateCF.png",
     buttons: [
       { on: "/next/image/Aggragate/Buttons/Button 1 ON.png", off: "/next/image/Aggragate/Buttons/Button 1 Off.png" },
       { on: "/next/image/Aggragate/Buttons/Button 2 ON.png", off: "/next/image/Aggragate/Buttons/Button 2 Off.png" },
@@ -66,9 +63,25 @@ const projects: Project[] = [
     ],
   },
   {
-    bg: "/next/image/St4r/Components/St4r.png",
-    pageImg: "/next/image/Aggragate/Components/AggragatePAGE.png",
-    frameImg: "/next/image/St4r/Components/St4rCF.png",
+    mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
+    pageImg: "/next/image/Fallcore/Components/FallcorePAGE.png",
+    buttons: [
+      { on: "/next/image/Fallcore/Buttons/Button 1 ON.png", off: "/next/image/Fallcore/Buttons/Button 1 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 4 On.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
+    ],
+    playlist: [
+      { src: "/music/Fallcore/1Shutter.mp3", titleImg: "/next/image/Fallcore/Titles/1Shutter.png" },
+      { src: "/music/Fallcore/2Velith.mp3", titleImg: "/next/image/Fallcore/Titles/2Velith.png" },
+      { src: "/music/Fallcore/3Animated.mp3", titleImg: "/next/image/Fallcore/Titles/3Animated.png" },
+      { src: "/music/Fallcore/4AFriend.mp3", titleImg: "/next/image/Fallcore/Titles/4AFriend.png" },
+    ],
+  },
+   {
+    mainImg: "/next/image/St4r/Components/St4rCF.png",
+    pageImg: "/next/image/St4r/Components/St4rPAGE.png",
     buttons: [
       { on: "/next/image/St4r/Buttons/Button 1 ON.png", off: "/next/image/St4r/Buttons/Button 1 Off.png" },
       { on: "/next/image/St4r/Buttons/Button 2 ON.png", off: "/next/image/St4r/Buttons/Button 2 Off.png" },
@@ -128,9 +141,8 @@ export default function Home() {
       const imageList: string[] = [
         ...projects.flatMap(proj => [
           ...proj.buttons.flatMap(btn => [btn.on, btn.off]),
-          proj.bg,
+          proj.mainImg,
           proj.pageImg,
-          proj.frameImg,
           ...proj.playlist.map(track => track.titleImg),
         ]),
         "/next/image/Loading.png",
@@ -401,7 +413,7 @@ export default function Home() {
                   bottom: 0,
                   height: 4,
                   width: "100%",
-                    background: "rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.06)",
                   zIndex: 10001,
                 }}
               >
@@ -418,24 +430,9 @@ export default function Home() {
             </div>
           )}
 
-          {/* --- Project BG --- */}
+          {/* --- Main frame (background+frame) --- */}
           <Image
-            src={project.bg}
-            alt="Project Background"
-            fill
-            style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              zIndex: 1,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-            priority
-          />
-
-          {/* --- Frame (dynamic per project) --- */}
-          <Image
-            src={project.frameImg}
+            src={project.mainImg}
             alt="Main Visual Frame"
             fill
             style={{
@@ -450,7 +447,6 @@ export default function Home() {
           />
 
           {/* --- Title image CROSSFADE --- */}
-          {/* Previous title */}
           <Image
             src={prevTitleImg}
             alt="Previous Song Title"
@@ -467,7 +463,6 @@ export default function Home() {
             }}
             priority
           />
-          {/* Current/new title */}
           <Image
             src={currentTrack.titleImg}
             alt="Song Title"
