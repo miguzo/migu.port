@@ -4,7 +4,7 @@ import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
 
-// --- TYPES ---
+// --- Types
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
 type Project = {
@@ -14,6 +14,7 @@ type Project = {
   playlist: { src: string; titleImg: string }[];
 };
 
+// --- Button positions
 const topButtonPositions: TopButtonPos[] = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },
@@ -22,6 +23,7 @@ const topButtonPositions: TopButtonPos[] = [
   { left: "24%", top: "76%", width: "52%", height: "8.7%" },
 ];
 
+// --- Projects
 const projects: Project[] = [
   {
     mainImg: "/next/image/Fragments/Components/FragmentsCF.png",
@@ -70,7 +72,7 @@ const projects: Project[] = [
       { on: "/next/image/Fallcore/Buttons/Button 1 ON.png", off: "/next/image/Fallcore/Buttons/Button 1 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },  
+      { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
     ],
     playlist: [
@@ -98,7 +100,7 @@ const projects: Project[] = [
   },
 ];
 
-// Preload helpers
+// --- Helpers preload
 function preloadImage(src: string) {
   return new Promise<void>((resolve, reject) => {
     const img = new window.Image();
@@ -119,36 +121,39 @@ function preloadHowl(src: string) {
   });
 }
 
+// --- Main Page logic
 export default function Home() {
-  // --- STATE ---
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [projectIdx, setProjectIdx] = useState(0);
-  const [trackIdx, setTrackIdx] = useState(0);
+  const [projectIdx, setProjectIdx] = useState<number>(0);
+  const [trackIdx, setTrackIdx] = useState<number>(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
   const [pageOpen, setPageOpen] = useState(true);
-  const [pageSeen, setPageSeen] = useState(projects.map(() => false));
+  const [pageSeen, setPageSeen] = useState(() => projects.map(() => false));
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [fadeBlack, setFadeBlack] = useState(0); // 0: transparent, 1: opaque
-  const [fading, setFading] = useState(false); // block interactions while fading
-  const [mainPageVisible, setMainPageVisible] = useState(false);
-  const [mainPageDone, setMainPageDone] = useState(false); // only once, for Fragments
+  const [playlistFade, setPlaylistFade] = useState<{ visible: boolean; opacity: number }>({ visible: false, opacity: 0 });
+  const [fadeBlack, setFadeBlack] = useState<number>(0);
+  const [fading, setFading] = useState<boolean>(false);
+  const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
   const [titleLoaded, setTitleLoaded] = useState(true);
   const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
   const [isFadingTitle, setIsFadingTitle] = useState(false);
+  const [mainPageVisible, setMainPageVisible] = useState<boolean>(false);
+  const [mainPageDone, setMainPageDone] = useState<boolean>(false);
 
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
-  // --- PRELOAD EVERYTHING ---
+  // --- Preload ALL on start
   useEffect(() => {
+    let cancel = false;
     async function doPreload() {
       const imageList: string[] = [
         ...projects.flatMap(proj => [
-          ...proj.buttons.flatMap(btn => [btn.on, btn.off]),
+          ...proj.buttons.flatMap((btn: ButtonImage) => [btn.on, btn.off]),
           proj.mainImg,
           proj.pageImg,
           ...proj.playlist.map(track => track.titleImg),
@@ -172,15 +177,25 @@ export default function Home() {
         ...imageList.map(src => preloadImage(src).then(inc).catch(inc)),
         ...audioList.map(src => preloadHowl(src).then(inc).catch(inc)),
       ]);
+      if (cancel) return;
       buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
       pageOnSound.current = new Howl({ src: ["/sounds/PageON.mp3"], html5: true });
       pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
       setLoading(false);
     }
     doPreload();
+    return () => { cancel = true; };
   }, []);
 
-  // --- Prevent scrolling
+  // Cleanup fadeTimeout
+  useEffect(() => {
+    let timeout = fadeTimeout.current;
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, []);
+
+  // Lock scroll/body
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -190,20 +205,14 @@ export default function Home() {
     };
   }, []);
 
-  // --- Handle title image crossfade
+  // Update music src
   useEffect(() => {
-    setIsFadingTitle(true);
-    setTitleLoaded(false);
+    if (!audioRef.current) return;
+    audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
+    audioRef.current.load();
   }, [projectIdx, trackIdx]);
-  function handleTitleLoad() {
-    setTitleLoaded(true);
-    setTimeout(() => {
-      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
-      setIsFadingTitle(false);
-    }, 350);
-  }
 
-  // --- Handle auto next on song end
+  // Next track auto
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -221,7 +230,43 @@ export default function Home() {
     return () => audio.removeEventListener("ended", onEnded);
   }, [projectIdx, trackIdx]);
 
-  // --- Helper: fade out audio volume smoothly
+  // Title crossfade
+  useEffect(() => {
+    setIsFadingTitle(true);
+    setTitleLoaded(false);
+  }, [projectIdx, trackIdx]);
+  function handleTitleLoad() {
+    setTitleLoaded(true);
+    setTimeout(() => {
+      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+      setIsFadingTitle(false);
+    }, 350);
+  }
+
+  // Intro panel for Fragments seen first
+  useEffect(() => {
+    setPageSeen(seen => seen.map((s, i) => (i === 0 ? true : s)));
+  }, []);
+
+  // Affichage MainPage.png juste après splash, une seule fois
+  useEffect(() => {
+    if (splashDone && !mainPageDone) {
+      setTimeout(() => setMainPageVisible(true), 50);
+    }
+  }, [splashDone, mainPageDone]);
+
+  // Si on change de projet, overlay panel auto
+  useEffect(() => {
+    if (!pageSeen[projectIdx]) {
+      setPageOpen(true);
+      setPageSeen(seen =>
+        seen.map((s, i) => (i === projectIdx ? true : s))
+      );
+    }
+    // eslint-disable-next-line
+  }, [projectIdx]);
+
+  // Fade util
   function fadeOutAudio(duration = 1200) {
     if (!audioRef.current) return Promise.resolve();
     const audio = audioRef.current;
@@ -244,48 +289,7 @@ export default function Home() {
     });
   }
 
-  // --- Project transition with fade-to-black + preloading next project
-  async function handleNextProject() {
-    if (pageOpen || fading || loading) return;
-    setFading(true);
-    playButtonFx();
-    setPressedIdx(3);
-
-    // Fade in to black
-    setFadeBlack(1);
-    await new Promise(res => setTimeout(res, 600));
-    await fadeOutAudio(600);
-
-    // Get next project index
-    const nextProject = (projectIdx + 1) % projects.length;
-
-    // Preload next project images & audio
-    const next = projects[nextProject];
-    await Promise.all([
-      preloadImage(next.mainImg),
-      preloadImage(next.pageImg),
-      ...next.buttons.map(btn => preloadImage(btn.on).catch(()=>{})),
-      ...next.buttons.map(btn => preloadImage(btn.off).catch(()=>{})),
-      ...next.playlist.map(track => preloadImage(track.titleImg).catch(()=>{})),
-      ...next.playlist.map(track => preloadHowl(track.src).catch(()=>{})),
-    ]);
-    // Switch project & track
-    setProjectIdx(nextProject);
-    setTrackIdx(0);
-
-    // Reset audio and overlay after fade
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.volume = 1;
-    }
-    setTimeout(() => {
-      setFadeBlack(0); // Fade out black
-      setPressedIdx(null);
-      setFading(false);
-    }, 350);
-  }
-
+  // Audio logic
   function playButtonFx() {
     buttonSound.current?.stop();
     buttonSound.current?.play();
@@ -323,6 +327,52 @@ export default function Home() {
       setPressedIdx(null);
     }, 600);
   }
+
+  // FADE TO BLACK, PRÉLOAD, SWITCH, FADE OUT
+  async function handleNextProject() {
+    if (pageOpen || playlistFade.visible || fading) return;
+    setFading(true);
+    playButtonFx();
+    setPressedIdx(3);
+    setFadeBlack(1);
+
+    // Wait for fade in to black (match CSS)
+    await new Promise(res => setTimeout(res, 550));
+
+    await fadeOutAudio(600);
+
+    // PRELOAD next project
+    const nextProject = (projectIdx + 1) % projects.length;
+    const next = projects[nextProject];
+    await Promise.all([
+      preloadImage(next.mainImg),
+      preloadImage(next.pageImg),
+      ...next.buttons.map((btn: ButtonImage) => preloadImage(btn.on).catch(()=>{})),
+      ...next.buttons.map((btn: ButtonImage) => preloadImage(btn.off).catch(()=>{})),
+      ...next.playlist.map(track => preloadImage(track.titleImg).catch(()=>{})),
+      ...next.playlist.map(track => preloadHowl(track.src).catch(()=>{})),
+    ]);
+
+    // Switch index, let React render
+    setProjectIdx(nextProject);
+    setTrackIdx(0);
+    await new Promise(res => setTimeout(res, 60));
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.volume = 1;
+    }
+
+    // FADE OUT
+    setFadeBlack(0);
+
+    setTimeout(() => {
+      setPressedIdx(null);
+      setFading(false);
+    }, 600);
+  }
+
   function handlePageBtn() {
     if (pageOpen || fading) return;
     playPageOnFx();
@@ -333,14 +383,14 @@ export default function Home() {
     setPageOpen(false);
   }
 
-  // Only show MainPage.png *once* after splash, before first interaction, above Fragments
-  useEffect(() => {
-    if (!mainPageDone && !loading && splashDone && projectIdx === 0) {
-      setMainPageVisible(true);
-    }
-  }, [mainPageDone, loading, splashDone, projectIdx]);
+  // MAINPAGE: ferme au clic
+  function handleMainPageClick() {
+    setMainPageVisible(false);
+    setMainPageDone(true);
+    setPageOpen(true); // Laisse l’intro Fragments ouverte juste après
+  }
 
-  // --- PAGE LOGIC ---
+  // --- Render
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -354,316 +404,269 @@ export default function Home() {
         className="fixed inset-0 flex justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw" }}
       >
-
-        {/* --- Black Fade Overlay --- */}
+        {/* FADE NOIR */}
         <div
           style={{
-            pointerEvents: fadeBlack === 1 ? "auto" : "none",
+            pointerEvents: fadeBlack > 0 ? "auto" : "none",
             opacity: fadeBlack,
             position: "fixed",
             inset: 0,
             background: "#000",
-            transition: "opacity 0.55s cubic-bezier(.7,0,.3,1)",
+            transition: "opacity .55s cubic-bezier(.7,0,.3,1)",
             zIndex: 20000,
           }}
         />
 
-        {/* --- Splash Loading Screen --- */}
-        {(loading || !splashDone) && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "#111",
-              zIndex: 30000,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: loading ? "default" : "pointer",
-              transition: "opacity 0.5s",
-              opacity: splashFading ? 0 : 1,
-            }}
-            onClick={() => {
-              if (!loading) {
-                setSplashFading(true);
-                pageOffSound.current?.play();
-                setTimeout(() => {
-                  setSplashDone(true);
-                  setSplashFading(false);
-                }, 500);
-              }
-            }}
-          >
-            <Image
-              src="/next/image/Loading.png"
-              alt="splash"
-              width={430}
-              height={620}
-              priority
-              style={{
-                width: "min(98vw, 430px)",
-                height: "auto",
-                objectFit: "contain",
-                maxHeight: "620px",
-                maxWidth: "430px",
-                userSelect: "none",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* Loading bar */}
+        <div
+          style={{
+            position: "relative",
+            width: "min(98vw, 430px)",
+            height: "min(85vh, calc(98vw * 1.44), 620px)",
+            maxHeight: "620px",
+            marginTop: "1vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* SPLASH/LOADING */}
+          {(loading || !splashDone) && (
             <div
               style={{
-                position: "absolute",
-                left: 0,
-                bottom: 0,
-                height: 4,
-                width: "100%",
-                background: "rgba(255,255,255,0.06)",
-                zIndex: 10001,
+                position: "fixed",
+                inset: 0,
+                background: "#111",
+                zIndex: 10000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: loading ? "default" : "pointer",
+                transition: "opacity 0.5s",
+                opacity: splashFading ? 0 : 1,
+              }}
+              onClick={() => {
+                if (!loading) {
+                  setSplashFading(true);
+                  pageOffSound.current?.play();
+                  setTimeout(() => {
+                    setSplashDone(true);
+                    setSplashFading(false);
+                  }, 500);
+                }
               }}
             >
-              <div
+              <Image
+                src="/next/image/Loading.png"
+                alt="splash"
+                width={430}
+                height={620}
+                priority
                 style={{
-                  height: "100%",
-                  width: `${Math.round(loadingProgress * 100)}%`,
-                  background: "#FFEB8A",
-                  transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
-                  borderRadius: 2,
+                  width: "min(98vw, 430px)",
+                  height: "auto",
+                  objectFit: "contain",
+                  maxHeight: "620px",
+                  maxWidth: "430px",
+                  userSelect: "none",
+                  pointerEvents: "none",
                 }}
               />
-            </div>
-          </div>
-        )}
 
-        {/* --- Main Page Overlay (only above Fragments, only once) --- */}
-        {mainPageVisible && projectIdx === 0 && !mainPageDone && (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: 25000,
-              background: "transparent", // allows to see behind!
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              setMainPageDone(true);
-              setMainPageVisible(false);
-              setPageOpen(true); // Show Fragments PAGE overlay after
-            }}
-          >
-            <Image
-              src="/next/image/MainPage.png"
-              alt="Main Welcome"
-              fill
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                zIndex: 25001,
-                userSelect: "none",
-                pointerEvents: "none",
-              }}
-              priority
-            />
-          </div>
-        )}
-
-        {/* --- Player UI, only if not loading or in splash --- */}
-        {(!loading && splashDone) && (
-          <div
-            style={{
-              position: "relative",
-              width: "min(98vw, 430px)",
-              height: "min(85vh, calc(98vw * 1.44), 620px)",
-              maxHeight: "620px",
-              marginTop: "1vh",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 10,
-            }}
-          >
-            {/* --- Main frame (background+frame) --- */}
-            <Image
-              src={project.mainImg}
-              alt="Main Visual Frame"
-              fill
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                background: "transparent",
-                zIndex: 2,
-                pointerEvents: "none",
-                userSelect: "none",
-              }}
-              priority
-            />
-
-            {/* --- Title image CROSSFADE --- */}
-            <Image
-              src={prevTitleImg}
-              alt="Previous Song Title"
-              fill
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                zIndex: 15,
-                pointerEvents: "none",
-                userSelect: "none",
-                opacity: isFadingTitle ? 1 : 0,
-                transition: "opacity 0.35s",
-                position: "absolute",
-              }}
-              priority
-            />
-            <Image
-              src={currentTrack.titleImg}
-              alt="Song Title"
-              fill
-              onLoad={handleTitleLoad}
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                zIndex: 16,
-                pointerEvents: "none",
-                userSelect: "none",
-                opacity: titleLoaded ? 1 : 0,
-                transition: "opacity 0.35s",
-                position: "absolute",
-              }}
-              priority
-            />
-
-            {/* --- PAGE OVERLAY: always same size as frame --- */}
-            {pageOpen && (
               <div
                 style={{
                   position: "absolute",
                   left: 0,
-                  top: 0,
+                  bottom: 0,
+                  height: 4,
                   width: "100%",
-                  height: "100%",
-                  zIndex: 30,
-                  cursor: "pointer",
+                  background: "rgba(255,255,255,0.06)",
+                  zIndex: 10001,
                 }}
-                onClick={handlePageClose}
               >
-                <Image
-                  src={project.pageImg}
-                  alt="Project Page"
-                  fill
+                <div
                   style={{
-                    objectFit: "contain",
-                    objectPosition: "center",
-                    zIndex: 31,
-                    pointerEvents: "none",
-                    userSelect: "none",
+                    height: "100%",
+                    width: `${Math.round(loadingProgress * 100)}%`,
+                    background: "#FFEB8A",
+                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
+                    borderRadius: 2,
                   }}
-                  priority
                 />
               </div>
-            )}
+            </div>
+          )}
 
-            {/* --- Render Button PNGs --- */}
-            {project.buttons.map((img, idx) => (
+          {/* --- Main frame (background+frame) --- */}
+          <Image
+            src={project.mainImg}
+            alt="Main Visual Frame"
+            fill
+            style={{
+              objectFit: "contain",
+              objectPosition: "center",
+              background: "transparent",
+              zIndex: 2,
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+            priority
+          />
+
+          {/* --- Title image CROSSFADE --- */}
+          <Image
+            src={prevTitleImg}
+            alt="Previous Song Title"
+            fill
+            style={{
+              objectFit: "contain",
+              objectPosition: "center",
+              zIndex: 15,
+              pointerEvents: "none",
+              userSelect: "none",
+              opacity: isFadingTitle ? 1 : 0,
+              transition: "opacity 0.35s",
+              position: "absolute",
+            }}
+            priority
+          />
+          <Image
+            src={currentTrack.titleImg}
+            alt="Song Title"
+            fill
+            onLoad={handleTitleLoad}
+            style={{
+              objectFit: "contain",
+              objectPosition: "center",
+              zIndex: 16,
+              pointerEvents: "none",
+              userSelect: "none",
+              opacity: titleLoaded ? 1 : 0,
+              transition: "opacity 0.35s",
+              position: "absolute",
+            }}
+            priority
+          />
+
+          {/* --- PAGE OVERLAY: always same size as frame --- */}
+          {pageOpen && (
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 30,
+                cursor: "pointer",
+              }}
+              onClick={handlePageClose}
+            >
               <Image
-                key={idx}
-                src={pressedIdx === idx ? img.on : img.off}
-                alt=""
+                src={project.pageImg}
+                alt="Project Page"
                 fill
                 style={{
                   objectFit: "contain",
                   objectPosition: "center",
-                  zIndex: 11,
+                  zIndex: 31,
                   pointerEvents: "none",
                   userSelect: "none",
                 }}
-                priority={idx === 0}
+                priority
               />
-            ))}
+            </div>
+          )}
 
-            {/* --- Button Hotzones (top + 5th) --- */}
-            <button
-              aria-label="Play"
+          {/* --- MAINPAGE.png overlay ONE TIME after splash for Fragments ONLY --- */}
+          {mainPageVisible && !mainPageDone && projectIdx === 0 && (
+            <div
               style={{
-                ...topButtonPositions[0],
                 position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor: pageOpen || pressedIdx === 0 || fading ? "default" : "pointer",
-                zIndex: 20,
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 10001,
+                cursor: "pointer",
+                background: "none",
+                pointerEvents: "auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-              onClick={handlePlay}
-              tabIndex={0}
-              disabled={pageOpen || pressedIdx === 0 || fading}
-            />
-            <button
-              aria-label="Pause"
-              style={{
-                ...topButtonPositions[1],
-                position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor: pageOpen || pressedIdx === 1 || fading ? "default" : "pointer",
-                zIndex: 20,
-              }}
-              onClick={handlePause}
-              tabIndex={0}
-              disabled={pageOpen || pressedIdx === 1 || fading}
-            />
-            <button
-              aria-label="Next Track"
-              style={{
-                ...topButtonPositions[2],
-                position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor: pageOpen || pressedIdx === 2 || fading ? "default" : "pointer",
-                zIndex: 20,
-              }}
-              onClick={handleNextTrack}
-              tabIndex={0}
-              disabled={pageOpen || pressedIdx === 2 || fading}
-            />
-            <button
-              aria-label="Next Project"
-              style={{
-                ...topButtonPositions[3],
-                position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor: pageOpen || pressedIdx === 3 || fading ? "default" : "pointer",
-                zIndex: 20,
-              }}
-              onClick={handleNextProject}
-              tabIndex={0}
-              disabled={pageOpen || pressedIdx === 3 || fading}
-            />
-            <button
-              aria-label="Show Project Page"
-              style={{
-                ...topButtonPositions[4],
-                position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor: pageOpen || fading ? "default" : "pointer",
-                zIndex: 20,
-              }}
-              onClick={handlePageBtn}
-              tabIndex={0}
-              disabled={pageOpen || fading}
-            />
+              onClick={handleMainPageClick}
+            >
+              <Image
+                src="/next/image/MainPage.png"
+                alt="Main Page"
+                fill
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 10002,
+                  userSelect: "none",
+                  pointerEvents: "none",
+                  background: "none"
+                }}
+                priority
+              />
+            </div>
+          )}
 
-            {/* --- Hidden audio player for actual music --- */}
-            <audio ref={audioRef} hidden src={currentTrack.src} />
-          </div>
-        )}
+          {/* --- Render Button PNGs --- */}
+          {project.buttons.map((img, idx) => (
+            <Image
+              key={idx}
+              src={pressedIdx === idx ? img.on : img.off}
+              alt=""
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 11,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority={idx === 0}
+            />
+          ))}
+
+          {/* --- Button Hotzones (top + 5th) --- */}
+          {topButtonPositions.map((pos, idx) => (
+            <button
+              key={idx}
+              aria-label={`Button ${idx + 1}`}
+              style={{
+                ...pos,
+                position: "absolute",
+                background: "transparent",
+                border: "none",
+                cursor:
+                  pageOpen || pressedIdx === idx || fading
+                    ? "default"
+                    : "pointer",
+                zIndex: 20,
+              }}
+              onClick={
+                idx === 0
+                  ? handlePlay
+                  : idx === 1
+                  ? handlePause
+                  : idx === 2
+                  ? handleNextTrack
+                  : idx === 3
+                  ? handleNextProject
+                  : idx === 4
+                  ? handlePageBtn
+                  : undefined
+              }
+              tabIndex={0}
+            />
+          ))}
+
+          {/* --- Hidden audio player for actual music --- */}
+          <audio ref={audioRef} hidden src={currentTrack.src} />
+        </div>
       </main>
     </>
   );
