@@ -79,7 +79,7 @@ const projects: Project[] = [
       { src: "/music/Fallcore/4AFriend.mp3", titleImg: "/next/image/Fallcore/Titles/4AFriend.png" },
     ],
   },
-   {
+  {
     mainImg: "/next/image/St4r/Components/St4rCF.png",
     pageImg: "/next/image/St4r/Components/St4rPAGE.png",
     buttons: [
@@ -97,7 +97,7 @@ const projects: Project[] = [
   },
 ];
 
-// --- PRELOAD HELPERS ---
+// --- Preload helpers ---
 function preloadImage(src: string) {
   return new Promise<void>((resolve, reject) => {
     const img = new window.Image();
@@ -130,14 +130,17 @@ export default function Home() {
   const [splashFading, setSplashFading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [playlistFade, setPlaylistFade] = useState<{ visible: boolean; opacity: number }>({ visible: false, opacity: 0 });
+  const [waitingProjectLoad, setWaitingProjectLoad] = useState(false);
   const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
   const [titleLoaded, setTitleLoaded] = useState(true);
   const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
   const [isFadingTitle, setIsFadingTitle] = useState(false);
+  const [pendingProject, setPendingProject] = useState<number | null>(null);
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
+  // Preload all resources at start (for loading splash)
   useEffect(() => {
     async function doPreload() {
       const imageList: string[] = [
@@ -237,6 +240,7 @@ export default function Home() {
     }
   }, [projectIdx]);
 
+  // --- Fade out audio ---
   function fadeOutAudio(duration = 1200) {
     if (!audioRef.current) return Promise.resolve();
     const audio = audioRef.current;
@@ -272,6 +276,46 @@ export default function Home() {
     pageOffSound.current?.play();
   }
 
+  // --- FADE SWITCH: project waits until images/audio are loaded before fade out ---
+  async function handleNextProject() {
+    if (pageOpen || playlistFade.visible || waitingProjectLoad) return;
+    playButtonFx();
+    setPressedIdx(3);
+
+    setPlaylistFade({ visible: true, opacity: 0 });
+    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
+
+    if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+    fadeOutAudio(1200);
+    setWaitingProjectLoad(true);
+
+    const nextProject = (projectIdx + 1) % projects.length;
+    setPendingProject(nextProject);
+
+    // Preload everything for the next project (mainImg, pageImg, *first* titleImg, first track audio)
+    const preloadAll = [
+      preloadImage(projects[nextProject].mainImg),
+      preloadImage(projects[nextProject].pageImg),
+      preloadImage(projects[nextProject].playlist[0].titleImg),
+      preloadHowl(projects[nextProject].playlist[0].src),
+    ];
+    await Promise.all(preloadAll);
+
+    setProjectIdx(nextProject);
+    setTrackIdx(0);
+    if (audioRef.current) audioRef.current.volume = 1;
+
+    // Wait just a bit, then fade out black
+    setTimeout(() => {
+      setPlaylistFade({ visible: true, opacity: 0 });
+      setTimeout(() => {
+        setPlaylistFade({ visible: false, opacity: 0 });
+        setWaitingProjectLoad(false);
+        setPressedIdx(null);
+      }, 1500);
+    }, 200);
+  }
+
   function handlePlay() {
     if (pressedIdx === 0 || pageOpen) return;
     playButtonFx();
@@ -295,27 +339,6 @@ export default function Home() {
       if (audioRef.current) audioRef.current.currentTime = 0;
       setPressedIdx(null);
     }, 600);
-  }
-  async function handleNextProject() {
-    if (pageOpen || playlistFade.visible) return;
-    playButtonFx();
-    setPressedIdx(3);
-    setPlaylistFade({ visible: true, opacity: 0 });
-    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
-    if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
-    fadeOutAudio(1200);
-    fadeTimeout.current = setTimeout(() => {
-      const nextProject = (projectIdx + 1) % projects.length;
-      setProjectIdx(nextProject);
-      setTrackIdx(0);
-      if (audioRef.current) audioRef.current.volume = 1;
-      setPlaylistFade({ visible: true, opacity: 1 });
-      setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 30);
-      fadeTimeout.current = setTimeout(() => {
-        setPlaylistFade({ visible: false, opacity: 0 });
-        setPressedIdx(null);
-      }, 1500);
-    }, 1500);
   }
   function handlePageBtn() {
     if (pageOpen) return;
@@ -451,7 +474,7 @@ export default function Home() {
           {/* --- Title image CROSSFADE --- */}
           <Image
             src={prevTitleImg}
-            alt="Previous Song Title"
+            alt=""
             fill
             style={{
               objectFit: "contain",
@@ -467,7 +490,7 @@ export default function Home() {
           />
           <Image
             src={currentTrack.titleImg}
-            alt="Song Title"
+            alt=""
             fill
             onLoad={handleTitleLoad}
             style={{
@@ -578,7 +601,7 @@ export default function Home() {
               position: "absolute",
               background: "transparent",
               border: "none",
-              cursor: pageOpen || pressedIdx === 3 ? "default" : "pointer",
+              cursor: pageOpen || pressedIdx === 3 || waitingProjectLoad ? "default" : "pointer",
               zIndex: 20,
             }}
             onClick={handleNextProject}
