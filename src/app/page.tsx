@@ -4,6 +4,7 @@ import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
 
+// --- Types
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
 type Project = {
@@ -21,6 +22,7 @@ const topButtonPositions: TopButtonPos[] = [
   { left: "24%", top: "76%", width: "52%", height: "8.7%" },
 ];
 
+// --- DATA projects (noms/images à adapter si besoin)
 const projects: Project[] = [
   {
     mainImg: "/next/image/Fragments/Components/FragmentsCF.png",
@@ -97,7 +99,7 @@ const projects: Project[] = [
   },
 ];
 
-// --- PRELOAD HELPERS ---
+// --- Preload Helpers
 function preloadImage(src: string) {
   return new Promise<void>((resolve, reject) => {
     const img = new window.Image();
@@ -120,16 +122,18 @@ function preloadHowl(src: string) {
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [projectIdx, setProjectIdx] = useState(0);
-  const [trackIdx, setTrackIdx] = useState(0);
+  const [projectIdx, setProjectIdx] = useState<number>(0);
+  const [trackIdx, setTrackIdx] = useState<number>(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
   const [pageOpen, setPageOpen] = useState(true);
-  const [pageSeen, setPageSeen] = useState<boolean[]>(() => projects.map(() => false));
+  const [mainPageVisible, setMainPageVisible] = useState(true);
+  const [pageSeen, setPageSeen] = useState(() => projects.map(() => false));
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [playlistFade, setPlaylistFade] = useState<{ visible: boolean; opacity: number }>({ visible: false, opacity: 0 });
+  const [fadeBlack, setFadeBlack] = useState(false); // true = noir opaque
+  const [waitingNext, setWaitingNext] = useState(false);
   const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
   const [titleLoaded, setTitleLoaded] = useState(true);
   const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
@@ -138,7 +142,7 @@ export default function Home() {
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
-  // PRELOAD
+  // --- PRELOAD ALL
   useEffect(() => {
     async function doPreload() {
       const imageList: string[] = [
@@ -149,6 +153,7 @@ export default function Home() {
           ...proj.playlist.map((track) => track.titleImg),
         ]),
         "/next/image/Loading.png",
+        "/next/image/Fragments/MainPage.png",
       ];
       const audioList: string[] = [
         "/sounds/Button.mp3",
@@ -174,12 +179,14 @@ export default function Home() {
     doPreload();
   }, []);
 
+  // --- Cleanup
   useEffect(() => {
     return () => {
       if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
     };
   }, []);
 
+  // --- BODY LOCK
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -189,12 +196,14 @@ export default function Home() {
     };
   }, []);
 
+  // --- MUSIC src update when track/project changes
   useEffect(() => {
     if (!audioRef.current) return;
     audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
     audioRef.current.load();
   }, [projectIdx, trackIdx]);
 
+  // --- Auto next when song ends
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -212,6 +221,7 @@ export default function Home() {
     return () => audio.removeEventListener("ended", onEnded);
   }, [projectIdx, trackIdx]);
 
+  // --- Crossfade logic for title image
   useEffect(() => {
     setIsFadingTitle(true);
     setTitleLoaded(false);
@@ -224,6 +234,7 @@ export default function Home() {
     }, 350);
   }
 
+  // --- PAGE OVERLAY SEEN LOGIC
   useEffect(() => {
     setPageSeen((seen) => seen.map((s, i) => (i === 0 ? true : s)));
   }, []);
@@ -235,8 +246,9 @@ export default function Home() {
         seen.map((s, i) => (i === projectIdx ? true : s))
       );
     }
-  }, [projectIdx, pageSeen]);
+  }, [projectIdx]);
 
+  // --- Helper: fade out audio volume smoothly
   function fadeOutAudio(duration = 1200) {
     if (!audioRef.current) return Promise.resolve();
     const audio = audioRef.current;
@@ -273,19 +285,19 @@ export default function Home() {
   }
 
   function handlePlay() {
-    if (pressedIdx === 0 || pageOpen) return;
+    if (pressedIdx === 0 || pageOpen || (projectIdx === 0 && mainPageVisible)) return;
     playButtonFx();
     audioRef.current?.play();
     setPressedIdx(0);
   }
   function handlePause() {
-    if (pressedIdx === 1 || pageOpen) return;
+    if (pressedIdx === 1 || pageOpen || (projectIdx === 0 && mainPageVisible)) return;
     playButtonFx();
     audioRef.current?.pause();
     setPressedIdx(1);
   }
   function handleNextTrack() {
-    if (pageOpen) return;
+    if (pageOpen || (projectIdx === 0 && mainPageVisible)) return;
     playButtonFx();
     setPressedIdx(2);
     setTimeout(() => {
@@ -296,29 +308,33 @@ export default function Home() {
       setPressedIdx(null);
     }, 600);
   }
+
+  // ---- Next Project Button
   async function handleNextProject() {
-    if (pageOpen || playlistFade.visible) return;
+    if (pageOpen || waitingNext || (projectIdx === 0 && mainPageVisible)) return;
     playButtonFx();
     setPressedIdx(3);
-    setPlaylistFade({ visible: true, opacity: 0 });
-    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
-    if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
-    fadeOutAudio(1200);
-    fadeTimeout.current = setTimeout(() => {
+    setFadeBlack(true);
+    setWaitingNext(true);
+    await fadeOutAudio(900);
+
+    // Simuler "wait" (on attend que tout ait changé)
+    setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
       if (audioRef.current) audioRef.current.volume = 1;
-      setPlaylistFade({ visible: true, opacity: 1 });
-      setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 30);
-      fadeTimeout.current = setTimeout(() => {
-        setPlaylistFade({ visible: false, opacity: 0 });
+      // Delay un peu pour charger l'image/buttons du prochain projet avant fade out
+      setTimeout(() => {
+        setFadeBlack(false);
         setPressedIdx(null);
-      }, 1500);
-    }, 1500);
+        setWaitingNext(false);
+      }, 700);
+    }, 900);
   }
+
   function handlePageBtn() {
-    if (pageOpen) return;
+    if (pageOpen || (projectIdx === 0 && mainPageVisible)) return;
     playPageOnFx();
     setPageOpen(true);
   }
@@ -327,6 +343,7 @@ export default function Home() {
     setPageOpen(false);
   }
 
+  // --- Main render
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -340,16 +357,17 @@ export default function Home() {
         className="fixed inset-0 flex justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw" }}
       >
-        {playlistFade.visible && (
+        {/* --- Fade black for project change or while waiting for load */}
+        {fadeBlack && (
           <div
             style={{
               position: "fixed",
               inset: 0,
-              background: "black",
-              opacity: playlistFade.opacity,
+              background: "#000",
+              opacity: 1,
               pointerEvents: "auto",
-              transition: "opacity 1.5s cubic-bezier(.7,0,.3,1)",
-              zIndex: 10001,
+              zIndex: 10002,
+              transition: "opacity 0.4s cubic-bezier(.7,0,.3,1)",
             }}
           />
         )}
@@ -366,13 +384,14 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
+          {/* --- Loading Splash: overlays everything until user clicks/taps --- */}
           {(loading || !splashDone) && (
             <div
               style={{
                 position: "fixed",
                 inset: 0,
                 background: "#111",
-                zIndex: 10000,
+                zIndex: 10010,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -407,7 +426,6 @@ export default function Home() {
                   pointerEvents: "none",
                 }}
               />
-
               <div
                 style={{
                   position: "absolute",
@@ -416,7 +434,7 @@ export default function Home() {
                   height: 4,
                   width: "100%",
                   background: "rgba(255,255,255,0.06)",
-                  zIndex: 10001,
+                  zIndex: 10012,
                 }}
               >
                 <div
@@ -513,6 +531,40 @@ export default function Home() {
             </div>
           )}
 
+          {/* --- MainPage OVERLAY (only above Fragments at start) --- */}
+          {projectIdx === 0 && mainPageVisible && splashDone && !loading && (
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 40,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onClick={() => setMainPageVisible(false)}
+            >
+              <Image
+                src="/next/image/Fragments/MainPage.png"
+                alt="MainPage"
+                fill
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 41,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  // Pas de background noir ! (pour voir la page dessous)
+                }}
+                priority
+              />
+            </div>
+          )}
+
           {/* --- Render Button PNGs --- */}
           {project.buttons.map((img, idx) => (
             <Image
@@ -532,43 +584,71 @@ export default function Home() {
           ))}
 
           {/* --- Button Hotzones (top + 5th) --- */}
-          {topButtonPositions.map((pos, idx) => (
-            <button
-              key={idx}
-              aria-label={["Play", "Pause", "Next Track", "Next Project", "Show Project Page"][idx]}
-              style={{
-                ...pos,
-                position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor:
-                  idx === 0 && (pageOpen || pressedIdx === 0)
-                    ? "default"
-                    : idx === 1 && (pageOpen || pressedIdx === 1)
-                    ? "default"
-                    : idx === 2 && (pageOpen || pressedIdx === 2)
-                    ? "default"
-                    : idx === 3 && (pageOpen || pressedIdx === 3)
-                    ? "default"
-                    : idx === 4 && pageOpen
-                    ? "default"
-                    : "pointer",
-                zIndex: 20,
-              }}
-              onClick={
-                idx === 0
-                  ? handlePlay
-                  : idx === 1
-                  ? handlePause
-                  : idx === 2
-                  ? handleNextTrack
-                  : idx === 3
-                  ? handleNextProject
-                  : handlePageBtn
-              }
-              tabIndex={0}
-            />
-          ))}
+          <button
+            aria-label="Play"
+            style={{
+              ...topButtonPositions[0],
+              position: "absolute",
+              background: "transparent",
+              border: "none",
+              cursor: pageOpen || (projectIdx === 0 && mainPageVisible) || pressedIdx === 0 ? "default" : "pointer",
+              zIndex: 20,
+            }}
+            onClick={handlePlay}
+            tabIndex={0}
+          />
+          <button
+            aria-label="Pause"
+            style={{
+              ...topButtonPositions[1],
+              position: "absolute",
+              background: "transparent",
+              border: "none",
+              cursor: pageOpen || (projectIdx === 0 && mainPageVisible) || pressedIdx === 1 ? "default" : "pointer",
+              zIndex: 20,
+            }}
+            onClick={handlePause}
+            tabIndex={0}
+          />
+          <button
+            aria-label="Next Track"
+            style={{
+              ...topButtonPositions[2],
+              position: "absolute",
+              background: "transparent",
+              border: "none",
+              cursor: pageOpen || (projectIdx === 0 && mainPageVisible) || pressedIdx === 2 ? "default" : "pointer",
+              zIndex: 20,
+            }}
+            onClick={handleNextTrack}
+            tabIndex={0}
+          />
+          <button
+            aria-label="Next Project"
+            style={{
+              ...topButtonPositions[3],
+              position: "absolute",
+              background: "transparent",
+              border: "none",
+              cursor: pageOpen || (projectIdx === 0 && mainPageVisible) || pressedIdx === 3 ? "default" : "pointer",
+              zIndex: 20,
+            }}
+            onClick={handleNextProject}
+            tabIndex={0}
+          />
+          <button
+            aria-label="Show Project Page"
+            style={{
+              ...topButtonPositions[4],
+              position: "absolute",
+              background: "transparent",
+              border: "none",
+              cursor: pageOpen || (projectIdx === 0 && mainPageVisible) ? "default" : "pointer",
+              zIndex: 20,
+            }}
+            onClick={handlePageBtn}
+            tabIndex={0}
+          />
 
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
@@ -577,3 +657,4 @@ export default function Home() {
     </>
   );
 }
+
