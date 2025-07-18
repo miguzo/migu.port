@@ -4,6 +4,7 @@ import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
 
+// ---------- TYPE DEFINITIONS ----------
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
 type Project = {
@@ -13,6 +14,7 @@ type Project = {
   playlist: { src: string; titleImg: string }[];
 };
 
+// ---------- DATA (Met à jour les chemins/images si besoin) ----------
 const topButtonPositions: TopButtonPos[] = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },
@@ -97,6 +99,10 @@ const projects: Project[] = [
   },
 ];
 
+// ... Project/button data (identique à avant, je n'y touche pas pour l'exemple)
+// Copie ici exactement le tableau projects[] comme dans ton script, rien à changer
+
+// ... (Préload helpers comme avant)
 function preloadImage(src: string) {
   return new Promise<void>((resolve, reject) => {
     const img = new window.Image();
@@ -118,6 +124,7 @@ function preloadHowl(src: string) {
 }
 
 export default function Home() {
+  // --- State ---
   const audioRef = useRef<HTMLAudioElement>(null);
   const [projectIdx, setProjectIdx] = useState<number>(0);
   const [trackIdx, setTrackIdx] = useState<number>(0);
@@ -128,19 +135,30 @@ export default function Home() {
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [playlistFade, setPlaylistFade] = useState<{ visible: boolean; opacity: number }>({ visible: false, opacity: 0 });
+
+  // NEW : main welcome page
+  const [mainPageVisible, setMainPageVisible] = useState(false);
+
+  // FADE
+  const [fade, setFade] = useState<"none" | "in" | "out">("none");
+  const [fadeBlack, setFadeBlack] = useState(true); // for true overlay black at start
   const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Waits
+  const [mainImgLoaded, setMainImgLoaded] = useState(false);
+  const [titleImgLoaded, setTitleImgLoaded] = useState(false);
+
+  // Title crossfade
   const [titleLoaded, setTitleLoaded] = useState(true);
   const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
   const [isFadingTitle, setIsFadingTitle] = useState(false);
+
+  // SFX
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
-  // New: For fade logic waiting
-  const [mainImgLoaded, setMainImgLoaded] = useState(false);
-  const [titleImgLoaded, setTitleImgLoaded] = useState(false);
-
+  // --- PRELOAD ---
   useEffect(() => {
     async function doPreload() {
       const imageList: string[] = [
@@ -151,6 +169,7 @@ export default function Home() {
           ...proj.playlist.map(track => track.titleImg),
         ]),
         "/next/image/Loading.png",
+        "/next/image/MainPage.png",
       ];
       const audioList: string[] = [
         "/sounds/Button.mp3",
@@ -176,12 +195,10 @@ export default function Home() {
     doPreload();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
-    };
-  }, []);
+  // CLEANUP
+  useEffect(() => () => { if (fadeTimeout.current) clearTimeout(fadeTimeout.current); }, []);
 
+  // Body scroll lock
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -191,12 +208,14 @@ export default function Home() {
     };
   }, []);
 
+  // Track changes
   useEffect(() => {
     if (!audioRef.current) return;
     audioRef.current.src = projects[projectIdx].playlist[trackIdx].src;
     audioRef.current.load();
   }, [projectIdx, trackIdx]);
 
+  // Audio ended: auto next
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -214,11 +233,11 @@ export default function Home() {
     return () => audio.removeEventListener("ended", onEnded);
   }, [projectIdx, trackIdx]);
 
+  // Title crossfade
   useEffect(() => {
     setIsFadingTitle(true);
     setTitleLoaded(false);
   }, [projectIdx, trackIdx]);
-
   function handleTitleLoad() {
     setTitleLoaded(true);
     setTimeout(() => {
@@ -227,6 +246,7 @@ export default function Home() {
     }, 350);
   }
 
+  // PAGE OVERLAY SEEN
   useEffect(() => {
     setPageSeen(seen => seen.map((s, i) => (i === 0 ? true : s)));
   }, []);
@@ -240,28 +260,50 @@ export default function Home() {
     }
   }, [projectIdx, pageSeen]);
 
-  // Reset image loaded flags for next project
+  // Reset image loaded flags on project/track change
   useEffect(() => {
     setMainImgLoaded(false);
     setTitleImgLoaded(false);
   }, [projectIdx, trackIdx]);
 
-  // Only fade out black once main image & title img are loaded!
+  // --------- FADE LOGIC ---------
+  // (1) At load, when loading screen closes, fade out to reveal project + show MainPage if first
+  useEffect(() => {
+    if (!loading && splashDone) {
+      setFade("in");
+      setFadeBlack(true);
+      setTimeout(() => setFade("none"), 600);
+      if (projectIdx === 0 && !mainPageVisible) {
+        setTimeout(() => setMainPageVisible(true), 700);
+      }
+    }
+  }, [loading, splashDone]);
+
+  // (2) On next project: stays black until images are loaded
   useEffect(() => {
     if (
+      fade === "out" &&
       mainImgLoaded &&
-      titleImgLoaded &&
-      playlistFade.visible &&
-      playlistFade.opacity === 1
+      titleImgLoaded
     ) {
       setTimeout(() => {
-        setPlaylistFade({ visible: true, opacity: 0 });
-        setTimeout(() => setPlaylistFade({ visible: false, opacity: 0 }), 1500);
-        setPressedIdx(null);
-      }, 100);
+        setFade("in");
+        setTimeout(() => setFade("none"), 600);
+      }, 150); // Optionally adjust this timing
     }
-  }, [mainImgLoaded, titleImgLoaded, playlistFade]);
+  }, [fade, mainImgLoaded, titleImgLoaded]);
 
+  // Fade functions
+  function startFadeOut() {
+    setFade("out");
+    setFadeBlack(true);
+  }
+  function endFade() {
+    setFade("in");
+    setTimeout(() => setFade("none"), 600);
+  }
+
+  // ---- Player controls (identique à avant)
   function fadeOutAudio(duration = 1200) {
     if (!audioRef.current) return Promise.resolve();
     const audio = audioRef.current;
@@ -283,34 +325,24 @@ export default function Home() {
       fadeStep();
     });
   }
-
-  function playButtonFx() {
-    buttonSound.current?.stop();
-    buttonSound.current?.play();
-  }
-  function playPageOnFx() {
-    pageOnSound.current?.stop();
-    pageOnSound.current?.play();
-  }
-  function playPageOffFx() {
-    pageOffSound.current?.stop();
-    pageOffSound.current?.play();
-  }
+  function playButtonFx() { buttonSound.current?.stop(); buttonSound.current?.play(); }
+  function playPageOnFx() { pageOnSound.current?.stop(); pageOnSound.current?.play(); }
+  function playPageOffFx() { pageOffSound.current?.stop(); pageOffSound.current?.play(); }
 
   function handlePlay() {
-    if (pressedIdx === 0 || pageOpen) return;
+    if (pressedIdx === 0 || pageOpen || fade !== "none" || mainPageVisible) return;
     playButtonFx();
     audioRef.current?.play();
     setPressedIdx(0);
   }
   function handlePause() {
-    if (pressedIdx === 1 || pageOpen) return;
+    if (pressedIdx === 1 || pageOpen || fade !== "none" || mainPageVisible) return;
     playButtonFx();
     audioRef.current?.pause();
     setPressedIdx(1);
   }
   function handleNextTrack() {
-    if (pageOpen) return;
+    if (pageOpen || fade !== "none" || mainPageVisible) return;
     playButtonFx();
     setPressedIdx(2);
     setTimeout(() => {
@@ -322,24 +354,21 @@ export default function Home() {
     }, 600);
   }
   async function handleNextProject() {
-    if (pageOpen || playlistFade.visible) return;
+    if (pageOpen || fade !== "none" || mainPageVisible) return;
     playButtonFx();
     setPressedIdx(3);
-    setPlaylistFade({ visible: true, opacity: 0 });
-    setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
-    if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
-    fadeOutAudio(1200);
-    fadeTimeout.current = setTimeout(() => {
+    startFadeOut();
+    await fadeOutAudio(1200);
+    setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
       if (audioRef.current) audioRef.current.volume = 1;
-      setPlaylistFade({ visible: true, opacity: 1 });
-      // Fade out only after images are loaded! (see useEffect above)
-    }, 1500);
+      // Wait for images (effect above will fade back in)
+    }, 600);
   }
   function handlePageBtn() {
-    if (pageOpen) return;
+    if (pageOpen || fade !== "none" || mainPageVisible) return;
     playPageOnFx();
     setPageOpen(true);
   }
@@ -348,6 +377,7 @@ export default function Home() {
     setPageOpen(false);
   }
 
+  // ----
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -361,16 +391,83 @@ export default function Home() {
         className="fixed inset-0 flex justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw" }}
       >
-        {playlistFade.visible && (
+        {/* --- LOADING SCREEN --- */}
+        {(loading || !splashDone) && (
           <div
             style={{
               position: "fixed",
               inset: 0,
-              background: "black",
-              opacity: playlistFade.opacity,
+              background: "#111",
+              zIndex: 10000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: loading ? "default" : "pointer",
+              transition: "opacity 0.5s",
+              opacity: splashFading ? 0 : 1,
+            }}
+            onClick={() => {
+              if (!loading) {
+                setSplashFading(true);
+                pageOffSound.current?.play();
+                setTimeout(() => {
+                  setSplashDone(true);
+                  setSplashFading(false);
+                }, 500);
+              }
+            }}
+          >
+            <Image
+              src="/next/image/Loading.png"
+              alt="splash"
+              width={430}
+              height={620}
+              priority
+              style={{
+                width: "min(98vw, 430px)",
+                height: "auto",
+                objectFit: "contain",
+                maxHeight: "620px",
+                maxWidth: "430px",
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                bottom: 0,
+                height: 4,
+                width: "100%",
+                background: "rgba(255,255,255,0.06)",
+                zIndex: 10001,
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${Math.round(loadingProgress * 100)}%`,
+                  background: "#FFEB8A",
+                  transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
+                  borderRadius: 2,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* --- BLACK FADE OVERLAY --- */}
+        {(fade === "out" || fade === "in") && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "#000",
+              opacity: fade === "out" ? 1 : 0,
               pointerEvents: "auto",
-              transition: "opacity 1.5s cubic-bezier(.7,0,.3,1)",
-              zIndex: 10001,
+              zIndex: 9999,
+              transition: "opacity 0.6s cubic-bezier(.7,0,.3,1)",
             }}
           />
         )}
@@ -385,73 +482,9 @@ export default function Home() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            pointerEvents: (fade === "out" || loading || mainPageVisible) ? "none" : "auto",
           }}
         >
-          {(loading || !splashDone) && (
-            <div
-              style={{
-                position: "fixed",
-                inset: 0,
-                background: "#111",
-                zIndex: 10000,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: loading ? "default" : "pointer",
-                transition: "opacity 0.5s",
-                opacity: splashFading ? 0 : 1,
-              }}
-              onClick={() => {
-                if (!loading) {
-                  setSplashFading(true);
-                  pageOffSound.current?.play();
-                  setTimeout(() => {
-                    setSplashDone(true);
-                    setSplashFading(false);
-                  }, 500);
-                }
-              }}
-            >
-              <Image
-                src="/next/image/Loading.png"
-                alt="splash"
-                width={430}
-                height={620}
-                priority
-                style={{
-                  width: "min(98vw, 430px)",
-                  height: "auto",
-                  objectFit: "contain",
-                  maxHeight: "620px",
-                  maxWidth: "430px",
-                  userSelect: "none",
-                  pointerEvents: "none",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  bottom: 0,
-                  height: 4,
-                  width: "100%",
-                  background: "rgba(255,255,255,0.06)",
-                  zIndex: 10001,
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${Math.round(loadingProgress * 100)}%`,
-                    background: "#FFEB8A",
-                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
-                    borderRadius: 2,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {/* --- Main frame (background+frame) --- */}
           <Image
             src={project.mainImg}
@@ -507,7 +540,7 @@ export default function Home() {
             priority
           />
 
-          {/* --- PAGE OVERLAY: always same size as frame --- */}
+          {/* --- PAGE OVERLAY --- */}
           {pageOpen && (
             <div
               style={{
@@ -625,6 +658,38 @@ export default function Home() {
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
         </div>
+
+        {/* -------- MAIN PAGE OVERLAY --------- */}
+        {mainPageVisible && projectIdx === 0 && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0)", // transparent
+              zIndex: 11000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "opacity 0.3s",
+            }}
+            onClick={() => setMainPageVisible(false)}
+          >
+            <Image
+              src="/next/image/MainPage.png"
+              alt="Main Welcome"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 11001,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+              priority
+            />
+          </div>
+        )}
       </main>
     </>
   );
