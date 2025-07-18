@@ -71,7 +71,7 @@ const projects: Project[] = [
       { on: "/next/image/Fallcore/Buttons/Button 1 ON.png", off: "/next/image/Fallcore/Buttons/Button 1 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 4 On.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
     ],
     playlist: [
@@ -438,39 +438,40 @@ export default function Home() {
           )}
 
           {/* --- MainPage overlay, ONLY after splashDone and ONLY once --- */}
-          {!mainPageSeen && splashDone && (
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                width: "100%",
-                height: "100%",
-                zIndex: 1000,
-                cursor: "pointer",
-                background: "rgba(0,0,0,0.92)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "opacity 0.4s"
-              }}
-              onClick={() => setMainPageSeen(true)}
-            >
-              <Image
-                src={MAIN_PAGE_IMG}
-                alt="Main Page"
-                fill
-                style={{
-                  objectFit: "contain",
-                  objectPosition: "center",
-                  zIndex: 1001,
-                  userSelect: "none",
-                  pointerEvents: "none",
-                }}
-                priority
-              />
-            </div>
-          )}
+       {!mainPageSeen && splashDone && (
+  <div
+    style={{
+      position: "absolute",
+      left: 0,
+      top: 0,
+      width: "100%",
+      height: "100%",
+      zIndex: 1000,
+      cursor: "pointer",
+      // background: "rgba(0,0,0,0.92)", // <-- REMOVED
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "opacity 0.4s"
+    }}
+    onClick={() => setMainPageSeen(true)}
+  >
+    <Image
+      src={MAIN_PAGE_IMG}
+      alt="Main Page"
+      fill
+      style={{
+        objectFit: "contain",
+        objectPosition: "center",
+        zIndex: 1001,
+        userSelect: "none",
+        pointerEvents: "none",
+      }}
+      priority
+    />
+  </div>
+)}
+
 
           {/* --- Main frame (background+frame) --- */}
           <Image
