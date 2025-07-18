@@ -125,7 +125,7 @@ export default function Home() {
   const [trackIdx, setTrackIdx] = useState<number>(0);
   const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
   const [pageOpen, setPageOpen] = useState(true);
-  const [pageSeen, setPageSeen] = useState(() => projects.map(() => false));
+  //const [pageSeen, setPageSeen] = useState(() => projects.map(() => false));
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
