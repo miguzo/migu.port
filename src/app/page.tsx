@@ -483,52 +483,77 @@ export default function Home() {
           ))}
 
           {/* --- Button Hotzones (top + 5th) --- */}
-          {topButtonPositions.map((pos, idx) => (
-            <button
-              key={idx}
-              aria-label={["Play", "Pause", "Next Track", "Next Project", "Show Project Page"][idx]}
-              style={{
-                ...pos,
-                position: "absolute",
-                background: "transparent",
-                border: "none",
-                cursor:
-                  (pageOpen || pressedIdx === idx || (idx === 3 && blackFade)) ? "default" : "pointer",
-                zIndex: 20,
-              }}
-              onClick={() => {
-                if (idx === 0) {
-                  if (pressedIdx === 0 || pageOpen) return;
-                  buttonSound.current?.play();
-                  audioRef.current?.play();
-                  setPressedIdx(0);
-                } else if (idx === 1) {
-                  if (pressedIdx === 1 || pageOpen) return;
-                  buttonSound.current?.play();
-                  audioRef.current?.pause();
-                  setPressedIdx(1);
-                } else if (idx === 2) {
-                  if (pageOpen) return;
-                  buttonSound.current?.play();
-                  setPressedIdx(2);
-                  setTimeout(() => {
-                    const nextIdx = (trackIdx + 1) % project.playlist.length;
-                    setTrackIdx(nextIdx);
-                    audioRef.current?.pause();
-                    if (audioRef.current) audioRef.current.currentTime = 0;
-                    setPressedIdx(null);
-                  }, 600);
-                } else if (idx === 3) {
-                  handleNextProject();
-                } else if (idx === 4) {
-                  if (pageOpen) return;
-                  pageOnSound.current?.play();
-                  setPageOpen(true);
-                }
-              }}
-              tabIndex={0}
-            />
-          ))}
+        {topButtonPositions.map((pos, idx) => (
+  <button
+    key={idx}
+    aria-label={["Play", "Pause", "Next Track", "Next Project", "Show Project Page"][idx]}
+    style={{
+      ...pos,
+      position: "absolute",
+      background: "transparent",
+      border: "none",
+      cursor:
+        (pageOpen || pressedIdx === idx || (idx === 3 && blackFade)) ? "default" : "pointer",
+      zIndex: 20,
+    }}
+    onClick={() => {
+      // --- PATCH BOUTON PLAY ---
+      if (idx === 0) {
+        if (pressedIdx === 0 || pageOpen) return;
+        buttonSound.current?.play();
+        if (audioRef.current) {
+          audioRef.current.volume = 1;
+          audioRef.current
+            .play()
+            .then(() => setPressedIdx(0))
+            .catch((e) => {
+              // Debug : log l'erreur si besoin
+              console.warn("Erreur lecture audio (mobile)", e);
+              setPressedIdx(0);
+            });
+        } else {
+          setPressedIdx(0);
+        }
+        return;
+      }
+      // --- PAUSE ---
+      if (idx === 1) {
+        if (pressedIdx === 1 || pageOpen) return;
+        buttonSound.current?.play();
+        audioRef.current?.pause();
+        setPressedIdx(1);
+        return;
+      }
+      // --- NEXT TRACK ---
+      if (idx === 2) {
+        if (pageOpen) return;
+        buttonSound.current?.play();
+        setPressedIdx(2);
+        setTimeout(() => {
+          const nextIdx = (trackIdx + 1) % project.playlist.length;
+          setTrackIdx(nextIdx);
+          audioRef.current?.pause();
+          if (audioRef.current) audioRef.current.currentTime = 0;
+          setPressedIdx(null);
+        }, 600);
+        return;
+      }
+      // --- NEXT PROJECT ---
+      if (idx === 3) {
+        handleNextProject();
+        return;
+      }
+      // --- PAGE BTN ---
+      if (idx === 4) {
+        if (pageOpen) return;
+        pageOnSound.current?.play();
+        setPageOpen(true);
+        return;
+      }
+    }}
+    tabIndex={0}
+  />
+))}
 
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
