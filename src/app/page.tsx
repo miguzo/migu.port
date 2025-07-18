@@ -236,38 +236,39 @@ async function handleNextProject() {
   if (pageOpen || playlistFade.visible) return;
   playButtonFx();
   setPressedIdx(3);
-  setPlaylistFade({ visible: true, opacity: 0 });
-  setTimeout(() => setPlaylistFade({ visible: true, opacity: 1 }), 10);
 
-  if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+  // 1. Fade noir direct
+  setPlaylistFade({ visible: true, opacity: 1 });
 
-  await fadeOutAudio(1200); // fade l’audio si besoin (tu peux await)
+  // 2. Fade audio (optionnel, tu peux await)
+  await fadeOutAudio(500);
 
+  // 3. Précharge images + audio du prochain projet
   const nextProject = (projectIdx + 1) % projects.length;
   const p = projects[nextProject];
-
-  // Prélance préchargement (toutes les images du projet + titres + boutons + pageImg + mainImg + 1er titre audio)
   const imagesToPreload = [
     p.mainImg, p.pageImg,
     ...p.buttons.flatMap(b => [b.on, b.off]),
     ...p.playlist.map(t => t.titleImg),
   ];
+
   await Promise.all([
     ...imagesToPreload.map(src => preloadImage(src).catch(() => {})),
     preloadHowl(p.playlist[0].src).catch(() => {})
   ]);
 
-  // Puis seulement switch de projet
+  // 4. Switch projet (on est encore sur écran noir !)
   setProjectIdx(nextProject);
   setTrackIdx(0);
   if (audioRef.current) audioRef.current.volume = 1;
 
-  // Puis fade out du noir après 100ms
+  // 5. Fade out du noir après 100ms
   setTimeout(() => setPlaylistFade({ visible: true, opacity: 0 }), 100);
+
   fadeTimeout.current = setTimeout(() => {
     setPlaylistFade({ visible: false, opacity: 0 });
     setPressedIdx(null);
-  }, 1000);
+  }, 800);
 }
 
   // Fade out audio helper
