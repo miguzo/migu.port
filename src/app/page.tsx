@@ -388,62 +388,70 @@ useEffect(() => {
         >
           {/* --- Loading Splash --- */}
           {(loading || !splashDone) && (
-            <div
-              style={{
-                position: "fixed",
-                inset: 0,
-                background: "#111",
-                zIndex: 10000,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: loading ? "default" : "pointer",
-                transition: "opacity 0.5s",
-                opacity: splashFading ? 0 : 1,
-              }}
-              onClick={handleSplashClick}
-            >
-              <Image
-                src="/next/image/Loading.png"
-                alt="splash"
-                width={430}
-                height={620}
-                priority
-                style={{
-                  width: "min(98vw, 430px)",
-                  height: "auto",
-                  objectFit: "contain",
-                  maxHeight: "620px",
-                  maxWidth: "430px",
-                  userSelect: "none",
-                  pointerEvents: "none",
-                }}
-              />
-              {/* Minimal loading bar */}
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  bottom: 0,
-                  height: 4,
-                  width: "100%",
-                  background: "rgba(255,255,255,0.06)",
-                  zIndex: 10001,
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${Math.round(loadingProgress * 100)}%`,
-                    background: "#FFEB8A",
-                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
-                    borderRadius: 2,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "#111",
+      zIndex: 10000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: loading ? "default" : "pointer",
+      transition: "opacity 0.5s",
+      opacity: splashFading ? 0 : 1,
+    }}
+    onClick={handleSplashClick}
+  >
+    <Image
+      src="/next/image/Loading.png"
+      alt="splash"
+      width={430}
+      height={620}
+      priority
+      style={{
+        width: "min(98vw, 430px)",
+        height: "auto",
+        objectFit: "contain",
+        maxHeight: "620px",
+        maxWidth: "430px",
+        userSelect: "none",
+        pointerEvents: "none",
+      }}
+    />
+    {/* Minimal loading bar */}
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        bottom: 0,
+        height: 4,
+        width: "100%",
+        background: "rgba(255,255,255,0.06)",
+        zIndex: 10001,
+      }}
+    >
+      <div
+        style={{
+          height: "100%",
+          width: `${Math.round(loadingProgress * 100)}%`,
+          background: "#FFEB8A",
+          transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
+          borderRadius: 2,
+        }}
+      />
+    </div>
+    {/* PATCH: Preload MainPage.png */}
+    <Image
+      src="/next/image/MainPage.png"
+      alt=""
+      style={{ display: "none" }}
+      width={10}
+      height={10}
+      priority
+    />
+  </div>
+)}
           {/* --- Main frame (background+frame) --- */}
           <Image
             src={project.mainImg}
