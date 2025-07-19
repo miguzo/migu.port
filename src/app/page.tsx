@@ -573,21 +573,27 @@ export default function Home() {
 
           {/* --- Hidden audio player --- */}
           <audio
-            ref={audioRef}
-            hidden
-            src={currentTrack.src}
-            onEnded={() => {
-              const nextIdx = (trackIdx + 1) % project.playlist.length;
-              setTrackIdx(nextIdx);
-              setPressedIdx(0);
-              setTimeout(() => {
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                  audioRef.current.play();
-                }
-              }, 30);
-            }}
-          />
+  ref={audioRef}
+  hidden
+  src={currentTrack.src}
+  onEnded={() => {
+  const nextIdx = (trackIdx + 1) % project.playlist.length;
+  setTrackIdx(nextIdx);
+  setPressedIdx(null);
+
+  setTimeout(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.load();
+
+      audioRef.current.oncanplaythrough = () => {
+        audioRef.current?.play().then(() => setPressedIdx(0)).catch(() => setPressedIdx(null));
+        audioRef.current!.oncanplaythrough = null; // the ! is now safe, since we checked above
+      };
+    }
+  }, 30);
+}}
+/>
         
         </div>
       </main>
