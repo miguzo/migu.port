@@ -20,7 +20,7 @@ const TOP_BUTTON_POSITIONS: TopButtonPos[] = [
   { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "24%", top: "76%", width: "52%", height: "8.7%" },
-  { left: "45%", top: "85%", width: "10%", height: "5%" }, // Button 6 (AboutMe)
+  { left: "0%", top: "35%", width: "9%", height: "30%" }, // Button 6 (AboutMe)
 ];
 
 // FILL IN YOUR FULL PROJECTS ARRAY (with 6 buttons in each)
@@ -681,9 +681,9 @@ export default function Home() {
                 href="mailto:igordubreucq.pro@gmail.com"
                 style={{
                   position: "absolute",
-                  left: "35%",    // <-- Tweak these
-                  top: "50%",     // <-- Tweak these
-                  width: "30%",   // <-- Tweak these
+                  left: "53%",    // <-- Tweak these
+                  top: "51%",     // <-- Tweak these
+                  width: "15%",   // <-- Tweak these
                   height: "7%",   // <-- Tweak these
                   zIndex: 10005,
                   cursor: "pointer",
@@ -700,9 +700,9 @@ export default function Home() {
                 rel="noopener noreferrer"
                 style={{
                   position: "absolute",
-                  left: "35%",   // <-- Tweak these
-                  top: "65%",    // <-- Tweak these
-                  width: "30%",  // <-- Tweak these
+                  left: "43%",   // <-- Tweak these
+                  top: "44%",    // <-- Tweak these
+                  width: "24%",  // <-- Tweak these
                   height: "7%",  // <-- Tweak these
                   zIndex: 10005,
                   cursor: "pointer",
