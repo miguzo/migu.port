@@ -560,7 +560,7 @@ export default function Home() {
                     width: link.width,
                     height: link.height,
                     zIndex: 32,
-                    cursor: "pointer",
+                    cursor: "help",
                     display: "block",
                   }}
                   onClick={e => e.stopPropagation()}
