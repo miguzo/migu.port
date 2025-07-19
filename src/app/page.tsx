@@ -22,8 +22,6 @@ const TOP_BUTTON_POSITIONS: TopButtonPos[] = [
   { left: "24%", top: "76%", width: "52%", height: "8.7%" },
   { left: "0%", top: "35%", width: "9%", height: "30%" }, // Button 6 (AboutMe)
 ];
-
-// FILL IN YOUR FULL PROJECTS ARRAY (with 6 buttons in each)
 const projects: Project[] = [
   {
     mainImg: "/next/image/Fragments/Components/FragmentsCF.png",
@@ -158,7 +156,11 @@ export default function Home() {
   const [trackIdx, setTrackIdx] = useState(0);
   const [pressedIdx, setPressedIdx] = useState<null | number>(null);
   const [aboutMeOpen, setAboutMeOpen] = useState(false);
+
+  // overlay state: starts open, auto-opens only once per visit
   const [pageOpen, setPageOpen] = useState(true);
+  const [hasSeenProjectPage, setHasSeenProjectPage] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [mainPageLoaded, setMainPageLoaded] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
@@ -216,6 +218,15 @@ export default function Home() {
     };
   }, []);
 
+  // --- Only show page overlay once per visit ---
+  useEffect(() => {
+    if (!hasSeenProjectPage) {
+      setPageOpen(true);
+      setHasSeenProjectPage(true);
+    }
+    // if already seen, don't re-open on project change
+  }, [hasSeenProjectPage]);
+
   // --- SPLASH (lock until everything is loaded) ---
   const handleSplashClick = useCallback(() => {
     if (!loading && mainPageLoaded) {
@@ -261,7 +272,6 @@ export default function Home() {
   }, []);
 
   // --- Button Handlers ---
- // const [audioLoading, setAudioLoading] = useState(false);
   const buttonHandlers = [
     // Play
     useCallback(() => {
@@ -274,10 +284,8 @@ export default function Home() {
         audioRef.current.volume = 1;
         audioRef.current.play();
       } else if (audioRef.current) {
-        //setAudioLoading(true);
         audioRef.current.load();
         audioRef.current.oncanplaythrough = () => {
-          //setAudioLoading(false);
           audioRef.current?.play();
         };
       }
@@ -304,7 +312,7 @@ export default function Home() {
         }
         setPressedIdx(null);
       }, 300); // Quicker feedback
-    }, [pageOpen, trackIdx, project.playlist.length, aboutMeOpen]),
+    }, [pageOpen, trackIdx, project, aboutMeOpen]),
     // Next Project
     handleNextProject,
     // Show Project Page
@@ -444,85 +452,84 @@ export default function Home() {
 
           {/* --- PAGE OVERLAY: always same size as frame --- */}
           {pageOpen && (
-  <div
-    style={{
-      position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
-      zIndex: 30, cursor: "pointer",
-    }}
-    onClick={() => {
-      pageOffSound.current?.play();
-      setPageOpen(false);
-    }}
-  >
-    <Image
-      src={project.pageImg}
-      alt="Project Page"
-      fill
-      style={{
-        objectFit: "contain", objectPosition: "center",
-        zIndex: 31, pointerEvents: "none", userSelect: "none",
-      }}
-      priority
-    />
-    {/* --- Place the three links here --- */}
-    {projectIdx === 1 && ( // Aggragate
-      <>
-        <a
-          href="https://ninofiliu.com/aggregate/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            position: "absolute",
-            left: "33.5%",
-            top: "43%",
-            width: "19%",
-            height: "5%",
-            zIndex: 32,
-            cursor: "pointer",
-            display: "block",
-          }}
-          onClick={e => e.stopPropagation()}
-          aria-label="Aggregate Site"
-        />
-        <a
-          href="https://www.instagram.com/moulsssss/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            position: "absolute",
-            left: "55%",
-            top: "47%",
-            width: "23%",
-            height: "5%",
-            zIndex: 32,
-            cursor: "pointer",
-            display: "block",
-          }}
-          onClick={e => e.stopPropagation()}
-          aria-label="Moul Instagram"
-        />
-        <a
-          href="https://distraction.fun/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            position: "absolute",
-            left: "55%",
-            top: "54%",
-            width: "18%",
-            height: "7%",
-            zIndex: 32,
-            cursor: "pointer",
-            display: "block",
-          }}
-          onClick={e => e.stopPropagation()}
-          aria-label="Distraction Site"
-        />
-      </>
-    )}
-  </div>
-)}
-
+            <div
+              style={{
+                position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
+                zIndex: 30, cursor: "pointer",
+              }}
+              onClick={() => {
+                pageOffSound.current?.play();
+                setPageOpen(false);
+              }}
+            >
+              <Image
+                src={project.pageImg}
+                alt="Project Page"
+                fill
+                style={{
+                  objectFit: "contain", objectPosition: "center",
+                  zIndex: 31, pointerEvents: "none", userSelect: "none",
+                }}
+                priority
+              />
+              {/* --- Place the three links here --- */}
+              {projectIdx === 1 && ( // Aggragate
+                <>
+                  <a
+                    href="https://ninofiliu.com/aggregate/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      left: "33.5%",
+                      top: "43%",
+                      width: "19%",
+                      height: "5%",
+                      zIndex: 32,
+                      cursor: "pointer",
+                      display: "block",
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    aria-label="Aggregate Site"
+                  />
+                  <a
+                    href="https://www.instagram.com/moulsssss/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      left: "55%",
+                      top: "47%",
+                      width: "23%",
+                      height: "5%",
+                      zIndex: 32,
+                      cursor: "pointer",
+                      display: "block",
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    aria-label="Moul Instagram"
+                  />
+                  <a
+                    href="https://distraction.fun/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      left: "55%",
+                      top: "54%",
+                      width: "18%",
+                      height: "7%",
+                      zIndex: 32,
+                      cursor: "pointer",
+                      display: "block",
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    aria-label="Distraction Site"
+                  />
+                </>
+              )}
+            </div>
+          )}
 
           {/* --- MAINPAGE overlay just after splash, once --- */}
           {mainPageVisible && (
@@ -630,28 +637,28 @@ export default function Home() {
 
           {/* --- Hidden audio player --- */}
           <audio
-  ref={audioRef}
-  hidden
-  src={currentTrack.src}
-  onEnded={() => {
-  const nextIdx = (trackIdx + 1) % project.playlist.length;
-  setTrackIdx(nextIdx);
-  setPressedIdx(null);
+            ref={audioRef}
+            hidden
+            src={currentTrack.src}
+            onEnded={() => {
+              const nextIdx = (trackIdx + 1) % project.playlist.length;
+              setTrackIdx(nextIdx);
+              setPressedIdx(null);
 
-  setTimeout(() => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.load();
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                  audioRef.current.load();
 
-      audioRef.current.oncanplaythrough = () => {
-        audioRef.current?.play().then(() => setPressedIdx(0)).catch(() => setPressedIdx(null));
-        audioRef.current!.oncanplaythrough = null; // the ! is now safe, since we checked above
-      };
-    }
-  }, 30);
-}}
-/>
-        
+                  audioRef.current.oncanplaythrough = () => {
+                    audioRef.current?.play().then(() => setPressedIdx(0)).catch(() => setPressedIdx(null));
+                    audioRef.current!.oncanplaythrough = null; // the ! is now safe
+                  };
+                }
+              }, 30);
+            }}
+          />
+
         </div>
       </main>
     </>
