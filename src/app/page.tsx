@@ -53,17 +53,17 @@ const projects: Project[] = [
     links: [
       {
         href: "https://iconiaavantgarde.com/victor-clavelly-les-fragments-collection//",
-        left: "32%",
-        top: "47%",
-        width: "36%",
+        left: "25%",
+        top: "56%",
+        width: "25%",
         height: "7%",
         label: "Fragments Site"
       },
        {
         href: "https://instagram.com/victorclavelly",
-        left: "32%",
-        top: "47%",
-        width: "36%",
+        left: "30%",
+        top: "49%",
+        width: "30%",
         height: "7%",
         label: "VC Instagram"
       }
@@ -138,9 +138,9 @@ const projects: Project[] = [
     links: [
       {
         href: "https://www.youtube.com/watch?v=9vqVzGTkRU4",
-        left: "34%",
-        top: "42%",
-        width: "33%",
+        left: "63%",
+        top: "60%",
+        width: "15%",
         height: "7%",
         label: "Fallcore Velith"
       }
@@ -165,16 +165,16 @@ const projects: Project[] = [
     links: [
       {
         href: "https://www.lefresnoy.net/en/exposition/1949/oeuvre/1900/",
-        left: "36%",
-        top: "50%",
-        width: "31%",
+        left: "60%",
+        top: "44%",
+        width: "15%",
         height: "6%",
         label: "St4r Fresnoy"
       },
        {
         href: "https://www.instagram.com/juliatarissan/",
-        left: "36%",
-        top: "50%",
+        left: "45%",
+        top: "58%",
         width: "31%",
         height: "6%",
         label: "St4r Julia"
