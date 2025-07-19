@@ -473,10 +473,10 @@ export default function Home() {
           rel="noopener noreferrer"
           style={{
             position: "absolute",
-            left: "20%",
-            top: "60%",
-            width: "18%",
-            height: "7%",
+            left: "33.5%",
+            top: "43%",
+            width: "19%",
+            height: "5%",
             zIndex: 32,
             cursor: "pointer",
             display: "block",
@@ -490,10 +490,10 @@ export default function Home() {
           rel="noopener noreferrer"
           style={{
             position: "absolute",
-            left: "42%",
-            top: "60%",
-            width: "18%",
-            height: "7%",
+            left: "55%",
+            top: "47%",
+            width: "23%",
+            height: "5%",
             zIndex: 32,
             cursor: "pointer",
             display: "block",
@@ -507,8 +507,8 @@ export default function Home() {
           rel="noopener noreferrer"
           style={{
             position: "absolute",
-            left: "64%",
-            top: "60%",
+            left: "55%",
+            top: "54%",
             width: "18%",
             height: "7%",
             zIndex: 32,
