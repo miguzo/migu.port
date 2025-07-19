@@ -178,6 +178,9 @@ export default function Home() {
   const [blackOpacity, setBlackOpacity] = useState(0);
   const [mainPageVisible, setMainPageVisible] = useState(false);
 
+  // PATCH: Track if MainPage.png is loaded
+  const [mainPageLoaded, setMainPageLoaded] = useState(false);
+
   // --- SFX ---
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
@@ -187,7 +190,7 @@ export default function Home() {
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
-  // --- Preload ---
+  // --- Preload --- (unchanged)
   useEffect(() => {
     let isMounted = true;
     async function doPreload() {
@@ -227,7 +230,7 @@ export default function Home() {
     return () => { isMounted = false; };
   }, []);
 
-  // --- Lock scroll ---
+  // --- Lock scroll --- (unchanged)
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -237,9 +240,9 @@ export default function Home() {
     };
   }, []);
 
-  // --- Splash handling ---
+  // PATCH: Only allow splash to close if MainPage.png is loaded
   const handleSplashClick = useCallback(() => {
-    if (!loading) {
+    if (!loading && mainPageLoaded) {
       setSplashFading(true);
       setTimeout(() => {
         setSplashDone(true);
@@ -247,9 +250,9 @@ export default function Home() {
         setMainPageVisible(true);
       }, 500);
     }
-  }, [loading]);
+  }, [loading, mainPageLoaded]);
 
-  // --- Next project with fade ---
+  // --- Next project with fade --- (unchanged)
   const handleNextProject = useCallback(async () => {
     if (pageOpen || blackFade) return;
     buttonSound.current?.play();
@@ -274,32 +277,30 @@ export default function Home() {
     }, 500);
   }, [pageOpen, blackFade, projectIdx]);
 
-  // --- Title crossfade ---
- // Only fade when the project changes
-useEffect(() => {
-  setIsFadingTitle(true);
-  setTitleLoaded(false);
-}, [projectIdx]);
+  // --- Title crossfade --- (unchanged)
+  useEffect(() => {
+    setIsFadingTitle(true);
+    setTitleLoaded(false);
+  }, [projectIdx]);
 
-function handleTitleLoad() {
-  setTitleLoaded(true);
-  setTimeout(() => {
+  function handleTitleLoad() {
+    setTitleLoaded(true);
+    setTimeout(() => {
+      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+      setIsFadingTitle(false);
+    }, 350);
+  }
+
+  useEffect(() => {
     setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
     setIsFadingTitle(false);
-  }, 350);
-}
-
-// For track changes, update title instantly
-useEffect(() => {
-  setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
-  setIsFadingTitle(false);
-  setTitleLoaded(true);
-}, [trackIdx]);
+    setTitleLoaded(true);
+  }, [trackIdx]);
 
   // --- Main page close ---
   const handleCloseMainPage = useCallback(() => setMainPageVisible(false), []);
 
-  // --- Button Handlers ---
+  // --- Button Handlers --- (unchanged)
   const buttonHandlers = [
     // Play
     useCallback(() => {
@@ -354,6 +355,8 @@ useEffect(() => {
       <Head>
         <title>Victor Clavelly</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait" />
+        {/* PATCH: browser-level preload as extra safety (optional) */}
+        <link rel="preload" as="image" href="/next/image/MainPage.png" />
       </Head>
       <main
         className="fixed inset-0 flex justify-center bg-[#19191b]"
@@ -388,70 +391,87 @@ useEffect(() => {
         >
           {/* --- Loading Splash --- */}
           {(loading || !splashDone) && (
-  <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      background: "#111",
-      zIndex: 10000,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: loading ? "default" : "pointer",
-      transition: "opacity 0.5s",
-      opacity: splashFading ? 0 : 1,
-    }}
-    onClick={handleSplashClick}
-  >
-    <Image
-      src="/next/image/Loading.png"
-      alt="splash"
-      width={430}
-      height={620}
-      priority
-      style={{
-        width: "min(98vw, 430px)",
-        height: "auto",
-        objectFit: "contain",
-        maxHeight: "620px",
-        maxWidth: "430px",
-        userSelect: "none",
-        pointerEvents: "none",
-      }}
-    />
-    {/* Minimal loading bar */}
-    <div
-      style={{
-        position: "absolute",
-        left: 0,
-        bottom: 0,
-        height: 4,
-        width: "100%",
-        background: "rgba(255,255,255,0.06)",
-        zIndex: 10001,
-      }}
-    >
-      <div
-        style={{
-          height: "100%",
-          width: `${Math.round(loadingProgress * 100)}%`,
-          background: "#FFEB8A",
-          transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
-          borderRadius: 2,
-        }}
-      />
-    </div>
-    {/* PATCH: Preload MainPage.png */}
-    <Image
-      src="/next/image/MainPage.png"
-      alt=""
-      style={{ display: "none" }}
-      width={10}
-      height={10}
-      priority
-    />
-  </div>
-)}
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "#111",
+                zIndex: 10000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: loading || !mainPageLoaded ? "default" : "pointer", // PATCH: lock cursor if not loaded
+                transition: "opacity 0.5s",
+                opacity: splashFading ? 0 : 1,
+              }}
+              onClick={handleSplashClick}
+            >
+              <Image
+                src="/next/image/Loading.png"
+                alt="splash"
+                width={430}
+                height={620}
+                priority
+                style={{
+                  width: "min(98vw, 430px)",
+                  height: "auto",
+                  objectFit: "contain",
+                  maxHeight: "620px",
+                  maxWidth: "430px",
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}
+              />
+              {/* Minimal loading bar */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  bottom: 0,
+                  height: 4,
+                  width: "100%",
+                  background: "rgba(255,255,255,0.06)",
+                  zIndex: 10001,
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.round(loadingProgress * 100)}%`,
+                    background: "#FFEB8A",
+                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
+                    borderRadius: 2,
+                  }}
+                />
+              </div>
+              {/* PATCH: Preload MainPage.png and track when loaded */}
+              <Image
+                src="/next/image/MainPage.png"
+                alt=""
+                style={{ display: "none" }}
+                width={10}
+                height={10}
+                priority
+                onLoad={() => setMainPageLoaded(true)}
+              />
+              {/* PATCH: Optionally show a spinner if everything else is loaded except MainPage.png */}
+              {(!loading && !mainPageLoaded) && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "55%",
+                    width: "100%",
+                    textAlign: "center",
+                    color: "#fff",
+                    fontSize: 16,
+                  }}
+                >
+                  Loading main page image...
+                </div>
+              )}
+            </div>
+          )}
+
           {/* --- Main frame (background+frame) --- */}
           <Image
             src={project.mainImg}
@@ -469,60 +489,60 @@ useEffect(() => {
           />
 
           {/* --- Title image CROSSFADE --- */}
-        {isFadingTitle ? (
-  <>
-    <Image
-      src={prevTitleImg}
-      alt="Previous Song Title"
-      fill
-      style={{
-        objectFit: "contain",
-        objectPosition: "center",
-        zIndex: 15,
-        pointerEvents: "none",
-        userSelect: "none",
-        opacity: 1,
-        transition: "opacity 0.35s",
-        position: "absolute",
-      }}
-      priority
-    />
-    <Image
-      src={projects[projectIdx].playlist[trackIdx].titleImg}
-      alt="Song Title"
-      fill
-      onLoad={handleTitleLoad}
-      style={{
-        objectFit: "contain",
-        objectPosition: "center",
-        zIndex: 16,
-        pointerEvents: "none",
-        userSelect: "none",
-        opacity: titleLoaded ? 1 : 0,
-        transition: "opacity 0.35s",
-        position: "absolute",
-      }}
-      priority
-    />
-  </>
-) : (
-  <Image
-    src={projects[projectIdx].playlist[trackIdx].titleImg}
-    alt="Song Title"
-    fill
-    style={{
-      objectFit: "contain",
-      objectPosition: "center",
-      zIndex: 16,
-      pointerEvents: "none",
-      userSelect: "none",
-      opacity: 1,
-      transition: "none",
-      position: "absolute",
-    }}
-    priority
-  />
-)}
+          {isFadingTitle ? (
+            <>
+              <Image
+                src={prevTitleImg}
+                alt="Previous Song Title"
+                fill
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 15,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  opacity: 1,
+                  transition: "opacity 0.35s",
+                  position: "absolute",
+                }}
+                priority
+              />
+              <Image
+                src={projects[projectIdx].playlist[trackIdx].titleImg}
+                alt="Song Title"
+                fill
+                onLoad={handleTitleLoad}
+                style={{
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 16,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  opacity: titleLoaded ? 1 : 0,
+                  transition: "opacity 0.35s",
+                  position: "absolute",
+                }}
+                priority
+              />
+            </>
+          ) : (
+            <Image
+              src={projects[projectIdx].playlist[trackIdx].titleImg}
+              alt="Song Title"
+              fill
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 16,
+                pointerEvents: "none",
+                userSelect: "none",
+                opacity: 1,
+                transition: "none",
+                position: "absolute",
+              }}
+              priority
+            />
+          )}
 
           {/* --- PAGE OVERLAY: always same size as frame --- */}
           {pageOpen && (
@@ -626,5 +646,3 @@ useEffect(() => {
     </>
   );
 }
-
-// NOTE: Don't forget to fill in your projects[] array from your original code!
