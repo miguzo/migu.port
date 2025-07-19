@@ -417,8 +417,8 @@ export default function Home() {
   <div
     style={{
       position: "absolute",
-      left: "40%",
-      top: "35%",
+      left: "46%",
+      top: "30%",
       width: "60vw",
       height: "60vw",
       maxWidth: "600px",
