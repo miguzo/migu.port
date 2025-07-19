@@ -412,7 +412,28 @@ export default function Home() {
         <link rel="preload" as="image" href="/next/image/MainPage.png" />
         <link rel="preload" as="image" href="/next/image/AboutMe.png" />
       </Head>
-      <main className="fixed inset-0 flex justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw" }}>
+    <main className="fixed inset-0 flex justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
+  {/* --- Spherical Glow BG --- */}
+  <div
+    style={{
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      width: "120vw",
+      height: "120vw",
+      maxWidth: "1200px",
+      maxHeight: "1200px",
+      transform: "translate(-50%, -50%)",
+      background: "radial-gradient(circle, #e1c68355 0%, #19191b 70%, #19191b 100%)",
+      filter: "blur(80px)",
+      opacity: 0.7,
+      zIndex: 0,
+      pointerEvents: "none",
+      userSelect: "none",
+    }}
+    aria-hidden
+  />
+
         {/* --- FADE NOIR FULLSCREEN --- */}
         {blackFade && (
           <div
