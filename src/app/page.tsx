@@ -261,7 +261,7 @@ export default function Home() {
   }, []);
 
   // --- Button Handlers ---
-  const [audioLoading, setAudioLoading] = useState(false);
+ // const [audioLoading, setAudioLoading] = useState(false);
   const buttonHandlers = [
     // Play
     useCallback(() => {
@@ -274,10 +274,10 @@ export default function Home() {
         audioRef.current.volume = 1;
         audioRef.current.play();
       } else if (audioRef.current) {
-        setAudioLoading(true);
+        //setAudioLoading(true);
         audioRef.current.load();
         audioRef.current.oncanplaythrough = () => {
-          setAudioLoading(false);
+          //setAudioLoading(false);
           audioRef.current?.play();
         };
       }
@@ -388,8 +388,8 @@ export default function Home() {
                 <div
                   style={{
                     height: "100%", width: `${Math.round(loadingProgress * 100)}%`,
-                    background: "#d6cfafff",
-                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)", borderRadius: 16,
+                    background: "#FFEB8A",
+                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)", borderRadius: 2,
                   }}
                 />
               </div>
@@ -588,7 +588,7 @@ export default function Home() {
               }, 30);
             }}
           />
-   
+        
         </div>
       </main>
     </>
