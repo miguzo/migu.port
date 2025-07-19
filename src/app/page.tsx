@@ -444,28 +444,85 @@ export default function Home() {
 
           {/* --- PAGE OVERLAY: always same size as frame --- */}
           {pageOpen && (
-            <div
-              style={{
-                position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
-                zIndex: 30, cursor: "pointer",
-              }}
-              onClick={() => {
-                pageOffSound.current?.play();
-                setPageOpen(false);
-              }}
-            >
-              <Image
-                src={project.pageImg}
-                alt="Project Page"
-                fill
-                style={{
-                  objectFit: "contain", objectPosition: "center",
-                  zIndex: 31, pointerEvents: "none", userSelect: "none",
-                }}
-                priority
-              />
-            </div>
-          )}
+  <div
+    style={{
+      position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
+      zIndex: 30, cursor: "pointer",
+    }}
+    onClick={() => {
+      pageOffSound.current?.play();
+      setPageOpen(false);
+    }}
+  >
+    <Image
+      src={project.pageImg}
+      alt="Project Page"
+      fill
+      style={{
+        objectFit: "contain", objectPosition: "center",
+        zIndex: 31, pointerEvents: "none", userSelect: "none",
+      }}
+      priority
+    />
+    {/* --- Place the three links here --- */}
+    {projectIdx === 1 && ( // Aggragate
+      <>
+        <a
+          href="https://ninofiliu.com/aggregate/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: "absolute",
+            left: "20%",
+            top: "60%",
+            width: "18%",
+            height: "7%",
+            zIndex: 32,
+            cursor: "pointer",
+            display: "block",
+          }}
+          onClick={e => e.stopPropagation()}
+          aria-label="Aggregate Site"
+        />
+        <a
+          href="https://www.instagram.com/moulsssss/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: "absolute",
+            left: "42%",
+            top: "60%",
+            width: "18%",
+            height: "7%",
+            zIndex: 32,
+            cursor: "pointer",
+            display: "block",
+          }}
+          onClick={e => e.stopPropagation()}
+          aria-label="Moul Instagram"
+        />
+        <a
+          href="https://distraction.fun/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: "absolute",
+            left: "64%",
+            top: "60%",
+            width: "18%",
+            height: "7%",
+            zIndex: 32,
+            cursor: "pointer",
+            display: "block",
+          }}
+          onClick={e => e.stopPropagation()}
+          aria-label="Distraction Site"
+        />
+      </>
+    )}
+  </div>
+)}
+
 
           {/* --- MAINPAGE overlay just after splash, once --- */}
           {mainPageVisible && (
