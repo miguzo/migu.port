@@ -388,7 +388,7 @@ export default function Home() {
                 <div
                   style={{
                     height: "100%", width: `${Math.round(loadingProgress * 100)}%`,
-                    background: "#FFEB8A",
+                    background: "#867d50a8",
                     transition: "width 0.3s cubic-bezier(.7,0,.3,1)", borderRadius: 2,
                   }}
                 />
