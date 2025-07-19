@@ -275,18 +275,26 @@ export default function Home() {
   }, [pageOpen, blackFade, projectIdx]);
 
   // --- Title crossfade ---
-  useEffect(() => {
-    setIsFadingTitle(true);
-    setTitleLoaded(false);
-  }, [projectIdx, trackIdx]);
+ // Only fade when the project changes
+useEffect(() => {
+  setIsFadingTitle(true);
+  setTitleLoaded(false);
+}, [projectIdx]);
 
-  const handleTitleLoad = useCallback(() => {
-    setTitleLoaded(true);
-    setTimeout(() => {
-      setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
-      setIsFadingTitle(false);
-    }, 350);
-  }, [projectIdx, trackIdx]);
+function handleTitleLoad() {
+  setTitleLoaded(true);
+  setTimeout(() => {
+    setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+    setIsFadingTitle(false);
+  }, 350);
+}
+
+// For track changes, update title instantly
+useEffect(() => {
+  setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
+  setIsFadingTitle(false);
+  setTitleLoaded(true);
+}, [trackIdx]);
 
   // --- Main page close ---
   const handleCloseMainPage = useCallback(() => setMainPageVisible(false), []);
@@ -453,39 +461,60 @@ export default function Home() {
           />
 
           {/* --- Title image CROSSFADE --- */}
-          <Image
-            src={prevTitleImg}
-            alt="Previous Song Title"
-            fill
-            style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              zIndex: 15,
-              pointerEvents: "none",
-              userSelect: "none",
-              opacity: isFadingTitle ? 1 : 0,
-              transition: "opacity 0.35s",
-              position: "absolute",
-            }}
-            priority
-          />
-          <Image
-            src={currentTrack.titleImg}
-            alt="Song Title"
-            fill
-            onLoad={handleTitleLoad}
-            style={{
-              objectFit: "contain",
-              objectPosition: "center",
-              zIndex: 16,
-              pointerEvents: "none",
-              userSelect: "none",
-              opacity: titleLoaded ? 1 : 0,
-              transition: "opacity 0.35s",
-              position: "absolute",
-            }}
-            priority
-          />
+        {isFadingTitle ? (
+  <>
+    <Image
+      src={prevTitleImg}
+      alt="Previous Song Title"
+      fill
+      style={{
+        objectFit: "contain",
+        objectPosition: "center",
+        zIndex: 15,
+        pointerEvents: "none",
+        userSelect: "none",
+        opacity: 1,
+        transition: "opacity 0.35s",
+        position: "absolute",
+      }}
+      priority
+    />
+    <Image
+      src={projects[projectIdx].playlist[trackIdx].titleImg}
+      alt="Song Title"
+      fill
+      onLoad={handleTitleLoad}
+      style={{
+        objectFit: "contain",
+        objectPosition: "center",
+        zIndex: 16,
+        pointerEvents: "none",
+        userSelect: "none",
+        opacity: titleLoaded ? 1 : 0,
+        transition: "opacity 0.35s",
+        position: "absolute",
+      }}
+      priority
+    />
+  </>
+) : (
+  <Image
+    src={projects[projectIdx].playlist[trackIdx].titleImg}
+    alt="Song Title"
+    fill
+    style={{
+      objectFit: "contain",
+      objectPosition: "center",
+      zIndex: 16,
+      pointerEvents: "none",
+      userSelect: "none",
+      opacity: 1,
+      transition: "none",
+      position: "absolute",
+    }}
+    priority
+  />
+)}
 
           {/* --- PAGE OVERLAY: always same size as frame --- */}
           {pageOpen && (
