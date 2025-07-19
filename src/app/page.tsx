@@ -388,8 +388,8 @@ export default function Home() {
                 <div
                   style={{
                     height: "100%", width: `${Math.round(loadingProgress * 100)}%`,
-                    background: "#FFEB8A",
-                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)", borderRadius: 2,
+                    background: "#d6cfafff",
+                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)", borderRadius: 16,
                   }}
                 />
               </div>
@@ -588,18 +588,7 @@ export default function Home() {
               }, 30);
             }}
           />
-          {/* Optional loading indicator for audio */}
-          {audioLoading && (
-            <div style={{
-              position: "absolute", bottom: 10, left: "50%",
-              transform: "translateX(-50%)",
-              color: "#FFD700", zIndex: 100,
-              background: "#222", padding: "4px 12px", borderRadius: 6,
-              fontSize: 14,
-            }}>
-              Loading track...
-            </div>
-          )}
+   
         </div>
       </main>
     </>
