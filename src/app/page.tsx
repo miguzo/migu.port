@@ -417,14 +417,14 @@ export default function Home() {
   <div
     style={{
       position: "absolute",
-      left: "50%",
-      top: "50%",
+      left: "40%",
+      top: "35%",
       width: "60vw",
       height: "60vw",
       maxWidth: "600px",
       maxHeight: "600px",
       transform: "translate(-50%, -50%)",
-      background: "radial-gradient(circle, #e1c68355 0%, #19191b 70%, #19191b 100%)",
+      background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
       filter: "blur(80px)",
       opacity: 0.7,
       zIndex: 0,
