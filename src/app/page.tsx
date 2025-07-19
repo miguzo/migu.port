@@ -34,7 +34,7 @@ const projects: Project[] = [
       { on: "/next/image/Fragments/Buttons/Button 3 ON.png", off: "/next/image/Fragments/Buttons/Button 3 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button 4 On.png", off: "/next/image/Fragments/Buttons/Button 4 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button5On.png", off: "/next/image/Fragments/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" }, // Button 6 (AboutMe)
+      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" }, // Button 6 (AboutMe)
     ],
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/Titles/1Lidge.png" },
@@ -53,7 +53,7 @@ const projects: Project[] = [
       { on: "/next/image/Aggragate/Buttons/Button 3 ON.png", off: "/next/image/Aggragate/Buttons/Button 3 Off.png" },
       { on: "/next/image/Aggragate/Buttons/Button 4 On.png", off: "/next/image/Aggragate/Buttons/Button 4 Off.png" },
       { on: "/next/image/Aggragate/Buttons/Button5On.png", off: "/next/image/Aggragate/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" },
+      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
       { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Aggragate/Titles/1HighRiver.png" },
@@ -76,7 +76,7 @@ const projects: Project[] = [
       { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" },
+      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
       { src: "/music/Fallcore/1Shutter.mp3", titleImg: "/next/image/Fallcore/Titles/1shutter.png" },
@@ -94,7 +94,7 @@ const projects: Project[] = [
       { on: "/next/image/St4r/Buttons/Button 3 ON.png", off: "/next/image/St4r/Buttons/Button 3 Off.png" },
       { on: "/next/image/St4r/Buttons/Button 4 On.png", off: "/next/image/St4r/Buttons/Button 4 Off.png" },
       { on: "/next/image/St4r/Buttons/Button5On.png", off: "/next/image/St4r/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" },
+      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
       { src: "/music/St4r/1DesEtoiles.mp3", titleImg: "/next/image/St4r/Titles/1DesEtoiles.png" },
