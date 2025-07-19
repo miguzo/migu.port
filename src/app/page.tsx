@@ -12,6 +12,14 @@ type Project = {
   mainImg: string;
   buttons: ButtonImage[];
   playlist: { src: string; titleImg: string }[];
+  links?: {
+    href: string;
+    left: string;
+    top: string;
+    width: string;
+    height: string;
+    label: string;
+  }[];
 };
 
 const TOP_BUTTON_POSITIONS: TopButtonPos[] = [
@@ -22,6 +30,7 @@ const TOP_BUTTON_POSITIONS: TopButtonPos[] = [
   { left: "24%", top: "76%", width: "52%", height: "8.7%" },
   { left: "0%", top: "35%", width: "9%", height: "30%" }, // Button 6 (AboutMe)
 ];
+
 const projects: Project[] = [
   {
     mainImg: "/next/image/Fragments/Components/FragmentsCF.png",
@@ -32,7 +41,7 @@ const projects: Project[] = [
       { on: "/next/image/Fragments/Buttons/Button 3 ON.png", off: "/next/image/Fragments/Buttons/Button 3 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button 4 On.png", off: "/next/image/Fragments/Buttons/Button 4 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button5On.png", off: "/next/image/Fragments/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" }, // Button 6 (AboutMe)
+      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/Titles/1Lidge.png" },
@@ -41,6 +50,24 @@ const projects: Project[] = [
       { src: "/music/Fragments/4TheRabbit.mp3", titleImg: "/next/image/Fragments/Titles/4Rabbit.png" },
       { src: "/music/Fragments/5Orphan.mp3", titleImg: "/next/image/Fragments/Titles/5Orphan.png" },
     ],
+    links: [
+      {
+        href: "https://iconiaavantgarde.com/victor-clavelly-les-fragments-collection//",
+        left: "32%",
+        top: "47%",
+        width: "36%",
+        height: "7%",
+        label: "Fragments Site"
+      },
+       {
+        href: "https://instagram.com/victorclavelly",
+        left: "32%",
+        top: "47%",
+        width: "36%",
+        height: "7%",
+        label: "VC Instagram"
+      }
+    ]
   },
   {
     mainImg: "/next/image/Aggragate/Components/AggragateCF.png",
@@ -64,6 +91,32 @@ const projects: Project[] = [
       { src: "/music/Aggragate/8ADisaster.mp3", titleImg: "/next/image/Aggragate/Titles/8ADisaster.png" },
       { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Aggragate/Titles/9OfRustAndMirror.png" },
     ],
+    links: [
+      {
+        href: "https://ninofiliu.com/aggregate/",
+        left: "33.5%",
+        top: "43%",
+        width: "19%",
+        height: "5%",
+        label: "Aggregate Site"
+      },
+      {
+        href: "https://www.instagram.com/moulsssss/",
+        left: "55%",
+        top: "47%",
+        width: "23%",
+        height: "5%",
+        label: "Moul Instagram"
+      },
+      {
+        href: "https://distraction.fun/",
+        left: "55%",
+        top: "54%",
+        width: "18%",
+        height: "7%",
+        label: "Distraction Site"
+      }
+    ]
   },
   {
     mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
@@ -82,6 +135,16 @@ const projects: Project[] = [
       { src: "/music/Fallcore/3Animated.mp3", titleImg: "/next/image/Fallcore/Titles/3Animated.png" },
       { src: "/music/Fallcore/4AFriend.mp3", titleImg: "/next/image/Fallcore/Titles/4AFriend.png" },
     ],
+    links: [
+      {
+        href: "https://www.youtube.com/watch?v=9vqVzGTkRU4",
+        left: "34%",
+        top: "42%",
+        width: "33%",
+        height: "7%",
+        label: "Fallcore Velith"
+      }
+    ]
   },
   {
     mainImg: "/next/image/St4r/Components/St4rCF.png",
@@ -99,9 +162,26 @@ const projects: Project[] = [
       { src: "/music/St4r/2Construction.mp3", titleImg: "/next/image/St4r/Titles/2Construction.png" },
       { src: "/music/St4r/3Escape.mp3", titleImg: "/next/image/St4r/Titles/3Escape.png" },
     ],
+    links: [
+      {
+        href: "https://www.lefresnoy.net/en/exposition/1949/oeuvre/1900/",
+        left: "36%",
+        top: "50%",
+        width: "31%",
+        height: "6%",
+        label: "St4r Fresnoy"
+      },
+       {
+        href: "https://www.instagram.com/juliatarissan/",
+        left: "36%",
+        top: "50%",
+        width: "31%",
+        height: "6%",
+        label: "St4r Julia"
+      }
+    ]
   },
 ];
-
 
 const BUTTON_LABELS = [
   "Play", "Pause", "Next Track", "Next Project", "Show Project Page", "Show About Me Page"
@@ -157,9 +237,8 @@ export default function Home() {
   const [pressedIdx, setPressedIdx] = useState<null | number>(null);
   const [aboutMeOpen, setAboutMeOpen] = useState(false);
 
-  // overlay state: starts open, auto-opens only once per visit
+  // overlay state: always open on project switch
   const [pageOpen, setPageOpen] = useState(true);
-  //const [hasSeenProjectPage, setHasSeenProjectPage] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [mainPageLoaded, setMainPageLoaded] = useState(false);
@@ -184,13 +263,13 @@ export default function Home() {
     let isMounted = true;
     async function doPreload() {
       const buttonImages = [
-  ...projects.flatMap(p => [p.mainImg, p.pageImg]),
-  ...project.buttons.flatMap(btn => [btn.on, btn.off]),
-  currentTrack.titleImg,
-  "/next/image/Loading.png",
-  "/next/image/MainPage.png",
-  "/next/image/AboutMe.png",
-];
+        ...projects.flatMap(p => [p.mainImg, p.pageImg]),
+        ...project.buttons.flatMap(btn => [btn.on, btn.off]),
+        currentTrack.titleImg,
+        "/next/image/Loading.png",
+        "/next/image/MainPage.png",
+        "/next/image/AboutMe.png",
+      ];
 
       let loaded = 0;
       const inc = () => { loaded++; if (isMounted) setLoadingProgress(loaded / buttonImages.length); };
@@ -218,10 +297,11 @@ export default function Home() {
     };
   }, []);
 
-  // --- Only show page overlay once per visit ---
-useEffect(() => {
-  setPageOpen(true);
-}, [projectIdx]);
+  // --- Always show page overlay when switching projects ---
+  useEffect(() => {
+    setPageOpen(true);
+  }, [projectIdx]);
+
   // --- SPLASH (lock until everything is loaded) ---
   const handleSplashClick = useCallback(() => {
     if (!loading && mainPageLoaded) {
@@ -272,9 +352,8 @@ useEffect(() => {
     useCallback(() => {
       if (pressedIdx === 0 || pageOpen || aboutMeOpen) return;
       buttonSound.current?.play();
-      setPressedIdx(0); // Show visual feedback instantly
+      setPressedIdx(0);
 
-      // If audio is ready, play it. Else, load and play.
       if (audioRef.current && audioRef.current.readyState > 2) {
         audioRef.current.volume = 1;
         audioRef.current.play();
@@ -432,7 +511,7 @@ useEffect(() => {
             priority
           />
 
-          {/* --- Title image (no crossfade for minimal state churn) --- */}
+          {/* --- Title image --- */}
           <Image
             src={project.playlist[trackIdx].titleImg}
             alt="Song Title"
@@ -467,62 +546,27 @@ useEffect(() => {
                 }}
                 priority
               />
-              {/* --- Place the three links here --- */}
-              {projectIdx === 1 && ( // Aggragate
-                <>
-                  <a
-                    href="https://ninofiliu.com/aggregate/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      position: "absolute",
-                      left: "33.5%",
-                      top: "43%",
-                      width: "19%",
-                      height: "5%",
-                      zIndex: 32,
-                      cursor: "pointer",
-                      display: "block",
-                    }}
-                    onClick={e => e.stopPropagation()}
-                    aria-label="Aggregate Site"
-                  />
-                  <a
-                    href="https://www.instagram.com/moulsssss/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      position: "absolute",
-                      left: "55%",
-                      top: "47%",
-                      width: "23%",
-                      height: "5%",
-                      zIndex: 32,
-                      cursor: "pointer",
-                      display: "block",
-                    }}
-                    onClick={e => e.stopPropagation()}
-                    aria-label="Moul Instagram"
-                  />
-                  <a
-                    href="https://distraction.fun/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      position: "absolute",
-                      left: "55%",
-                      top: "54%",
-                      width: "18%",
-                      height: "7%",
-                      zIndex: 32,
-                      cursor: "pointer",
-                      display: "block",
-                    }}
-                    onClick={e => e.stopPropagation()}
-                    aria-label="Distraction Site"
-                  />
-                </>
-              )}
+              {/* --- Dynamic Overlay Links --- */}
+              {(project.links ?? []).map((link, i) => (
+                <a
+                  key={i}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    position: "absolute",
+                    left: link.left,
+                    top: link.top,
+                    width: link.width,
+                    height: link.height,
+                    zIndex: 32,
+                    cursor: "pointer",
+                    display: "block",
+                  }}
+                  onClick={e => e.stopPropagation()}
+                  aria-label={link.label}
+                />
+              ))}
             </div>
           )}
 
@@ -647,15 +691,15 @@ useEffect(() => {
 
                   audioRef.current.oncanplaythrough = () => {
                     audioRef.current?.play().then(() => setPressedIdx(0)).catch(() => setPressedIdx(null));
-                    audioRef.current!.oncanplaythrough = null; // the ! is now safe
+                    audioRef.current!.oncanplaythrough = null;
                   };
                 }
               }, 30);
             }}
           />
-
         </div>
       </main>
     </>
   );
 }
+
