@@ -184,14 +184,14 @@ export default function Home() {
     let isMounted = true;
     async function doPreload() {
       const buttonImages = [
-        ...project.buttons.flatMap(btn => [btn.on, btn.off]),
-        project.mainImg,
-        project.pageImg,
-        currentTrack.titleImg,
-        "/next/image/Loading.png",
-        "/next/image/MainPage.png",
-        "/next/image/AboutMe.png",
-      ];
+  ...projects.flatMap(p => [p.mainImg, p.pageImg]),
+  ...project.buttons.flatMap(btn => [btn.on, btn.off]),
+  currentTrack.titleImg,
+  "/next/image/Loading.png",
+  "/next/image/MainPage.png",
+  "/next/image/AboutMe.png",
+];
+
       let loaded = 0;
       const inc = () => { loaded++; if (isMounted) setLoadingProgress(loaded / buttonImages.length); };
       await Promise.all(buttonImages.map(src => preloadImage(src).then(inc).catch(inc)));
