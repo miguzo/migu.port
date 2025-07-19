@@ -219,14 +219,9 @@ export default function Home() {
   }, []);
 
   // --- Only show page overlay once per visit ---
-  useEffect(() => {
-    if (!hasSeenProjectPage) {
-      setPageOpen(true);
-      setHasSeenProjectPage(true);
-    }
-    // if already seen, don't re-open on project change
-  }, [hasSeenProjectPage]);
-
+useEffect(() => {
+  setPageOpen(true);
+}, [projectIdx]);
   // --- SPLASH (lock until everything is loaded) ---
   const handleSplashClick = useCallback(() => {
     if (!loading && mainPageLoaded) {
