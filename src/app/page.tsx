@@ -159,7 +159,7 @@ export default function Home() {
 
   // overlay state: starts open, auto-opens only once per visit
   const [pageOpen, setPageOpen] = useState(true);
-  const [hasSeenProjectPage, setHasSeenProjectPage] = useState(false);
+  //const [hasSeenProjectPage, setHasSeenProjectPage] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [mainPageLoaded, setMainPageLoaded] = useState(false);
