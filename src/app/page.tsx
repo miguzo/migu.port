@@ -111,7 +111,7 @@ const BUTTON_LABELS = [
   "Next Track",
   "Next Project",
   "Show Project Page",
-  "Show About Me Page"
+  "Show About Me Page",
 ];
 
 // --- Helpers ---
@@ -151,14 +151,12 @@ const ButtonHotzone = memo(function ButtonHotzone({
   disabled: boolean;
   blackFade: boolean;
 }) {
-  // Move style definition outside of render for better perf
   const style = {
     ...pos,
     position: "absolute" as const,
     background: "transparent",
     border: "none",
-    cursor:
-      disabled || pressed || (idx === 3 && blackFade) ? "default" : "pointer",
+    cursor: disabled || pressed || (idx === 3 && blackFade) ? "default" : "pointer",
     zIndex: 20,
   };
   return (
@@ -253,13 +251,14 @@ export default function Home() {
     };
   }, []);
 
-  // Only allow splash to close if MainPage.png is loaded
+  // --- SPLASH (lock until everything is loaded) ---
   const handleSplashClick = useCallback(() => {
     if (!loading && mainPageLoaded) {
       setSplashFading(true);
       setTimeout(() => {
         setSplashDone(true);
         setSplashFading(false);
+        pageOnSound.current?.play();
         setMainPageVisible(true);
       }, 500);
     }
@@ -295,7 +294,6 @@ export default function Home() {
     setIsFadingTitle(true);
     setTitleLoaded(false);
   }, [projectIdx]);
-
   function handleTitleLoad() {
     setTitleLoaded(true);
     setTimeout(() => {
@@ -303,7 +301,6 @@ export default function Home() {
       setIsFadingTitle(false);
     }, 350);
   }
-
   useEffect(() => {
     setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
     setIsFadingTitle(false);
@@ -311,7 +308,10 @@ export default function Home() {
   }, [trackIdx]);
 
   // --- Main page close ---
-  const handleCloseMainPage = useCallback(() => setMainPageVisible(false), []);
+  const handleCloseMainPage = useCallback(() => {
+    pageOffSound.current?.play();
+    setMainPageVisible(false);
+  }, []);
 
   // --- Button Handlers ---
   const buttonHandlers = [
@@ -363,6 +363,7 @@ export default function Home() {
     // Show About Me
     useCallback(() => {
       if (aboutMeOpen) return;
+      pageOnSound.current?.play();
       setAboutMeOpen(true);
     }, [aboutMeOpen]),
   ];
@@ -581,7 +582,10 @@ export default function Home() {
                 zIndex: 30,
                 cursor: "pointer",
               }}
-              onClick={() => setPageOpen(false)}
+              onClick={() => {
+                pageOffSound.current?.play();
+                setPageOpen(false);
+              }}
             >
               <Image
                 src={project.pageImg}
@@ -651,7 +655,10 @@ export default function Home() {
             >
               {/* Click-backdrop (close when clicking outside the links/buttons) */}
               <div
-                onClick={() => setAboutMeOpen(false)}
+                onClick={() => {
+                  pageOffSound.current?.play();
+                  setAboutMeOpen(false);
+                }}
                 style={{
                   position: "absolute",
                   left: 0,
@@ -681,14 +688,13 @@ export default function Home() {
                 href="mailto:igordubreucq.pro@gmail.com"
                 style={{
                   position: "absolute",
-                  left: "53%",    // <-- Tweak these
-                  top: "51%",     // <-- Tweak these
-                  width: "15%",   // <-- Tweak these
-                  height: "7%",   // <-- Tweak these
+                  left: "53%",
+                  top: "51%",
+                  width: "15%",
+                  height: "7%",
                   zIndex: 10005,
                   cursor: "pointer",
                   display: "block",
-                  // border: "2px solid #ff0", // For debugging zone, remove after
                 }}
                 onClick={e => e.stopPropagation()}
                 aria-label="Email"
@@ -700,14 +706,13 @@ export default function Home() {
                 rel="noopener noreferrer"
                 style={{
                   position: "absolute",
-                  left: "43%",   // <-- Tweak these
-                  top: "44%",    // <-- Tweak these
-                  width: "24%",  // <-- Tweak these
-                  height: "7%",  // <-- Tweak these
+                  left: "43%",
+                  top: "44%",
+                  width: "24%",
+                  height: "7%",
                   zIndex: 10005,
                   cursor: "pointer",
                   display: "block",
-                  // border: "2px solid #0ff", // For debugging zone, remove after
                 }}
                 onClick={e => e.stopPropagation()}
                 aria-label="Instagram"
@@ -747,7 +752,22 @@ export default function Home() {
           ))}
 
           {/* --- Hidden audio player for actual music --- */}
-          <audio ref={audioRef} hidden src={currentTrack.src} />
+          <audio
+            ref={audioRef}
+            hidden
+            src={currentTrack.src}
+            onEnded={() => {
+              const nextIdx = (trackIdx + 1) % project.playlist.length;
+              setTrackIdx(nextIdx);
+              setPressedIdx(0);
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                  audioRef.current.play();
+                }
+              }, 30);
+            }}
+          />
         </div>
       </main>
     </>
