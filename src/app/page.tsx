@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
 
+// --- Types & Data ---
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
 type Project = {
@@ -13,7 +14,7 @@ type Project = {
   playlist: { src: string; titleImg: string }[];
 };
 
-const topButtonPositions: TopButtonPos[] = [
+const TOP_BUTTON_POSITIONS: TopButtonPos[] = [
   { left: "21.5%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "36.1%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },
@@ -97,8 +98,10 @@ const projects: Project[] = [
   },
 ];
 
-// --- Helpers preload
 
+const BUTTON_LABELS = ["Play", "Pause", "Next Track", "Next Project", "Show Project Page"];
+
+// --- Helpers ---
 function preloadImage(src: string) {
   return new Promise<void>((resolve, reject) => {
     const img = new window.Image();
@@ -119,13 +122,51 @@ function preloadHowl(src: string) {
   });
 }
 
+// --- Subcomponents ---
+const ButtonHotzone = memo(function ButtonHotzone({
+  idx,
+  pos,
+  onClick,
+  pressed,
+  disabled,
+  blackFade,
+}: {
+  idx: number;
+  pos: TopButtonPos;
+  onClick: () => void;
+  pressed: boolean;
+  disabled: boolean;
+  blackFade: boolean;
+}) {
+  // Move style definition outside of render for better perf
+  const style = {
+    ...pos,
+    position: "absolute" as const,
+    background: "transparent",
+    border: "none",
+    cursor:
+      disabled || pressed || (idx === 3 && blackFade) ? "default" : "pointer",
+    zIndex: 20,
+  };
+  return (
+    <button
+      aria-label={BUTTON_LABELS[idx]}
+      style={style}
+      onClick={onClick}
+      disabled={disabled || pressed || (idx === 3 && blackFade)}
+      tabIndex={-1}
+      type="button"
+    />
+  );
+});
+
 export default function Home() {
+  // --- State ---
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [projectIdx, setProjectIdx] = useState<number>(0);
-  const [trackIdx, setTrackIdx] = useState<number>(0);
-  const [pressedIdx, setPressedIdx] = useState<null | 0 | 1 | 2 | 3 | 4>(null);
+  const [projectIdx, setProjectIdx] = useState(0);
+  const [trackIdx, setTrackIdx] = useState(0);
+  const [pressedIdx, setPressedIdx] = useState<null | number>(null);
   const [pageOpen, setPageOpen] = useState(true);
-  //const [pageSeen, setPageSeen] = useState(() => projects.map(() => false));
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
@@ -133,12 +174,8 @@ export default function Home() {
   const [titleLoaded, setTitleLoaded] = useState(true);
   const [prevTitleImg, setPrevTitleImg] = useState(projects[0].playlist[0].titleImg);
   const [isFadingTitle, setIsFadingTitle] = useState(false);
-
-  // --- FADE NOIR ---
   const [blackFade, setBlackFade] = useState(false);
   const [blackOpacity, setBlackOpacity] = useState(0);
-
-  // --- MAIN PAGE (après loading, au-dessus de Fragments seulement une fois) ---
   const [mainPageVisible, setMainPageVisible] = useState(false);
 
   // --- SFX ---
@@ -146,8 +183,13 @@ export default function Home() {
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
-  // --- PRELOAD ---
+  // --- Data shortcuts ---
+  const project = projects[projectIdx];
+  const currentTrack = project.playlist[trackIdx];
+
+  // --- Preload ---
   useEffect(() => {
+    let isMounted = true;
     async function doPreload() {
       const imageList: string[] = [
         ...projects.flatMap(proj => [
@@ -169,21 +211,23 @@ export default function Home() {
       let loaded = 0;
       function inc() {
         loaded += 1;
-        setLoadingProgress(loaded / total);
+        if (isMounted) setLoadingProgress(loaded / total);
       }
       await Promise.all([
         ...imageList.map(src => preloadImage(src).then(inc).catch(inc)),
         ...audioList.map(src => preloadHowl(src).then(inc).catch(inc)),
       ]);
+      if (!isMounted) return;
       buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
       pageOnSound.current = new Howl({ src: ["/sounds/PageON.mp3"], html5: true });
       pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
       setLoading(false);
     }
     doPreload();
+    return () => { isMounted = false; };
   }, []);
 
-  // Lock scroll
+  // --- Lock scroll ---
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
@@ -193,8 +237,8 @@ export default function Home() {
     };
   }, []);
 
-  // Au clic sur splash, show mainPage
-  function handleSplashClick() {
+  // --- Splash handling ---
+  const handleSplashClick = useCallback(() => {
     if (!loading) {
       setSplashFading(true);
       setTimeout(() => {
@@ -203,19 +247,17 @@ export default function Home() {
         setMainPageVisible(true);
       }, 500);
     }
-  }
+  }, [loading]);
 
-  // LANCEMENT DU NOIR AU CHANGEMENT DE PROJET
-  async function handleNextProject() {
+  // --- Next project with fade ---
+  const handleNextProject = useCallback(async () => {
     if (pageOpen || blackFade) return;
     buttonSound.current?.play();
     setPressedIdx(3);
     setBlackFade(true);
     setBlackOpacity(1);
 
-    // Attendre le FADE IN NOIR
-    setTimeout(async () => {
-      // Charger le prochain projet...
+    setTimeout(() => {
       const nextProject = (projectIdx + 1) % projects.length;
       setProjectIdx(nextProject);
       setTrackIdx(0);
@@ -224,36 +266,81 @@ export default function Home() {
         audioRef.current.src = projects[nextProject].playlist[0].src;
         audioRef.current.load();
       }
-      // Attendre que tout soit prêt (optionnel, à affiner si titres/images dynamiques)
       setTimeout(() => {
-        setBlackOpacity(0); // FADE OUT
+        setBlackOpacity(0);
         setTimeout(() => setBlackFade(false), 700);
         setPressedIdx(null);
       }, 700);
     }, 500);
-  }
+  }, [pageOpen, blackFade, projectIdx]);
 
-  // --- Transitions titres (pas modifié)
+  // --- Title crossfade ---
   useEffect(() => {
     setIsFadingTitle(true);
     setTitleLoaded(false);
   }, [projectIdx, trackIdx]);
-  function handleTitleLoad() {
+
+  const handleTitleLoad = useCallback(() => {
     setTitleLoaded(true);
     setTimeout(() => {
       setPrevTitleImg(projects[projectIdx].playlist[trackIdx].titleImg);
       setIsFadingTitle(false);
     }, 350);
-  }
+  }, [projectIdx, trackIdx]);
 
-  // MAIN PAGE (fermer, visible qu'une fois)
-  function handleCloseMainPage() {
-    setMainPageVisible(false);
-  }
+  // --- Main page close ---
+  const handleCloseMainPage = useCallback(() => setMainPageVisible(false), []);
 
-  const project = projects[projectIdx];
-  const currentTrack = project.playlist[trackIdx];
+  // --- Button Handlers ---
+  const buttonHandlers = [
+    // Play
+    useCallback(() => {
+      if (pressedIdx === 0 || pageOpen) return;
+      buttonSound.current?.play();
+      if (audioRef.current) {
+        audioRef.current.volume = 1;
+        audioRef.current
+          .play()
+          .then(() => setPressedIdx(0))
+          .catch((e) => {
+            console.warn("Erreur lecture audio (mobile)", e);
+            setPressedIdx(0);
+          });
+      } else {
+        setPressedIdx(0);
+      }
+    }, [pressedIdx, pageOpen]),
+    // Pause
+    useCallback(() => {
+      if (pressedIdx === 1 || pageOpen) return;
+      buttonSound.current?.play();
+      audioRef.current?.pause();
+      setPressedIdx(1);
+    }, [pressedIdx, pageOpen]),
+    // Next Track
+    useCallback(() => {
+      if (pageOpen) return;
+      buttonSound.current?.play();
+      setPressedIdx(2);
+      setTimeout(() => {
+        const nextIdx = (trackIdx + 1) % project.playlist.length;
+        setTrackIdx(nextIdx);
+        audioRef.current?.pause();
+        if (audioRef.current) audioRef.current.currentTime = 0;
+        setPressedIdx(null);
+      }, 600);
+    }, [pageOpen, trackIdx, project.playlist.length]),
+    // Next Project
+    handleNextProject,
+    // Show Project Page
+    useCallback(() => {
+      if (pageOpen) return;
+      pageOnSound.current?.play();
+      setPageOpen(true);
+    }, [pageOpen]),
+  ];
 
+  // --- Render ---
   return (
     <>
       <Head>
@@ -440,7 +527,7 @@ export default function Home() {
                 width: "100%",
                 height: "100%",
                 zIndex: 10001,
-                background: "transparent", // Pas de noir
+                background: "transparent",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -483,77 +570,17 @@ export default function Home() {
           ))}
 
           {/* --- Button Hotzones (top + 5th) --- */}
-        {topButtonPositions.map((pos, idx) => (
-  <button
-    key={idx}
-    aria-label={["Play", "Pause", "Next Track", "Next Project", "Show Project Page"][idx]}
-    style={{
-      ...pos,
-      position: "absolute",
-      background: "transparent",
-      border: "none",
-      cursor:
-        (pageOpen || pressedIdx === idx || (idx === 3 && blackFade)) ? "default" : "pointer",
-      zIndex: 20,
-    }}
-    onClick={() => {
-      // --- PATCH BOUTON PLAY ---
-      if (idx === 0) {
-        if (pressedIdx === 0 || pageOpen) return;
-        buttonSound.current?.play();
-        if (audioRef.current) {
-          audioRef.current.volume = 1;
-          audioRef.current
-            .play()
-            .then(() => setPressedIdx(0))
-            .catch((e) => {
-              // Debug : log l'erreur si besoin
-              console.warn("Erreur lecture audio (mobile)", e);
-              setPressedIdx(0);
-            });
-        } else {
-          setPressedIdx(0);
-        }
-        return;
-      }
-      // --- PAUSE ---
-      if (idx === 1) {
-        if (pressedIdx === 1 || pageOpen) return;
-        buttonSound.current?.play();
-        audioRef.current?.pause();
-        setPressedIdx(1);
-        return;
-      }
-      // --- NEXT TRACK ---
-      if (idx === 2) {
-        if (pageOpen) return;
-        buttonSound.current?.play();
-        setPressedIdx(2);
-        setTimeout(() => {
-          const nextIdx = (trackIdx + 1) % project.playlist.length;
-          setTrackIdx(nextIdx);
-          audioRef.current?.pause();
-          if (audioRef.current) audioRef.current.currentTime = 0;
-          setPressedIdx(null);
-        }, 600);
-        return;
-      }
-      // --- NEXT PROJECT ---
-      if (idx === 3) {
-        handleNextProject();
-        return;
-      }
-      // --- PAGE BTN ---
-      if (idx === 4) {
-        if (pageOpen) return;
-        pageOnSound.current?.play();
-        setPageOpen(true);
-        return;
-      }
-    }}
-    tabIndex={0}
-  />
-))}
+          {TOP_BUTTON_POSITIONS.map((pos, idx) => (
+            <ButtonHotzone
+              key={idx}
+              idx={idx}
+              pos={pos}
+              onClick={buttonHandlers[idx]}
+              pressed={pressedIdx === idx}
+              disabled={pageOpen}
+              blackFade={blackFade}
+            />
+          ))}
 
           {/* --- Hidden audio player for actual music --- */}
           <audio ref={audioRef} hidden src={currentTrack.src} />
@@ -562,3 +589,5 @@ export default function Home() {
     </>
   );
 }
+
+// NOTE: Don't forget to fill in your projects[] array from your original code!
