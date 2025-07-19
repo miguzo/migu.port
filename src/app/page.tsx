@@ -20,10 +20,10 @@ const TOP_BUTTON_POSITIONS: TopButtonPos[] = [
   { left: "51.1%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "66.5%", top: "13.5%", width: "13%", height: "4.9%" },
   { left: "24%", top: "76%", width: "52%", height: "8.7%" },
-  // Button 6 (customize position as you want)
-  { left: "45%", top: "85%", width: "10%", height: "5%" },
+  { left: "45%", top: "85%", width: "10%", height: "5%" }, // Button 6 (AboutMe)
 ];
 
+// FILL IN YOUR FULL PROJECTS ARRAY (with 6 buttons in each)
 const projects: Project[] = [
   {
     mainImg: "/next/image/Fragments/Components/FragmentsCF.png",
@@ -34,7 +34,7 @@ const projects: Project[] = [
       { on: "/next/image/Fragments/Buttons/Button 3 ON.png", off: "/next/image/Fragments/Buttons/Button 3 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button 4 On.png", off: "/next/image/Fragments/Buttons/Button 4 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button5On.png", off: "/next/image/Fragments/Buttons/Button5Off.png" },
-      { on: "/next/image/Fragments/Buttons/Button6On.png", off: "/next/image/Fragments/Buttons/Button6Off.png" },
+      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" }, // Button 6 (AboutMe)
     ],
     playlist: [
       { src: "/music/Fragments/1Lidge.mp3", titleImg: "/next/image/Fragments/Titles/1Lidge.png" },
@@ -44,12 +44,74 @@ const projects: Project[] = [
       { src: "/music/Fragments/5Orphan.mp3", titleImg: "/next/image/Fragments/Titles/5Orphan.png" },
     ],
   },
-  // ...repeat for other projects (as in your data above, all 6 button images per project)
-  // Omitted here for brevity
+  {
+    mainImg: "/next/image/Aggragate/Components/AggragateCF.png",
+    pageImg: "/next/image/Aggragate/Components/AggragatePAGE.png",
+    buttons: [
+      { on: "/next/image/Aggragate/Buttons/Button 1 ON.png", off: "/next/image/Aggragate/Buttons/Button 1 Off.png" },
+      { on: "/next/image/Aggragate/Buttons/Button 2 ON.png", off: "/next/image/Aggragate/Buttons/Button 2 Off.png" },
+      { on: "/next/image/Aggragate/Buttons/Button 3 ON.png", off: "/next/image/Aggragate/Buttons/Button 3 Off.png" },
+      { on: "/next/image/Aggragate/Buttons/Button 4 On.png", off: "/next/image/Aggragate/Buttons/Button 4 Off.png" },
+      { on: "/next/image/Aggragate/Buttons/Button5On.png", off: "/next/image/Aggragate/Buttons/Button5Off.png" },
+      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" },
+    ],
+    playlist: [
+      { src: "/music/Aggragate/1HighRiver.mp3", titleImg: "/next/image/Aggragate/Titles/1HighRiver.png" },
+      { src: "/music/Aggragate/2AmongTheStorm.mp3", titleImg: "/next/image/Aggragate/Titles/2AmongTheStorm.png" },
+      { src: "/music/Aggragate/3Spectacle.mp3", titleImg: "/next/image/Aggragate/Titles/3Spectacle.png" },
+      { src: "/music/Aggragate/4Arrest.mp3", titleImg: "/next/image/Aggragate/Titles/4Arrest.png" },
+      { src: "/music/Aggragate/5NoOnesEnnemy.mp3", titleImg: "/next/image/Aggragate/Titles/5NoOnesEnnemy.png" },
+      { src: "/music/Aggragate/6PromessField.mp3", titleImg: "/next/image/Aggragate/Titles/6PromessField.png" },
+      { src: "/music/Aggragate/7TheArena.mp3", titleImg: "/next/image/Aggragate/Titles/7TheArena.png" },
+      { src: "/music/Aggragate/8ADisaster.mp3", titleImg: "/next/image/Aggragate/Titles/8ADisaster.png" },
+      { src: "/music/Aggragate/9OfRustAndMirror.mp3", titleImg: "/next/image/Aggragate/Titles/9OfRustAndMirror.png" },
+    ],
+  },
+  {
+    mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
+    pageImg: "/next/image/Fallcore/Components/FallcorePAGE.png",
+    buttons: [
+      { on: "/next/image/Fallcore/Buttons/Button 1 ON.png", off: "/next/image/Fallcore/Buttons/Button 1 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
+      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" },
+    ],
+    playlist: [
+      { src: "/music/Fallcore/1Shutter.mp3", titleImg: "/next/image/Fallcore/Titles/1shutter.png" },
+      { src: "/music/Fallcore/2Velith.mp3", titleImg: "/next/image/Fallcore/Titles/2Velith.png" },
+      { src: "/music/Fallcore/3Animated.mp3", titleImg: "/next/image/Fallcore/Titles/3Animated.png" },
+      { src: "/music/Fallcore/4AFriend.mp3", titleImg: "/next/image/Fallcore/Titles/4AFriend.png" },
+    ],
+  },
+  {
+    mainImg: "/next/image/St4r/Components/St4rCF.png",
+    pageImg: "/next/image/St4r/Components/St4rPAGE.png",
+    buttons: [
+      { on: "/next/image/St4r/Buttons/Button 1 ON.png", off: "/next/image/St4r/Buttons/Button 1 Off.png" },
+      { on: "/next/image/St4r/Buttons/Button 2 ON.png", off: "/next/image/St4r/Buttons/Button 2 Off.png" },
+      { on: "/next/image/St4r/Buttons/Button 3 ON.png", off: "/next/image/St4r/Buttons/Button 3 Off.png" },
+      { on: "/next/image/St4r/Buttons/Button 4 On.png", off: "/next/image/St4r/Buttons/Button 4 Off.png" },
+      { on: "/next/image/St4r/Buttons/Button5On.png", off: "/next/image/St4r/Buttons/Button5Off.png" },
+      { on: "/next/image/AboutMeButton.png", off: "/next/image/AboutMeButton.png" },
+    ],
+    playlist: [
+      { src: "/music/St4r/1DesEtoiles.mp3", titleImg: "/next/image/St4r/Titles/1DesEtoiles.png" },
+      { src: "/music/St4r/2Construction.mp3", titleImg: "/next/image/St4r/Titles/2Construction.png" },
+      { src: "/music/St4r/3Escape.mp3", titleImg: "/next/image/St4r/Titles/3Escape.png" },
+    ],
+  },
 ];
 
+
 const BUTTON_LABELS = [
-  "Play", "Pause", "Next Track", "Next Project", "Show Project Page", "Show Custom Page"
+  "Play",
+  "Pause",
+  "Next Track",
+  "Next Project",
+  "Show Project Page",
+  "Show About Me Page"
 ];
 
 // --- Helpers ---
@@ -89,6 +151,7 @@ const ButtonHotzone = memo(function ButtonHotzone({
   disabled: boolean;
   blackFade: boolean;
 }) {
+  // Move style definition outside of render for better perf
   const style = {
     ...pos,
     position: "absolute" as const,
@@ -111,11 +174,12 @@ const ButtonHotzone = memo(function ButtonHotzone({
 });
 
 export default function Home() {
+  // --- State ---
   const audioRef = useRef<HTMLAudioElement>(null);
   const [projectIdx, setProjectIdx] = useState(0);
   const [trackIdx, setTrackIdx] = useState(0);
   const [pressedIdx, setPressedIdx] = useState<null | number>(null);
-  const [customPageOpen, setCustomPageOpen] = useState(false);
+  const [aboutMeOpen, setAboutMeOpen] = useState(false);
   const [pageOpen, setPageOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
@@ -134,6 +198,7 @@ export default function Home() {
   const pageOnSound = useRef<Howl | null>(null);
   const pageOffSound = useRef<Howl | null>(null);
 
+  // --- Data shortcuts ---
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
@@ -150,7 +215,7 @@ export default function Home() {
         ]),
         "/next/image/Loading.png",
         "/next/image/MainPage.png",
-        "/next/image/Fragments/Components/CustomPage.png",
+        "/next/image/AboutMe.png",
       ];
       const audioList: string[] = [
         "/sounds/Button.mp3",
@@ -188,7 +253,7 @@ export default function Home() {
     };
   }, []);
 
-  // --- Splash handling ---
+  // Only allow splash to close if MainPage.png is loaded
   const handleSplashClick = useCallback(() => {
     if (!loading && mainPageLoaded) {
       setSplashFading(true);
@@ -202,7 +267,7 @@ export default function Home() {
 
   // --- Next project with fade ---
   const handleNextProject = useCallback(async () => {
-    if (pageOpen || customPageOpen || blackFade) return;
+    if (pageOpen || blackFade || aboutMeOpen) return;
     buttonSound.current?.play();
     setPressedIdx(3);
     setBlackFade(true);
@@ -223,7 +288,7 @@ export default function Home() {
         setPressedIdx(null);
       }, 700);
     }, 500);
-  }, [pageOpen, customPageOpen, blackFade, projectIdx]);
+  }, [pageOpen, blackFade, projectIdx, aboutMeOpen]);
 
   // --- Title crossfade ---
   useEffect(() => {
@@ -252,7 +317,7 @@ export default function Home() {
   const buttonHandlers = [
     // Play
     useCallback(() => {
-      if (pressedIdx === 0 || pageOpen || customPageOpen) return;
+      if (pressedIdx === 0 || pageOpen || aboutMeOpen) return;
       buttonSound.current?.play();
       if (audioRef.current) {
         audioRef.current.volume = 1;
@@ -266,17 +331,17 @@ export default function Home() {
       } else {
         setPressedIdx(0);
       }
-    }, [pressedIdx, pageOpen, customPageOpen]),
+    }, [pressedIdx, pageOpen, aboutMeOpen]),
     // Pause
     useCallback(() => {
-      if (pressedIdx === 1 || pageOpen || customPageOpen) return;
+      if (pressedIdx === 1 || pageOpen || aboutMeOpen) return;
       buttonSound.current?.play();
       audioRef.current?.pause();
       setPressedIdx(1);
-    }, [pressedIdx, pageOpen, customPageOpen]),
+    }, [pressedIdx, pageOpen, aboutMeOpen]),
     // Next Track
     useCallback(() => {
-      if (pageOpen || customPageOpen) return;
+      if (pageOpen || aboutMeOpen) return;
       buttonSound.current?.play();
       setPressedIdx(2);
       setTimeout(() => {
@@ -286,20 +351,20 @@ export default function Home() {
         if (audioRef.current) audioRef.current.currentTime = 0;
         setPressedIdx(null);
       }, 600);
-    }, [pageOpen, customPageOpen, trackIdx, project.playlist.length]),
+    }, [pageOpen, trackIdx, project.playlist.length, aboutMeOpen]),
     // Next Project
     handleNextProject,
     // Show Project Page
     useCallback(() => {
-      if (pageOpen || customPageOpen) return;
+      if (pageOpen || aboutMeOpen) return;
       pageOnSound.current?.play();
       setPageOpen(true);
-    }, [pageOpen, customPageOpen]),
-    // Show Custom Page
+    }, [pageOpen, aboutMeOpen]),
+    // Show About Me
     useCallback(() => {
-      if (customPageOpen || pageOpen) return;
-      setCustomPageOpen(true);
-    }, [customPageOpen, pageOpen]),
+      if (aboutMeOpen) return;
+      setAboutMeOpen(true);
+    }, [aboutMeOpen]),
   ];
 
   // --- Render ---
@@ -308,9 +373,8 @@ export default function Home() {
       <Head>
         <title>Victor Clavelly</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait" />
-        {/* browser-level preload for critical overlays */}
         <link rel="preload" as="image" href="/next/image/MainPage.png" />
-        <link rel="preload" as="image" href="/next/image/Fragments/Components/CustomPage.png" />
+        <link rel="preload" as="image" href="/next/image/AboutMe.png" />
       </Head>
       <main
         className="fixed inset-0 flex justify-center bg-[#19191b]"
@@ -398,7 +462,7 @@ export default function Home() {
                   }}
                 />
               </div>
-              {/* PATCH: Preload MainPage.png and track when loaded */}
+              {/* Preload MainPage & AboutMe as invisible images */}
               <Image
                 src="/next/image/MainPage.png"
                 alt=""
@@ -408,7 +472,14 @@ export default function Home() {
                 priority
                 onLoad={() => setMainPageLoaded(true)}
               />
-              {/* PATCH: Optionally show a spinner if everything else is loaded except MainPage.png */}
+              <Image
+                src="/next/image/AboutMe.png"
+                alt=""
+                style={{ display: "none" }}
+                width={10}
+                height={10}
+                priority
+              />
               {(!loading && !mainPageLoaded) && (
                 <div
                   style={{
@@ -562,8 +633,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* --- CUSTOM PAGE overlay (global, always same image) --- */}
-          {customPageOpen && (
+          {/* --- ABOUT ME overlay (global, always same image and clickable links) --- */}
+          {aboutMeOpen && (
             <div
               style={{
                 position: "absolute",
@@ -576,13 +647,25 @@ export default function Home() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer",
               }}
-              onClick={() => setCustomPageOpen(false)}
             >
+              {/* Click-backdrop (close when clicking outside the links/buttons) */}
+              <div
+                onClick={() => setAboutMeOpen(false)}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "transparent",
+                  zIndex: 10003,
+                }}
+              />
+              {/* The AboutMe image (with pointer-events: none so links work!) */}
               <Image
-                src="/next/image/Fragments/Components/AboutMe.png"
-                alt="Custom Page"
+                src="/next/image/AboutMe.png"
+                alt="About Me"
                 fill
                 style={{
                   objectFit: "contain",
@@ -592,6 +675,42 @@ export default function Home() {
                   userSelect: "none",
                 }}
                 priority
+              />
+              {/* EMAIL BUTTON: Adjust left/top/width/height as needed! */}
+              <a
+                href="mailto:igordubreucq.pro@gmail.com"
+                style={{
+                  position: "absolute",
+                  left: "35%",    // <-- Tweak these
+                  top: "50%",     // <-- Tweak these
+                  width: "30%",   // <-- Tweak these
+                  height: "7%",   // <-- Tweak these
+                  zIndex: 10005,
+                  cursor: "pointer",
+                  display: "block",
+                  // border: "2px solid #ff0", // For debugging zone, remove after
+                }}
+                onClick={e => e.stopPropagation()}
+                aria-label="Email"
+              />
+              {/* INSTAGRAM BUTTON: Adjust as above */}
+              <a
+                href="https://instagram.com/migu.exe"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  position: "absolute",
+                  left: "35%",   // <-- Tweak these
+                  top: "65%",    // <-- Tweak these
+                  width: "30%",  // <-- Tweak these
+                  height: "7%",  // <-- Tweak these
+                  zIndex: 10005,
+                  cursor: "pointer",
+                  display: "block",
+                  // border: "2px solid #0ff", // For debugging zone, remove after
+                }}
+                onClick={e => e.stopPropagation()}
+                aria-label="Instagram"
               />
             </div>
           )}
@@ -614,7 +733,7 @@ export default function Home() {
             />
           ))}
 
-          {/* --- Button Hotzones (top + 5th + 6th) --- */}
+          {/* --- Button Hotzones (top + others) --- */}
           {TOP_BUTTON_POSITIONS.map((pos, idx) => (
             <ButtonHotzone
               key={idx}
@@ -622,7 +741,7 @@ export default function Home() {
               pos={pos}
               onClick={buttonHandlers[idx]}
               pressed={pressedIdx === idx}
-              disabled={pageOpen || customPageOpen}
+              disabled={pageOpen || aboutMeOpen}
               blackFade={blackFade}
             />
           ))}
