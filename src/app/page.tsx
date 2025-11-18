@@ -26,7 +26,7 @@ export default function HomeMenu() {
         fontWeight: "300",
         marginBottom: "20px",
       }}>
-        Welcome
+        IGOR DUBREUCQ - MENU
       </h1>
 
       {/* Bloc d'images du menu */}
