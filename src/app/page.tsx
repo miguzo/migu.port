@@ -42,7 +42,7 @@ export default function HomeMenu() {
           style={{ cursor: "pointer" }}
         >
           <Image
-            src="/next/image/Menu/MiguPlayerThumbnail.png"
+            src="/next/image/Loading.png"
             width={250}
             height={350}
             alt="Migu Player"
