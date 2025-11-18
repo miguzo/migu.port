@@ -1,5 +1,6 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
+
+@import "tailwindcss";
 
 /* Remove iOS blue tap highlight */
 html { -webkit-tap-highlight-color: transparent; }
@@ -32,4 +33,7 @@ body {
     background-color: #19191b;
     color: #e5c06c; /* or your main foreground color */
   }
+}
+html, body {
+  cursor: url('/cursor.png') 16 16, auto;
 }

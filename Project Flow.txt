@@ -1,0 +1,101 @@
+Project Resume: Victor Clavelly Music Web Player
+What We've Built
+A minimalist, interactive music player website with a vintage/mysterious UI, designed for both desktop and mobile, optimized for fast loading and low distractions.
+
+The interface simulates a “machine” with physical-looking buttons, an animated splash/loading overlay, and custom navigation for music and project pages.
+
+Main Features
+Splash/Loading Screen: Custom hand-drawn image covers the app on load. Stays until all images/sounds are preloaded, then waits for a tap/click to enter the site.
+
+Preloading: All UI images (frames, backgrounds, title cards, buttons) and all audio (sound FX, music tracks) are preloaded before the site starts to avoid lag/delays on first use.
+
+No Scroll: The app locks the page scroll for a fullscreen "kiosk" feel.
+
+Custom Buttons: Five touch/click zones mapped to PNG overlays, controlling play, pause, next track, next project, and a “page” panel.
+
+Music/Project System: Each project (album/EP) contains a background image, a page image, and a playlist (music tracks, each with its own title image).
+
+Sound FX: Button clicks and panel open/close play sound effects using Howler.js for reliable playback on both desktop and mobile.
+
+“Page” Overlay: Button 5 toggles a project-specific “page” image panel, which overlays the player and can be dismissed by tapping/clicking.
+
+Title Display: The current track’s title image is always shown. If the track changes, the previous title remains visible until the new image has fully loaded (no flicker).
+
+Mobile First: Works reliably on iPhone, locks orientation (as much as web allows), disables pinch/zoom, and is touch-optimized.
+
+How the Website Works (User Flow)
+Landing/Splash: User sees the custom loading image. While assets preload, user can’t interact. Once loading is complete, tapping/clicking removes the splash.
+
+Main UI: The “machine” interface appears, with a background image, a frame, title card, and five “button” hotzones (overlaid on the frame, invisible but clickable/tappable).
+
+Buttons:
+
+Play: Plays the current track.
+
+Pause: Pauses playback.
+
+Next Track: Skips to the next track in the current project playlist.
+
+Next Project: Switches to the next project/album and starts from its first track.
+
+Page (Button 5): Opens the “project page” overlay (shows a large PNG). Tapping anywhere closes it (with sound effect).
+
+Audio: Each track has a corresponding music file; transitions never cause abrupt cut-off (waits for track/title to load).
+
+No accidental scroll/zoom: User can’t scroll, zoom, or accidentally “leave” the player on mobile.
+
+Technical Stack
+Frontend: [Next.js 13+ App Router] (React-based framework)
+
+TypeScript: For strict typing and code safety
+
+Image Handling: next/image for optimized images
+
+Audio: Howler.js for robust, mobile-friendly sound FX and playback
+
+Styling: Inline styles + a tiny bit of Tailwind for body bg (you can expand to use more Tailwind if needed)
+
+File Structure: All assets (music, images, sound FX) stored in /public/next/image/ and /public/music/ and /public/sounds/
+
+No external DB: All project/playlist data is hardcoded as arrays (easy to expand)
+
+Key Libraries/Dependencies
+next (Next.js)
+
+react and react-dom
+
+howler (for sound)
+
+(optional) @types/howler for TypeScript intellisense
+
+Tips for Future Sessions / Cloning
+Reuse the “Project/Playlist” structure to add new albums/projects. Just add new entries in the projects array with images, page overlays, and tracks.
+
+All images/sounds referenced must exist in /public/next/image/ or /public/music/ for things to work reliably.
+
+To avoid broken images: Double-check file names for case, spaces, typos (web servers are case sensitive).
+
+If you want to add features (volume, scrub bar, more pages, etc.), just describe your change and paste this project sheet into a new chat for context.
+
+How to Extend
+More projects: Just add new objects to the projects array.
+
+More tracks: Add more items to each project’s playlist.
+
+New overlays/splash/animations: Replace images or add CSS keyframes as needed.
+
+Advanced navigation: Can add swipe/keyboard support, or external links if wanted.
+
+Accessibility: Can add ARIA labels and improve focus/keyboard nav.
+
+Known Quirks
+On some iPhones, audio playback may still require an initial user gesture to “unlock” sound (standard iOS policy).
+
+next/image requires all images to be accessible and correctly referenced, otherwise you’ll see broken links.
+
+Audio pool errors can occur on iOS if too many sound FX overlap (Howler limitation).
+
+Code Organization
+Everything is in src/app/page.tsx (for now).
+
+You can modularize further (e.g., move components to /components) as your project grows.
