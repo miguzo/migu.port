@@ -43,8 +43,8 @@ export default function HomeMenu() {
         >
           <Image
             src="/next/image/Loading.png"
-            width={250}
-            height={350}
+            width={500}
+            height={700}
             alt="Migu Player"
             style={{
               objectFit: "contain",
@@ -59,9 +59,9 @@ export default function HomeMenu() {
           style={{ cursor: "pointer" }}
         >
           <Image
-            src="/next/image/Menu/CVThumbnail.png"
-            width={250}
-            height={350}
+            src="/next/image/CV.png"
+            width={500}
+            height={700}
             alt="Portfolio / CV"
             style={{
               objectFit: "contain",
