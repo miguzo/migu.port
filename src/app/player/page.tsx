@@ -3,6 +3,9 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
+import HomeButton from "@/components/HomeButton";
+
+
 
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
@@ -147,14 +150,14 @@ const projects: Project[] = [
     ]
   },
     {
-    mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
-    pageImg: "/next/image/Fallcore/Components/FallcorePAGE.png",
+    mainImg: "/next/image/Fallcore/Components/memoriaCF.png",
+    pageImg: "/next/image/Fallcore/Components/memoriaFAGE.png",
     buttons: [
-      { on: "/next/image/Fallcore/Buttons/Button 1 ON.png", off: "/next/image/Fallcore/Buttons/Button 1 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
+      { on: "/next/image/Memoria/Buttons/Button 1 ON.png", off: "/next/image/Memoria/Buttons/Button 1 Off.png" },
+      { on: "/next/image/Memoria/Buttons/Button 2 ON.png", off: "/next/image/Memoria/Buttons/Button 2 Off.png" },
+      { on: "/next/image/Memoria/Buttons/Button 3 ON.png", off: "/next/image/Memoria/Buttons/Button 3 Off.png" },
+      { on: "/next/image/Memoria/Buttons/Button 4 ON.png", off: "/next/image/Memoria/Buttons/Button 4 Off.png" },
+      { on: "/next/image/Memoria/Buttons/Button5On.png", off: "/next/image/Memoria/Buttons/Button5Off.png" },
       { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
@@ -305,6 +308,7 @@ export default function Home() {
   const [blackOpacity, setBlackOpacity] = useState(0);
   const [mainPageVisible, setMainPageVisible] = useState(false);
 
+  <HomeButton />
   // --- SFX ---
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
