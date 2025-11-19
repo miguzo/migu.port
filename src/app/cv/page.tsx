@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function CVPage() {
   return (
     <main
@@ -5,15 +7,31 @@ export default function CVPage() {
         width: "100vw",
         height: "100vh",
         background: "#19191b",
-        color: "white",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
       }}
     >
-      <h2 style={{ fontSize: "24px", fontWeight: "300" }}>
-        CV / Who am I — en construction
-      </h2>
+      <div
+        style={{
+          position: "relative",
+          width: "min(95vw, 430px)",
+          height: "min(90vh, calc(95vw * 1.4), 620px)",
+        }}
+      >
+        <Image
+          src="/next/image/CV/CVPage.png"
+          alt="CV Page"
+          fill
+          priority
+          style={{
+            objectFit: "contain",
+            objectPosition: "center",
+            userSelect: "none",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
     </main>
   );
 }
