@@ -20,7 +20,7 @@ export default function CVPage() {
         }}
       >
         <Image
-          src="/next/image/CV/CVPage.png"
+          src="/next/image/cars.png"
           alt="CV Page"
           fill
           priority
