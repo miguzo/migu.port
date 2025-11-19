@@ -43,10 +43,10 @@ export default function HomeMenu() {
           onClick={() => router.push("/player")}
           style={{
             position: "absolute",
-            left: "20%",    // à ajuster
-            top: "40%",     // à ajuster
-            width: "60%",   // à ajuster
-            height: "10%",  // à ajuster
+            left: "14%",    // à ajuster
+            top: "30%",     // à ajuster
+            width: "20%",   // à ajuster
+            height: "40%",  // à ajuster
             background: "transparent",
             border: "none",
             cursor: "pointer",
@@ -59,10 +59,10 @@ export default function HomeMenu() {
           onClick={() => router.push("/cv")}
           style={{
             position: "absolute",
-            left: "20%",    // à ajuster selon ton image
-            top: "55%",     // à ajuster
-            width: "60%",
-            height: "10%",
+            left: "50%",    // à ajuster selon ton image
+            top: "30%",     // à ajuster
+            width: "20%",
+            height: "40%",
             background: "transparent",
             border: "none",
             cursor: "pointer",
