@@ -3,9 +3,6 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
-import HomeButton from "@/components/HomeButton";
-
-
 
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
@@ -308,7 +305,6 @@ export default function Home() {
   const [blackOpacity, setBlackOpacity] = useState(0);
   const [mainPageVisible, setMainPageVisible] = useState(false);
 
-  <HomeButton />
   // --- SFX ---
   const buttonSound = useRef<Howl | null>(null);
   const pageOnSound = useRef<Howl | null>(null);
@@ -472,7 +468,7 @@ export default function Home() {
         <link rel="preload" as="image" href="/next/image/MainPage.png" />
         <link rel="preload" as="image" href="/next/image/AboutMe.png" />
       </Head>
-    <main className="fixed inset-0 flex justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
+    <main className="fixed inset-0 flex items-center justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
   {/* --- Spherical Glow BG --- */}
   <div
     style={{
