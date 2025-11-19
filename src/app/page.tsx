@@ -14,62 +14,61 @@ export default function HomeMenu() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        flexDirection: "column",
-        gap: "40px",
+        overflow: "hidden",
       }}
     >
-      {/* Titre */}
-      <h1 style={{
-        color: "#d8ccaf",
-        fontSize: "20px",
-        letterSpacing: "2px",
-        fontWeight: "300",
-        marginBottom: "20px",
-      }}>
-        IGOR DUBREUCQ - MENU
-      </h1>
+      <div
+        style={{
+          position: "relative",
+          width: "min(95vw, 430px)",
+          height: "min(85vh, calc(95vw * 1.4), 620px)",
+        }}
+      >
+        {/* Ton image de menu */}
+        <Image
+          src="/next/image/Menu/rahg.png"
+          alt="Menu principal"
+          fill
+          priority
+          style={{
+            objectFit: "contain",
+            objectPosition: "center",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        />
 
-      {/* Bloc d'images du menu */}
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        gap: "40px",
-      }}>
-
-        {/* Image bouton : Migu Player */}
-        <div
+        {/* Bouton Migu Player */}
+        <button
           onClick={() => router.push("/player")}
-          style={{ cursor: "pointer" }}
-        >
-          <Image
-            src="/next/image/Loading.png"
-            width={500}
-            height={700}
-            alt="Migu Player"
-            style={{
-              objectFit: "contain",
-              transition: "0.3s",
-            }}
-          />
-        </div>
+          style={{
+            position: "absolute",
+            left: "20%",    // à ajuster
+            top: "40%",     // à ajuster
+            width: "60%",   // à ajuster
+            height: "10%",  // à ajuster
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+          aria-label="Migu Player"
+        />
 
-        {/* Image bouton : CV */}
-        <div
+        {/* Bouton CV / Portfolio */}
+        <button
           onClick={() => router.push("/cv")}
-          style={{ cursor: "pointer" }}
-        >
-          <Image
-            src="/next/image/CV.png"
-            width={500}
-            height={700}
-            alt="Portfolio / CV"
-            style={{
-              objectFit: "contain",
-              transition: "0.3s",
-            }}
-          />
-        </div>
-
+          style={{
+            position: "absolute",
+            left: "20%",    // à ajuster selon ton image
+            top: "55%",     // à ajuster
+            width: "60%",
+            height: "10%",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+          aria-label="Portfolio / Who Am I"
+        />
       </div>
     </main>
   );
