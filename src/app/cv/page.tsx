@@ -1,25 +1,30 @@
 import Image from "next/image";
+import BackButton from "@/components/BackButton";
 
 export default function CVPage() {
   return (
     <main
       style={{
+        position: "relative",
         width: "100vw",
         height: "100vh",
         background: "#19191b",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        overflow: "hidden",
       }}
     >
+      {/* === SAME CONTAINER AS MAIN MENU === */}
       <div
         style={{
           position: "relative",
-          width: "min(95vw, 430px)",
-          height: "min(85vh, calc(95vw * 1.4), 620px)",
+          width: "min(98vw, 430px)",
+          height: "min(85vh, calc(98vw * 1.44), 620px)",
         }}
       >
-        {/* CV background image */}
+
+        {/* === BACKGROUND IMAGE (cars.png) === */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
@@ -27,49 +32,37 @@ export default function CVPage() {
           priority
           style={{
             objectFit: "contain",
-            objectPosition: "center",
             pointerEvents: "none",
-            userSelect: "none",
           }}
         />
 
-        {/* === CENTERED HOME BUTTON (PNG + hotspot) === */}
-        <div
+        {/* === HOME BUTTON PNG (FULL SCALE) === */}
+        <Image
+          src="/next/image/home.png"
+          alt="Home button graphic"
+          fill
           style={{
-            position: "absolute",
-            top: "4%",
-            left: "50%",
-            transform: "translateX(-50%)",  // ★ centers perfectly
+            objectFit: "contain",
+            pointerEvents: "none", // allows hotzone clicks
             zIndex: 20,
           }}
-        >
-          {/* Visual PNG */}
-          <Image
-            src="/next/image/home.png"
-            alt="Home button"
-            width={110}     // adjust size here
-            height={110}
-            style={{
-              pointerEvents: "none", // hotspot handles the click
-            }}
-          />
+        />
 
-          {/* Exact-size clickable hotspot */}
-          <a
-            href="https://igordubreucq.com"
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              cursor: "pointer",
-              background: "transparent",
-            }}
-            aria-label="Back to main menu"
-          />
-        </div>
-
+        {/* === CLICKABLE HOTZONE — YOU POSITION THIS === */}
+        <button
+          onClick={() => (window.location.href = "https://igordubreucq.com")}
+          style={{
+            position: "absolute",
+            left: "40%",  // place exactly where the icon should be clickable
+            top: "10%",
+            width: "20%",
+            height: "12%",
+            background: "transparent",
+            border: "none",
+            zIndex: 30,
+            cursor: "pointer",
+          }}
+        />
       </div>
     </main>
   );
