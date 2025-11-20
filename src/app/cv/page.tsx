@@ -49,7 +49,7 @@ export default function CVPage() {
     left: "50%",                   // <-- must be a string
     transform: "translateX(-50%)", // <-- must be a string
     top: "1%",                     // position at the very top
-    width: "30%",                  // scales with screen
+    width: "28%",                  // scales with screen
     aspectRatio: "1 / 1",          // makes the image square so fill works
     zIndex: 40,
     cursor: "pointer",
