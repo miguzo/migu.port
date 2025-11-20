@@ -20,11 +20,17 @@ export default function HomeMenu() {
       <div
         style={{
           position: "relative",
-          width: "min(95vw, 430px)",
-          height: "min(85vh, calc(95vw * 1.4), 620px)",
+
+          /* NEW — fits large screens while keeping iPhone proportions */
+          width: "min(100vw, 430px)",
+          height: "min(calc(100vw * 1.4), 100vh, 620px)",
+
+          /* Prevents it from shrinking too much */
+          maxWidth: "430px",
+          maxHeight: "620px",
         }}
       >
-        {/* Ton image de menu */}
+        {/* Menu image */}
         <Image
           src="/next/image/cars2.png"
           alt="Menu principal"
@@ -38,15 +44,15 @@ export default function HomeMenu() {
           }}
         />
 
-        {/* Bouton Migu Player */}
+        {/* Migu Player button */}
         <button
           onClick={() => router.push("/player")}
           style={{
             position: "absolute",
-            left: "14%",    // à ajuster
-            top: "30%",     // à ajuster
-            width: "20%",   // à ajuster
-            height: "40%",  // à ajuster
+            left: "14%",
+            top: "30%",
+            width: "20%",
+            height: "40%",
             background: "transparent",
             border: "none",
             cursor: "pointer",
@@ -54,13 +60,13 @@ export default function HomeMenu() {
           aria-label="Migu Player"
         />
 
-        {/* Bouton CV / Portfolio */}
+        {/* CV / Portfolio button */}
         <button
           onClick={() => router.push("/cv")}
           style={{
             position: "absolute",
-            left: "50%",    // à ajuster selon ton image
-            top: "30%",     // à ajuster
+            left: "50%",
+            top: "30%",
             width: "20%",
             height: "40%",
             background: "transparent",
