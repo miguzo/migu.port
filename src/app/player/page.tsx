@@ -565,30 +565,7 @@ export default function Home() {
                   }}
                 />
               </div>
-              <a
-  href="https://igordubreucq.com"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    position: "absolute",
-    left: "20%",
-    top: "2%",
-    width: "20%",
-    cursor: "pointer",
-    zIndex: 500,   // higher than everything except overlays
-  }}
->
-  <Image
-    src="/next/image/home.png"
-    alt="Home"
-    fill
-    style={{
-      objectFit: "contain",
-      pointerEvents: "none",
-      userSelect: "none",
-    }}
-  />
-</a>
+            
               {/* Preload MainPage & AboutMe as invisible images */}
               <Image
                 src="/next/image/MainPage.png"
@@ -623,6 +600,33 @@ export default function Home() {
               )}
             </div>
           )}
+{/* --- SIMPLE PNG BUTTON WITH LINK --- */}
+{!loading && splashDone && (
+  <a
+    href="https://igordubreucq.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      position: "absolute",
+      left: "20%",
+      top: "2%",
+      width: "20%",
+      zIndex: 500,
+      cursor: "pointer",
+    }}
+  >
+    <Image
+      src="/next/image/home.png"
+      alt="Home"
+      fill
+      style={{
+        objectFit: "contain",
+        pointerEvents: "none",
+        userSelect: "none",
+      }}
+    />
+  </a>
+)}
 
           {/* --- Main frame (background+frame) --- */}
           <Image
