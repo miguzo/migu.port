@@ -600,7 +600,7 @@ export default function Home() {
               )}
             </div>
           )}
-{/* --- SIMPLE PNG BUTTON WITH LINK --- */}
+{/* --- SIMPLE PNG BUTTON WITH LINK (correct placement) --- */}
 {!loading && splashDone && (
   <a
     href="https://igordubreucq.com"
@@ -608,11 +608,13 @@ export default function Home() {
     rel="noopener noreferrer"
     style={{
       position: "absolute",
-      left: "20%",
-      top: "2%",
-      width: "20%",
+      left: "5%",     // <- now inside the frame border
+      top: "5%",      // <- these coords are relative to frame container
+      width: "15%",
+      height: "auto",
       zIndex: 500,
       cursor: "pointer",
+      display: "block",
     }}
   >
     <Image
@@ -622,11 +624,11 @@ export default function Home() {
       style={{
         objectFit: "contain",
         pointerEvents: "none",
-        userSelect: "none",
       }}
     />
   </a>
 )}
+
 
           {/* --- Main frame (background+frame) --- */}
           <Image
