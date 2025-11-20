@@ -472,19 +472,19 @@ export default function Home() {
 
 
   {/* === CUSTOM BACK BUTTON PNG === */}
-  <Image
-    src="/next/image/home.png"
-    alt="Back icon"
-    width={80}
-    height={80}
-    style={{
-      position: "absolute",
-      top: "20px",
-      left: "20px",
-      zIndex: 99999,
-      pointerEvents: "none",
-    }}
-  />
+<Image
+  src="/next/image/home.png"
+  alt="Back icon"
+  style={{
+    width: "25%",        // 🎯 same visual scale as menu buttons
+    height: "auto",
+    position: "absolute",
+    top: "20px",
+    left: "20px",
+    zIndex: 10,
+    pointerEvents: "none",
+  }}
+/>
 
   {/* === CLICKABLE HOTZONE === */}
   <BackButton />
