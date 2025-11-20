@@ -25,27 +25,28 @@ export default function CVPage() {
           maxHeight: "1260px",
         }}
       >
-
         {/* === BACKGROUND IMAGE (cars.png) === */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
           fill
           priority
-           sizes="100vw"  // <-- ALLOWS UPSCALING
+          /* ALLOWS UPSCALING */
+          sizes="100vw"
           style={{
             objectFit: "contain",
             pointerEvents: "none",
           }}
         />
-   
+
         {/* === HOME BUTTON PNG (FULL SCALE) === */}
         <Image
           src="/next/image/home.png"
           alt="Home button graphic"
           fill
           priority
-          sizes="100vw"  // <-- ALLOWS UPSCALING
+          /* ALLOWS UPSCALING */
+          sizes="100vw"
           style={{
             objectFit: "contain",
             pointerEvents: "none", // allows hotzone clicks
@@ -58,7 +59,7 @@ export default function CVPage() {
           onClick={() => (window.location.href = "https://igordubreucq.com")}
           style={{
             position: "absolute",
-            left: "40%",  // place exactly where the icon should be clickable
+            left: "40%", // place exactly where the icon should be clickable
             top: "10%",
             width: "20%",
             height: "12%",
