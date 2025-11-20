@@ -1,9 +1,11 @@
 import Image from "next/image";
+import BackButton from "@/components/BackButton";
 
 export default function CVPage() {
   return (
     <main
       style={{
+        position: "relative",
         width: "100vw",
         height: "100vh",
         background: "#19191b",
@@ -12,6 +14,8 @@ export default function CVPage() {
         alignItems: "center",
       }}
     >
+      <BackButton />
+
       <div
         style={{
           position: "relative",

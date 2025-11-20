@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
-
+import BackButton from "@/components/BackButton";
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
@@ -469,6 +469,10 @@ export default function Home() {
         <link rel="preload" as="image" href="/next/image/AboutMe.png" />
       </Head>
     <main className="fixed inset-0 flex items-center justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
+
+       {/* ✅ BACK BUTTON GOES HERE */}
+      <BackButton />
+
   {/* --- Spherical Glow BG --- */}
   <div
     style={{
