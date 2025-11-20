@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
-import { useRouter } from "next/navigation";
 
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
@@ -242,7 +241,6 @@ const ButtonHotzone = memo(function ButtonHotzone({
 
 // --- Main Component ---
 export default function Home() {
-  const router = useRouter();
 
   // --- State ---
   const audioRef = useRef<HTMLAudioElement>(null);
