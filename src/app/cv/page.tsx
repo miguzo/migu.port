@@ -14,34 +14,33 @@ export default function CVPage() {
         alignItems: "center",
       }}
     >
-
       <div
         style={{
           position: "relative",
-          width: "min(98vw, 600px)",                    // upscale
-          height: "min(90vh, calc(98vw * 1.44), 900px)", // upscale
+          width: "min(90vw, 800px)",
+          height: "calc(min(90vw, 800px) * 1.35)",
+          maxHeight: "90vh",
         }}
       >
 
-        {/* Back PNG */}
-    <Image
-  src="/next/image/home.png"
-  alt="Back icon"
-  style={{
-    width: "25%",        // 🎯 same visual scale as menu buttons
-    height: "auto",
-    position: "absolute",
-    top: "20px",
-    left: "20px",
-    zIndex: 10,
-    pointerEvents: "none",
-  }}
-/>
+        {/* Home icon */}
+        <Image
+          src="/next/image/home.png"
+          alt="Back icon"
+          style={{
+            width: "18%",       // scales with new container size
+            height: "auto",
+            position: "absolute",
+            top: "2%",
+            left: "2%",
+            zIndex: 10,
+            pointerEvents: "none",
+          }}
+        />
 
-        {/* Clickable hotzone */}
         <BackButton />
 
-        {/* Upscaled fullscreen image */}
+        {/* Background image */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
