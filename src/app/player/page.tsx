@@ -603,31 +603,32 @@ export default function Home() {
           )}
 {/* --- SIMPLE HOME BUTTON --- */}
 {!loading && splashDone && (
-<a
-  href="https://igordubreucq.com"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
+  <a
+    href="https://igordubreucq.com"
+    target="_blank"
+    rel="noopener noreferrer"
+   style={{
     position: "absolute",
     left: "50%",                   // <-- must be a string
     transform: "translateX(-50%)", // <-- must be a string
     top: "1%",                     // position at the very top
-    width: "30%",                  // scales with screen
+    width: "28%",                  // scales with screen
     aspectRatio: "1 / 1",          // makes the image square so fill works
     zIndex: 40,
     cursor: "pointer",
-  }}
->
-  <Image
-    src="/next/image/homebutton.png"
-    alt="Home"
-    fill
-    style={{
-      objectFit: "contain",
-      pointerEvents: "none",
     }}
-  />
-</a>
+  >
+    <Image
+      src="/next/image/home.png"
+      alt="Home Button"
+      fill
+      style={{
+        objectFit: "contain",
+        pointerEvents: "none",
+        userSelect: "none",
+      }}
+    />
+  </a>
 )}
 
 
