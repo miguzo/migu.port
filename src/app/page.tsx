@@ -21,30 +21,30 @@ export default function HomeMenu() {
         style={{
           position: "relative",
 
-          /* NEW — fits large screens while keeping iPhone proportions */
-          width: "min(100vw, 430px)",
-          height: "min(calc(100vw * 1.4), 100vh, 620px)",
+          // ALLOWS BIGGER SIZE ON DESKTOP
+          width: "min(100vw, 900px)",
+          height: "min(calc(100vw * 1.4), 1260px)",
 
-          /* Prevents it from shrinking too much */
-          maxWidth: "430px",
-          maxHeight: "620px",
+          maxWidth: "900px",
+          maxHeight: "1260px",
         }}
       >
-        {/* Menu image */}
+        {/* IMAGE */}
         <Image
           src="/next/image/cars2.png"
           alt="Menu principal"
           fill
           priority
+          sizes="100vw"  // <-- ALLOWS UPSCALING
           style={{
-            objectFit: "contain",
+            objectFit: "contain", // keeps proportions
             objectPosition: "center",
             pointerEvents: "none",
             userSelect: "none",
           }}
         />
 
-        {/* Migu Player button */}
+        {/* MIGU PLAYER BUTTON */}
         <button
           onClick={() => router.push("/player")}
           style={{
@@ -60,7 +60,7 @@ export default function HomeMenu() {
           aria-label="Migu Player"
         />
 
-        {/* CV / Portfolio button */}
+        {/* CV / PORTFOLIO BUTTON */}
         <button
           onClick={() => router.push("/cv")}
           style={{
