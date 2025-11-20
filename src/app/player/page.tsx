@@ -282,8 +282,7 @@ export default function Home() {
         "/next/image/Loading.png",
         "/next/image/MainPage.png",
         "/next/image/AboutMe.png",
-        "/next/image/homebutton.png",
-"
+        "/next/image/home.png",
       ];
 
       let loaded = 0;
