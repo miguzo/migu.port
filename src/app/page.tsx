@@ -26,7 +26,7 @@ export default function HomeMenu() {
       >
         {/* Ton image de menu */}
         <Image
-          src="/next/image/rahg.png"
+          src="/next/image/cars2.png"
           alt="Menu principal"
           fill
           priority
