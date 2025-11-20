@@ -14,15 +14,16 @@ export default function CVPage() {
         alignItems: "center",
       }}
     >
+
       <div
         style={{
           position: "relative",
-          width: "min(95vw, 430px)",
-          height: "min(90vh, calc(95vw * 1.4), 620px)",
+          width: "min(98vw, 600px)",                    // upscale
+          height: "min(90vh, calc(98vw * 1.44), 900px)", // upscale
         }}
       >
 
-        {/* PNG icon for your back button */}
+        {/* Back PNG */}
         <Image
           src="/next/image/home.png"
           alt="Back icon"
@@ -33,14 +34,14 @@ export default function CVPage() {
             top: "20px",
             left: "20px",
             zIndex: 10,
-            pointerEvents: "none", // clickable below
+            pointerEvents: "none",
           }}
         />
 
-        {/* Hotzone button */}
+        {/* Clickable hotzone */}
         <BackButton />
 
-        {/* Background image */}
+        {/* Upscaled fullscreen image */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
