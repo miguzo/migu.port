@@ -459,31 +459,7 @@ export default function Home() {
             userSelect: "none",
           }}
         />
-{/* --- SIMPLE PNG BUTTON WITH LINK --- */}
-<a
-  href="https://igordubreucq.com"   // your link here
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    position: "absolute",
-    left: "20%",     // <-- adjust position
-    top: "2%",      // <-- adjust position
-    width: "20%",    // <-- responsive width
-    cursor: "pointer",
-    zIndex: 40,
-  }}
->
-  <Image
-    src="/next/image/home.png"   // put your PNG inside /public/next/image
-    alt="My Button"
-    fill
-    style={{
-      objectFit: "contain",
-      pointerEvents: "none",
-      userSelect: "none",
-    }}
-  />
-</a>
+
 
         {/* --- Spherical Glow BG (duplicate, aria-hidden) --- */}
         <div
@@ -533,6 +509,31 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
+          {/* --- SIMPLE PNG BUTTON WITH LINK --- */}
+<a
+  href="https://igordubreucq.com"   // your link here
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{
+    position: "absolute",
+    left: "20%",     // <-- adjust position
+    top: "2%",      // <-- adjust position
+    width: "20%",    // <-- responsive width
+    cursor: "pointer",
+    zIndex: 40,
+  }}
+>
+  <Image
+    src="/next/image/home.png"   // put your PNG inside /public/next/image
+    alt="My Button"
+    fill
+    style={{
+      objectFit: "contain",
+      pointerEvents: "none",
+      userSelect: "none",
+    }}
+  />
+</a>
           {/* --- Loading Splash --- */}
           {(loading || !splashDone) && (
             <div
