@@ -440,40 +440,33 @@ export default function Home() {
         className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
       >
- {/* HOME ICON + BUTTON */}
-<div
-  style={{
-    position: "absolute",
-    top: "2%",
-    left: "2%",
-    width: "60px",
-    height: "60px",
-    zIndex: 200,              // very high to stay above everything
-  }}
->
-  <Image
-    src="/next/image/home.png"
-    alt="Home"
-    fill
-    style={{
-      objectFit: "contain",
-    }}
-    priority
-  />
-</div>
+    {/* === HOME BUTTON PNG (FULL SCALE) === */}
+        <Image
+          src="/next/image/home.png"
+          alt="Home button graphic"
+          fill
+          priority
+          /* ALLOWS UPSCALING */
+          sizes="100vw"
+          style={{
+            objectFit: "contain",
+            pointerEvents: "none", // allows hotzone clicks
+            zIndex: 20,
+          }}
+        />
 
-        {/* CLICKABLE HOTZONE */}
+        {/* === CLICKABLE HOTZONE — YOU POSITION THIS === */}
         <button
-          onClick={() => router.push("/")}
+          onClick={() => (window.location.href = "https://igordubreucq.com")}
           style={{
             position: "absolute",
-            left: "40%",
-            top: "8%",
-            width: "20%",
-            height: "10%",
-            zIndex: 30,
+            left: "42%", // place exactly where the icon should be clickable
+            top: "25%",
+            width: "15%",
+            height: "7%",
             background: "transparent",
             border: "none",
+            zIndex: 30,
             cursor: "pointer",
           }}
         />
