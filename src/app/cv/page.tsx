@@ -40,31 +40,31 @@ export default function CVPage() {
           }}
         />
 {/* --- SIMPLE HOME BUTTON --- */}
-  <a
-    href="https://igordubreucq.com"
-    target="_blank"
-    rel="noopener noreferrer"
+<a
+  href="https://igordubreucq.com"
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{
+    position: "absolute",
+    left: "50%",                   // <-- must be a string
+    transform: "translateX(-50%)", // <-- must be a string
+    top: "1%",                     // position at the very top
+    width: "30%",                  // scales with screen
+    aspectRatio: "1 / 1",          // makes the image square so fill works
+    zIndex: 40,
+    cursor: "pointer",
+  }}
+>
+  <Image
+    src="/next/image/homebutton.png"
+    alt="Home"
+    fill
     style={{
-      position: "absolute",
-      left: "5%",
-      top: "1%",
-      width: "30%",
-      aspectRatio: "1 / 1",   // <-- THIS FIXES THE HEIGHT
-      zIndex: 40,
-      cursor: "pointer",
+      objectFit: "contain",
+      pointerEvents: "none",
     }}
-  >
-    <Image
-      src="/next/image/home.png"
-      alt="Home Button"
-      fill
-      style={{
-        objectFit: "contain",
-        pointerEvents: "none",
-        userSelect: "none",
-      }}
-    />
-  </a>
+  />
+</a>
 
       </div>
     </main>
