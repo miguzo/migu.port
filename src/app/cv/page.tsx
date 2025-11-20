@@ -5,7 +5,6 @@ export default function CVPage() {
   return (
     <main
       style={{
-        position: "relative",
         width: "100vw",
         height: "100vh",
         background: "#19191b",
@@ -15,12 +14,16 @@ export default function CVPage() {
         overflow: "hidden",
       }}
     >
-      {/* === SAME CONTAINER AS MAIN MENU === */}
       <div
         style={{
           position: "relative",
-          width: "min(98vw, 430px)",
-          height: "min(85vh, calc(98vw * 1.44), 620px)",
+
+          // ALLOWS BIGGER SIZE ON DESKTOP
+          width: "min(100vw, 900px)",
+          height: "min(calc(100vw * 1.4), 1260px)",
+
+          maxWidth: "900px",
+          maxHeight: "1260px",
         }}
       >
 
