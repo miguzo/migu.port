@@ -60,10 +60,10 @@ export default function CVPage() {
           onClick={() => (window.location.href = "https://igordubreucq.com")}
           style={{
             position: "absolute",
-            left: "40%", // place exactly where the icon should be clickable
-            top: "10%",
-            width: "20%",
-            height: "12%",
+            left: "42%", // place exactly where the icon should be clickable
+            top: "25%",
+            width: "15%",
+            height: "7%",
             background: "transparent",
             border: "none",
             zIndex: 30,
