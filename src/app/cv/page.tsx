@@ -49,7 +49,10 @@ export default function CVPage() {
           /* ALLOWS UPSCALING */
           sizes="100vw"
           style={{
-            objectFit: "contain",
+                 left: "42%", // place exactly where the icon should be clickable
+            top: "25%",
+            width: "15%",
+            height: "7%",
             pointerEvents: "none", // allows hotzone clicks
             zIndex: 20,
           }}
