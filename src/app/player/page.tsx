@@ -600,7 +600,7 @@ export default function Home() {
               )}
             </div>
           )}
-{/* --- SIMPLE PNG BUTTON WITH LINK (correct placement) --- */}
+{/* --- SIMPLE HOME BUTTON --- */}
 {!loading && splashDone && (
   <a
     href="https://igordubreucq.com"
@@ -608,22 +608,22 @@ export default function Home() {
     rel="noopener noreferrer"
     style={{
       position: "absolute",
-      left: "5%",     // <- now inside the frame border
-      top: "5%",      // <- these coords are relative to frame container
+      left: "5%",
+      top: "5%",
       width: "15%",
-      height: "auto",
-      zIndex: 500,
+      aspectRatio: "1 / 1",   // <-- THIS FIXES THE HEIGHT
+      zIndex: 40,
       cursor: "pointer",
-      display: "block",
     }}
   >
     <Image
       src="/next/image/home.png"
-      alt="Home"
+      alt="Home Button"
       fill
       style={{
         objectFit: "contain",
         pointerEvents: "none",
+        userSelect: "none",
       }}
     />
   </a>
