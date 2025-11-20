@@ -3,7 +3,8 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
-import BackButton from "@/components/BackButton";
+import { useRouter } from "next/navigation";
+
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
@@ -57,17 +58,17 @@ const projects: Project[] = [
         top: "56%",
         width: "25%",
         height: "7%",
-        label: "Fragments Site"
+        label: "Fragments Site",
       },
-       {
+      {
         href: "https://instagram.com/victorclavelly",
         left: "30%",
         top: "49%",
         width: "30%",
         height: "7%",
-        label: "VC Instagram"
-      }
-    ]
+        label: "VC Instagram",
+      },
+    ],
   },
   {
     mainImg: "/next/image/Aggragate/Components/AggragateCF.png",
@@ -98,7 +99,7 @@ const projects: Project[] = [
         top: "43%",
         width: "19%",
         height: "5%",
-        label: "Aggregate Site"
+        label: "Aggregate Site",
       },
       {
         href: "https://www.instagram.com/moulsssss/",
@@ -106,7 +107,7 @@ const projects: Project[] = [
         top: "47%",
         width: "23%",
         height: "5%",
-        label: "Moul Instagram"
+        label: "Moul Instagram",
       },
       {
         href: "https://distraction.fun/",
@@ -114,9 +115,9 @@ const projects: Project[] = [
         top: "54%",
         width: "18%",
         height: "7%",
-        label: "Distraction Site"
-      }
-    ]
+        label: "Distraction Site",
+      },
+    ],
   },
   {
     mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
@@ -142,11 +143,11 @@ const projects: Project[] = [
         top: "60%",
         width: "15%",
         height: "7%",
-        label: "Fallcore Velith"
-      }
-    ]
+        label: "Fallcore Velith",
+      },
+    ],
   },
-    {
+  {
     mainImg: "/next/image/Fallcore/Components/memoriaCF.png",
     pageImg: "/next/image/Fallcore/Components/memoriaFAGE.png",
     buttons: [
@@ -170,11 +171,11 @@ const projects: Project[] = [
         top: "60%",
         width: "15%",
         height: "7%",
-        label: "Fallcore Velith"
-      }
-    ]
+        label: "Fallcore Velith",
+      },
+    ],
   },
-    {
+  {
     mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
     pageImg: "/next/image/Fallcore/Components/FallcorePAGE.png",
     buttons: [
@@ -198,9 +199,9 @@ const projects: Project[] = [
         top: "60%",
         width: "15%",
         height: "7%",
-        label: "Fallcore Velith"
-      }
-    ]
+        label: "Fallcore Velith",
+      },
+    ],
   },
   {
     mainImg: "/next/image/St4r/Components/St4rCF.png",
@@ -225,22 +226,27 @@ const projects: Project[] = [
         top: "44%",
         width: "15%",
         height: "6%",
-        label: "St4r Fresnoy"
+        label: "St4r Fresnoy",
       },
-       {
+      {
         href: "https://www.instagram.com/juliatarissan/",
         left: "45%",
         top: "58%",
         width: "31%",
         height: "6%",
-        label: "St4r Julia"
-      }
-    ]
+        label: "St4r Julia",
+      },
+    ],
   },
 ];
 
 const BUTTON_LABELS = [
-  "Play", "Pause", "Next Track", "Next Project", "Show Project Page", "Show About Me Page"
+  "Play",
+  "Pause",
+  "Next Track",
+  "Next Project",
+  "Show Project Page",
+  "Show About Me Page",
 ];
 
 // --- Preload helper (for button images only) ---
@@ -255,7 +261,12 @@ function preloadImage(src: string) {
 
 // --- Subcomponents ---
 const ButtonHotzone = memo(function ButtonHotzone({
-  idx, pos, onClick, pressed, disabled, blackFade
+  idx,
+  pos,
+  onClick,
+  pressed,
+  disabled,
+  blackFade,
 }: {
   idx: number;
   pos: TopButtonPos;
@@ -286,6 +297,8 @@ const ButtonHotzone = memo(function ButtonHotzone({
 
 // --- Main Component ---
 export default function Home() {
+  const router = useRouter();
+
   // --- State ---
   const audioRef = useRef<HTMLAudioElement>(null);
   const [projectIdx, setProjectIdx] = useState(0);
@@ -317,10 +330,11 @@ export default function Home() {
   // --- Preload only button ON/OFF images and current title image ---
   useEffect(() => {
     let isMounted = true;
+
     async function doPreload() {
       const buttonImages = [
-        ...projects.flatMap(p => [p.mainImg, p.pageImg]),
-        ...project.buttons.flatMap(btn => [btn.on, btn.off]),
+        ...projects.flatMap((p) => [p.mainImg, p.pageImg]),
+        ...project.buttons.flatMap((btn) => [btn.on, btn.off]),
         currentTrack.titleImg,
         "/next/image/Loading.png",
         "/next/image/MainPage.png",
@@ -328,8 +342,11 @@ export default function Home() {
       ];
 
       let loaded = 0;
-      const inc = () => { loaded++; if (isMounted) setLoadingProgress(loaded / buttonImages.length); };
-      await Promise.all(buttonImages.map(src => preloadImage(src).then(inc).catch(inc)));
+      const inc = () => {
+        loaded++;
+        if (isMounted) setLoadingProgress(loaded / buttonImages.length);
+      };
+      await Promise.all(buttonImages.map((src) => preloadImage(src).then(inc).catch(inc)));
       if (!isMounted) return;
       // Only preload SFX, not music tracks yet
       buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
@@ -337,8 +354,11 @@ export default function Home() {
       pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
       setLoading(false);
     }
+
     doPreload();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
     // Only run on first render (button images only)
     // eslint-disable-next-line
   }, []);
@@ -464,78 +484,107 @@ export default function Home() {
     <>
       <Head>
         <title>Victor Clavelly</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait"
+        />
         <link rel="preload" as="image" href="/next/image/MainPage.png" />
         <link rel="preload" as="image" href="/next/image/AboutMe.png" />
       </Head>
-    <main className="fixed inset-0 flex items-center justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
+      <main
+        className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
+        style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
+      >
+        {/* FULL-SCALE BACK BUTTON PNG */}
+        <div
+          style={{
+            position: "absolute",
+            top: "0",
+            left: "0",
+            width: "min(98vw, 430px)", // SAME SCALE AS MENU
+            height: "min(85vh, calc(98vw * 1.44), 620px)",
+            pointerEvents: "none",
+            zIndex: 20,
+          }}
+        >
+          <Image
+            src="/next/image/home.png"
+            alt="Back Icon"
+            fill
+            priority
+            style={{
+              objectFit: "contain",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
 
+        {/* CLICKABLE HOTZONE */}
+        <button
+          onClick={() => router.push("/")}
+          style={{
+            position: "absolute",
+            left: "40%",
+            top: "8%",
+            width: "20%",
+            height: "10%",
+            zIndex: 30,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        />
 
-  {/* === CUSTOM BACK BUTTON PNG === */}
-<Image
-  src="/next/image/home.png"
-  alt="Back icon"
-  style={{
-    width: "25%",        // 🎯 same visual scale as menu buttons
-    height: "auto",
-    position: "absolute",
-    top: "20px",
-    left: "20px",
-    zIndex: 10,
-    pointerEvents: "none",
-  }}
-/>
+        {/* --- Spherical Glow BG --- */}
+        <div
+          style={{
+            position: "absolute",
+            left: "46%",
+            top: "30%",
+            width: "60vw",
+            height: "60vw",
+            maxWidth: "600px",
+            maxHeight: "600px",
+            transform: "translate(-50%, -50%)",
+            background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
+            filter: "blur(80px)",
+            opacity: 0.7,
+            zIndex: 0,
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        />
 
-  {/* === CLICKABLE HOTZONE === */}
-  <BackButton />
-
-  {/* --- Spherical Glow BG --- */}
-  <div
-    style={{
-      position: "absolute",
-      left: "46%",
-      top: "30%",
-      width: "60vw",
-      height: "60vw",
-      maxWidth: "600px",
-      maxHeight: "600px",
-      transform: "translate(-50%, -50%)",
-      background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
-      filter: "blur(80px)",
-      opacity: 0.7,
-      zIndex: 0,
-      pointerEvents: "none",
-      userSelect: "none",
-    }}
-  />
-
-  {/* --- Spherical Glow BG --- */}
-  <div
-    style={{
-      position: "absolute",
-      left: "46%",
-      top: "30%",
-      width: "60vw",
-      height: "60vw",
-      maxWidth: "600px",
-      maxHeight: "600px",
-      transform: "translate(-50%, -50%)",
-      background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
-      filter: "blur(80px)",
-      opacity: 0.7,
-      zIndex: 0,
-      pointerEvents: "none",
-      userSelect: "none",
-    }}
-    aria-hidden
-  />
+        {/* --- Spherical Glow BG (duplicate, aria-hidden) --- */}
+        <div
+          style={{
+            position: "absolute",
+            left: "46%",
+            top: "30%",
+            width: "60vw",
+            height: "60vw",
+            maxWidth: "600px",
+            maxHeight: "600px",
+            transform: "translate(-50%, -50%)",
+            background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
+            filter: "blur(80px)",
+            opacity: 0.7,
+            zIndex: 0,
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+          aria-hidden
+        />
 
         {/* --- FADE NOIR FULLSCREEN --- */}
         {blackFade && (
           <div
             style={{
-              position: "fixed", inset: 0, background: "black",
-              opacity: blackOpacity, pointerEvents: "auto",
+              position: "fixed",
+              inset: 0,
+              background: "black",
+              opacity: blackOpacity,
+              pointerEvents: "auto",
               transition: "opacity 0.7s cubic-bezier(.7,0,.3,1)",
               zIndex: 99999,
             }}
@@ -558,10 +607,16 @@ export default function Home() {
           {(loading || !splashDone) && (
             <div
               style={{
-                position: "fixed", inset: 0, background: "#111", zIndex: 10000,
-                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "fixed",
+                inset: 0,
+                background: "#111",
+                zIndex: 10000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: loading || !mainPageLoaded ? "default" : "pointer",
-                transition: "opacity 0.5s", opacity: splashFading ? 0 : 1,
+                transition: "opacity 0.5s",
+                opacity: splashFading ? 0 : 1,
               }}
               onClick={handleSplashClick}
             >
@@ -572,23 +627,34 @@ export default function Home() {
                 height={620}
                 priority
                 style={{
-                  width: "min(98vw, 430px)", height: "auto", objectFit: "contain",
-                  maxHeight: "620px", maxWidth: "430px",
-                  userSelect: "none", pointerEvents: "none",
+                  width: "min(98vw, 430px)",
+                  height: "auto",
+                  objectFit: "contain",
+                  maxHeight: "620px",
+                  maxWidth: "430px",
+                  userSelect: "none",
+                  pointerEvents: "none",
                 }}
               />
               {/* Minimal loading bar */}
               <div
                 style={{
-                  position: "absolute", left: 0, bottom: 0, height: 4, width: "100%",
-                  background: "rgba(255,255,255,0.06)", zIndex: 10001,
+                  position: "absolute",
+                  left: 0,
+                  bottom: 0,
+                  height: 4,
+                  width: "100%",
+                  background: "rgba(255,255,255,0.06)",
+                  zIndex: 10001,
                 }}
               >
                 <div
                   style={{
-                    height: "100%", width: `${Math.round(loadingProgress * 100)}%`,
+                    height: "100%",
+                    width: `${Math.round(loadingProgress * 100)}%`,
                     background: "#867d50a8",
-                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)", borderRadius: 2,
+                    transition: "width 0.3s cubic-bezier(.7,0,.3,1)",
+                    borderRadius: 2,
                   }}
                 />
               </div>
@@ -597,21 +663,32 @@ export default function Home() {
                 src="/next/image/MainPage.png"
                 alt=""
                 style={{ display: "none" }}
-                width={10} height={10} priority onLoad={() => setMainPageLoaded(true)}
+                width={10}
+                height={10}
+                priority
+                onLoad={() => setMainPageLoaded(true)}
               />
               <Image
                 src="/next/image/AboutMe.png"
                 alt=""
                 style={{ display: "none" }}
-                width={10} height={10} priority
+                width={10}
+                height={10}
+                priority
               />
-              {(!loading && !mainPageLoaded) && (
+              {!loading && !mainPageLoaded && (
                 <div
                   style={{
-                    position: "absolute", top: "55%", width: "100%",
-                    textAlign: "center", color: "#fff", fontSize: 16,
+                    position: "absolute",
+                    top: "55%",
+                    width: "100%",
+                    textAlign: "center",
+                    color: "#fff",
+                    fontSize: 16,
                   }}
-                >Loading main page image...</div>
+                >
+                  Loading main page image...
+                </div>
               )}
             </div>
           )}
@@ -622,8 +699,12 @@ export default function Home() {
             alt="Main Visual Frame"
             fill
             style={{
-              objectFit: "contain", objectPosition: "center",
-              background: "transparent", zIndex: 2, pointerEvents: "none", userSelect: "none",
+              objectFit: "contain",
+              objectPosition: "center",
+              background: "transparent",
+              zIndex: 2,
+              pointerEvents: "none",
+              userSelect: "none",
             }}
             priority
           />
@@ -634,9 +715,14 @@ export default function Home() {
             alt="Song Title"
             fill
             style={{
-              objectFit: "contain", objectPosition: "center",
-              zIndex: 16, pointerEvents: "none", userSelect: "none",
-              opacity: 1, transition: "none", position: "absolute",
+              objectFit: "contain",
+              objectPosition: "center",
+              zIndex: 16,
+              pointerEvents: "none",
+              userSelect: "none",
+              opacity: 1,
+              transition: "none",
+              position: "absolute",
             }}
             priority
           />
@@ -645,8 +731,13 @@ export default function Home() {
           {pageOpen && (
             <div
               style={{
-                position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
-                zIndex: 30, cursor: "pointer",
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 30,
+                cursor: "pointer",
               }}
               onClick={() => {
                 pageOffSound.current?.play();
@@ -658,8 +749,11 @@ export default function Home() {
                 alt="Project Page"
                 fill
                 style={{
-                  objectFit: "contain", objectPosition: "center",
-                  zIndex: 31, pointerEvents: "none", userSelect: "none",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 31,
+                  pointerEvents: "none",
+                  userSelect: "none",
                 }}
                 priority
               />
@@ -680,7 +774,7 @@ export default function Home() {
                     cursor: "help",
                     display: "block",
                   }}
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   aria-label={link.label}
                 />
               ))}
@@ -691,9 +785,17 @@ export default function Home() {
           {mainPageVisible && (
             <div
               style={{
-                position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
-                zIndex: 10001, background: "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 10001,
+                background: "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
               }}
               onClick={handleCloseMainPage}
             >
@@ -702,8 +804,11 @@ export default function Home() {
                 alt="MainPage"
                 fill
                 style={{
-                  objectFit: "contain", objectPosition: "center",
-                  zIndex: 10002, pointerEvents: "none", userSelect: "none",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 10002,
+                  pointerEvents: "none",
+                  userSelect: "none",
                 }}
                 priority
               />
@@ -714,9 +819,16 @@ export default function Home() {
           {aboutMeOpen && (
             <div
               style={{
-                position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
-                zIndex: 10003, background: "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 10003,
+                background: "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <div
@@ -725,8 +837,13 @@ export default function Home() {
                   setAboutMeOpen(false);
                 }}
                 style={{
-                  position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
-                  background: "transparent", zIndex: 10003,
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "transparent",
+                  zIndex: 10003,
                 }}
               />
               <Image
@@ -734,8 +851,11 @@ export default function Home() {
                 alt="About Me"
                 fill
                 style={{
-                  objectFit: "contain", objectPosition: "center",
-                  zIndex: 10004, pointerEvents: "none", userSelect: "none",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  zIndex: 10004,
+                  pointerEvents: "none",
+                  userSelect: "none",
                 }}
                 priority
               />
@@ -743,21 +863,34 @@ export default function Home() {
               <a
                 href="mailto:igordubreucq.pro@gmail.com"
                 style={{
-                  position: "absolute", left: "53%", top: "51%",
-                  width: "15%", height: "7%", zIndex: 10005, cursor: "pointer", display: "block",
+                  position: "absolute",
+                  left: "53%",
+                  top: "51%",
+                  width: "15%",
+                  height: "7%",
+                  zIndex: 10005,
+                  cursor: "pointer",
+                  display: "block",
                 }}
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 aria-label="Email"
               />
               {/* INSTAGRAM BUTTON */}
               <a
                 href="https://instagram.com/migu.exe"
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  position: "absolute", left: "43%", top: "44%",
-                  width: "24%", height: "7%", zIndex: 10005, cursor: "pointer", display: "block",
+                  position: "absolute",
+                  left: "43%",
+                  top: "44%",
+                  width: "24%",
+                  height: "7%",
+                  zIndex: 10005,
+                  cursor: "pointer",
+                  display: "block",
                 }}
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 aria-label="Instagram"
               />
             </div>
@@ -771,8 +904,11 @@ export default function Home() {
               alt=""
               fill
               style={{
-                objectFit: "contain", objectPosition: "center",
-                zIndex: 11, pointerEvents: "none", userSelect: "none",
+                objectFit: "contain",
+                objectPosition: "center",
+                zIndex: 11,
+                pointerEvents: "none",
+                userSelect: "none",
               }}
               priority={idx === 0}
             />
@@ -807,8 +943,13 @@ export default function Home() {
                   audioRef.current.load();
 
                   audioRef.current.oncanplaythrough = () => {
-                    audioRef.current?.play().then(() => setPressedIdx(0)).catch(() => setPressedIdx(null));
-                    audioRef.current!.oncanplaythrough = null;
+                    audioRef.current
+                      ?.play()
+                      .then(() => setPressedIdx(0))
+                      .catch(() => setPressedIdx(null));
+                    if (audioRef.current) {
+                      audioRef.current.oncanplaythrough = null;
+                    }
                   };
                 }
               }, 30);
@@ -819,4 +960,3 @@ export default function Home() {
     </>
   );
 }
-
