@@ -39,40 +39,33 @@ export default function CVPage() {
             pointerEvents: "none",
           }}
         />
+{/* --- SIMPLE HOME BUTTON --- */}
+  <a
+    href="https://igordubreucq.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      position: "absolute",
+      left: "5%",
+      top: "5%",
+      width: "15%",
+      aspectRatio: "1 / 1",   // <-- THIS FIXES THE HEIGHT
+      zIndex: 40,
+      cursor: "pointer",
+    }}
+  >
+    <Image
+      src="/next/image/home.png"
+      alt="Home Button"
+      fill
+      style={{
+        objectFit: "contain",
+        pointerEvents: "none",
+        userSelect: "none",
+      }}
+    />
+  </a>
 
-        {/* === HOME BUTTON PNG (FULL SCALE) === */}
-        <Image
-          src="/next/image/home.png"
-          alt="Home button graphic"
-          fill
-          priority
-          /* ALLOWS UPSCALING */
-          sizes="100vw"
-          style={{
-                 left: "42%", // place exactly where the icon should be clickable
-            top: "25%",
-            width: "15%",
-            height: "7%",
-            pointerEvents: "none", // allows hotzone clicks
-            zIndex: 20,
-          }}
-        />
-
-        {/* === CLICKABLE HOTZONE — YOU POSITION THIS === */}
-        <button
-          onClick={() => (window.location.href = "https://igordubreucq.com")}
-          style={{
-            position: "absolute",
-            left: "42%", // place exactly where the icon should be clickable
-            top: "25%",
-            width: "15%",
-            height: "7%",
-            background: "transparent",
-            border: "none",
-            zIndex: 30,
-            cursor: "pointer",
-          }}
-        />
       </div>
     </main>
   );
