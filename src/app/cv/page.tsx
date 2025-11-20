@@ -28,11 +28,11 @@ export default function CVPage() {
           src="/next/image/home.png"
           alt="Back icon"
           style={{
-            width: "18%",       // scales with new container size
+            width: "100%",       // scales with new container size
             height: "auto",
             position: "absolute",
             top: "2%",
-            left: "2%",
+            left: "140%",
             zIndex: 10,
             pointerEvents: "none",
           }}
