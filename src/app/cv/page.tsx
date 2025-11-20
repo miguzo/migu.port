@@ -47,8 +47,8 @@ export default function CVPage() {
     style={{
       position: "absolute",
       left: "5%",
-      top: "5%",
-      width: "15%",
+      top: "1%",
+      width: "30%",
       aspectRatio: "1 / 1",   // <-- THIS FIXES THE HEIGHT
       zIndex: 40,
       cursor: "pointer",
