@@ -600,6 +600,34 @@ export default function Home() {
               )}
             </div>
           )}
+{/* --- SIMPLE PNG BUTTON WITH LINK (correct placement) --- */}
+{!loading && splashDone && (
+  <a
+    href="https://igordubreucq.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      position: "absolute",
+      left: "5%",     // <- now inside the frame border
+      top: "5%",      // <- these coords are relative to frame container
+      width: "15%",
+      height: "auto",
+      zIndex: 500,
+      cursor: "pointer",
+      display: "block",
+    }}
+  >
+    <Image
+      src="/next/image/home.png"
+      alt="Home"
+      fill
+      style={{
+        objectFit: "contain",
+        pointerEvents: "none",
+      }}
+    />
+  </a>
+)}
 
 
           {/* --- Main frame (background+frame) --- */}
@@ -723,34 +751,6 @@ export default function Home() {
               />
             </div>
           )}
-{/* --- SIMPLE PNG BUTTON WITH LINK (correct placement) --- */}
-{!loading && splashDone && (
-  <a
-    href="https://igordubreucq.com"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      position: "absolute",
-      left: "5%",     // <- now inside the frame border
-      top: "5%",      // <- these coords are relative to frame container
-      width: "15%",
-      height: "auto",
-      zIndex: 500,
-      cursor: "pointer",
-      display: "block",
-    }}
-  >
-    <Image
-      src="/next/image/home.png"
-      alt="Home"
-      fill
-      style={{
-        objectFit: "contain",
-        pointerEvents: "none",
-      }}
-    />
-  </a>
-)}
 
           {/* --- ABOUT ME overlay --- */}
           {aboutMeOpen && (
