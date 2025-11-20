@@ -440,37 +440,26 @@ export default function Home() {
         className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
       >
- <div
+ {/* HOME ICON + BUTTON */}
+<div
   style={{
     position: "absolute",
     top: "2%",
     left: "2%",
     width: "60px",
     height: "60px",
-    zIndex: 50,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: "none",
+    zIndex: 200,              // very high to stay above everything
   }}
 >
-  <div
+  <Image
+    src="/next/image/home.png"
+    alt="Home"
+    fill
     style={{
-      position: "relative",
-      width: "100%",
-      height: "100%",
+      objectFit: "contain",
     }}
-  >
-    <Image
-      src="/next/image/home.png"
-      alt="Back Icon"
-      fill
-      priority
-      style={{
-        objectFit: "contain",
-      }}
-    />
-  </div>
+    priority
+  />
 </div>
 
         {/* CLICKABLE HOTZONE */}
