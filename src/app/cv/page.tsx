@@ -56,7 +56,7 @@ export default function CVPage() {
   }}
 >
   <Image
-    src="/next/image/homebutton.png"
+    src="/next/image/home.png"
     alt="Home"
     fill
     style={{
