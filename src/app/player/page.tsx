@@ -612,7 +612,7 @@ export default function Home() {
       position: "absolute",
       left: "50%",
       transform: "translateX(-50%)",
-      top: "1%",
+      top: "-29%",
       width: "28%",
       aspectRatio: "1 / 1",
       zIndex: 40,
