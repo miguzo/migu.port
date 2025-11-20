@@ -33,17 +33,20 @@ export default function CVPage() {
           alt="CV Page"
           fill
           priority
+           sizes="100vw"  // <-- ALLOWS UPSCALING
           style={{
             objectFit: "contain",
             pointerEvents: "none",
           }}
         />
-
+   
         {/* === HOME BUTTON PNG (FULL SCALE) === */}
         <Image
           src="/next/image/home.png"
           alt="Home button graphic"
           fill
+          priority
+          sizes="100vw"  // <-- ALLOWS UPSCALING
           style={{
             objectFit: "contain",
             pointerEvents: "none", // allows hotzone clicks
