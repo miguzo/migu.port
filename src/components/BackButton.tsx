@@ -9,18 +9,16 @@ export default function BackButton() {
       onClick={() => router.push("/")}
       style={{
         position: "absolute",
-        top: "20px",
+        top: "20px",       // ← change this for perfect positioning
         left: "20px",
-        background: "rgba(255,255,255,0.15)",
-        padding: "10px 16px",
-        borderRadius: "10px",
+        width: "60px",     // ← change to match your PNG size
+        height: "60px",
+        background: "transparent",
         border: "none",
-        color: "white",
         cursor: "pointer",
-        fontSize: "16px",
+        zIndex: 9999
       }}
-    >
-      ⬅ Return
-    </button>
+      aria-label="Return to Main Menu"
+    />
   );
 }

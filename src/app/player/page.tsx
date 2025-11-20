@@ -470,8 +470,44 @@ export default function Home() {
       </Head>
     <main className="fixed inset-0 flex items-center justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
 
-       {/* ✅ BACK BUTTON GOES HERE */}
-      <BackButton />
+
+  {/* === CUSTOM BACK BUTTON PNG === */}
+  <Image
+    src="/next/image/home.png"
+    alt="Back icon"
+    width={80}
+    height={80}
+    style={{
+      position: "absolute",
+      top: "20px",
+      left: "20px",
+      zIndex: 99999,
+      pointerEvents: "none",
+    }}
+  />
+
+  {/* === CLICKABLE HOTZONE === */}
+  <BackButton />
+
+  {/* --- Spherical Glow BG --- */}
+  <div
+    style={{
+      position: "absolute",
+      left: "46%",
+      top: "30%",
+      width: "60vw",
+      height: "60vw",
+      maxWidth: "600px",
+      maxHeight: "600px",
+      transform: "translate(-50%, -50%)",
+      background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
+      filter: "blur(80px)",
+      opacity: 0.7,
+      zIndex: 0,
+      pointerEvents: "none",
+      userSelect: "none",
+    }}
+  />
 
   {/* --- Spherical Glow BG --- */}
   <div

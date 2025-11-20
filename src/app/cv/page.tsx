@@ -14,8 +14,6 @@ export default function CVPage() {
         alignItems: "center",
       }}
     >
-      <BackButton />
-
       <div
         style={{
           position: "relative",
@@ -23,6 +21,26 @@ export default function CVPage() {
           height: "min(90vh, calc(95vw * 1.4), 620px)",
         }}
       >
+
+        {/* PNG icon for your back button */}
+        <Image
+          src="/next/image/home.png"
+          alt="Back icon"
+          width={80}
+          height={80}
+          style={{
+            position: "absolute",
+            top: "20px",
+            left: "20px",
+            zIndex: 10,
+            pointerEvents: "none", // clickable below
+          }}
+        />
+
+        {/* Hotzone button */}
+        <BackButton />
+
+        {/* Background image */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
