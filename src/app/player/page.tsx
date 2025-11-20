@@ -440,29 +440,29 @@ export default function Home() {
         className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
       >
-        {/* FULL-SCALE BACK BUTTON PNG */}
-        <div
-          style={{
-            position: "absolute",
-            top: "0",
-            left: "0",
-            width: "min(98vw, 430px)", // SAME SCALE AS MENU
-            height: "min(85vh, calc(98vw * 1.44), 620px)",
-            pointerEvents: "none",
-            zIndex: 20,
-          }}
-        >
-          <Image
-            src="/next/image/home.png"
-            alt="Back Icon"
-            fill
-            priority
-            style={{
-              objectFit: "contain",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
+    {/* HOME BUTTON (scaled) */}
+<div
+  style={{
+    position: "absolute",
+    top: "2%",
+    left: "2%",
+    width: "60px",      // ← increase size here
+    height: "60px",     // ← increase size here
+    zIndex: 50,
+    pointerEvents: "none",
+  }}
+>
+  <Image
+    src="/next/image/home.png"
+    alt="Back Icon"
+    fill
+    priority
+    style={{
+      objectFit: "contain",
+      pointerEvents: "none",
+    }}
+  />
+</div>
 
         {/* CLICKABLE HOTZONE */}
         <button
