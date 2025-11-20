@@ -438,36 +438,7 @@ export default function Home() {
         className="fixed inset-0 flex items-center justify-center bg-[#19191b]"
         style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
       >
-    {/* === HOME BUTTON PNG (FULL SCALE) === */}
-        <Image
-          src="/next/image/home.png"
-          alt="Home button graphic"
-          fill
-          priority
-          /* ALLOWS UPSCALING */
-          sizes="100vw"
-          style={{
-            objectFit: "contain",
-            pointerEvents: "none", // allows hotzone clicks
-            zIndex: 20,
-          }}
-        />
 
-        {/* === CLICKABLE HOTZONE — YOU POSITION THIS === */}
-        <button
-          onClick={() => (window.location.href = "https://igordubreucq.com")}
-          style={{
-            position: "absolute",
-            left: "42%", // place exactly where the icon should be clickable
-            top: "25%",
-            width: "15%",
-            height: "7%",
-            background: "transparent",
-            border: "none",
-            zIndex: 30,
-            cursor: "pointer",
-          }}
-        />
 
         {/* --- Spherical Glow BG --- */}
         <div
