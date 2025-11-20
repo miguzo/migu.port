@@ -64,7 +64,7 @@ export default function CVPage() {
           style={{
             position: "absolute",
             left: "42%", // place exactly where the icon should be clickable
-            top: "5%",
+            top: "25%",
             width: "15%",
             height: "7%",
             background: "transparent",
