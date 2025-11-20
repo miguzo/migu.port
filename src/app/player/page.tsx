@@ -602,20 +602,21 @@ export default function Home() {
             </div>
           )}
 {/* --- SIMPLE HOME BUTTON --- */}
+
 {!loading && splashDone && (
   <a
     href="https://igordubreucq.com"
     target="_blank"
     rel="noopener noreferrer"
-   style={{
-    position: "absolute",
-    left: "50%",                   // <-- must be a string
-    transform: "translateX(-50%)", // <-- must be a string
-    top: "1%",                     // position at the very top
-    width: "28%",                  // scales with screen
-    aspectRatio: "1 / 1",          // makes the image square so fill works
-    zIndex: 40,
-    cursor: "pointer",
+    style={{
+      position: "absolute",
+      left: "50%",
+      transform: "translateX(-50%)",
+      top: "1%",
+      width: "28%",
+      aspectRatio: "1 / 1",
+      zIndex: 40,
+      cursor: "pointer",
     }}
   >
     <Image
@@ -630,6 +631,7 @@ export default function Home() {
     />
   </a>
 )}
+
 
 
           {/* --- Main frame (background+frame) --- */}
