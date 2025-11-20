@@ -147,62 +147,7 @@ const projects: Project[] = [
       },
     ],
   },
-  {
-    mainImg: "/next/image/Fallcore/Components/memoriaCF.png",
-    pageImg: "/next/image/Fallcore/Components/memoriaFAGE.png",
-    buttons: [
-      { on: "/next/image/Memoria/Buttons/Button 1 ON.png", off: "/next/image/Memoria/Buttons/Button 1 Off.png" },
-      { on: "/next/image/Memoria/Buttons/Button 2 ON.png", off: "/next/image/Memoria/Buttons/Button 2 Off.png" },
-      { on: "/next/image/Memoria/Buttons/Button 3 ON.png", off: "/next/image/Memoria/Buttons/Button 3 Off.png" },
-      { on: "/next/image/Memoria/Buttons/Button 4 ON.png", off: "/next/image/Memoria/Buttons/Button 4 Off.png" },
-      { on: "/next/image/Memoria/Buttons/Button5On.png", off: "/next/image/Memoria/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
-    ],
-    playlist: [
-      { src: "/music/Fallcore/1Shutter.mp3", titleImg: "/next/image/Fallcore/Titles/1shutter.png" },
-      { src: "/music/Fallcore/2Velith.mp3", titleImg: "/next/image/Fallcore/Titles/2Velith.png" },
-      { src: "/music/Fallcore/3Animated.mp3", titleImg: "/next/image/Fallcore/Titles/3Animated.png" },
-      { src: "/music/Fallcore/4AFriend.mp3", titleImg: "/next/image/Fallcore/Titles/4AFriend.png" },
-    ],
-    links: [
-      {
-        href: "https://www.youtube.com/watch?v=9vqVzGTkRU4",
-        left: "63%",
-        top: "60%",
-        width: "15%",
-        height: "7%",
-        label: "Fallcore Velith",
-      },
-    ],
-  },
-  {
-    mainImg: "/next/image/Fallcore/Components/FallcoreCF.png",
-    pageImg: "/next/image/Fallcore/Components/FallcorePAGE.png",
-    buttons: [
-      { on: "/next/image/Fallcore/Buttons/Button 1 ON.png", off: "/next/image/Fallcore/Buttons/Button 1 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
-      { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
-    ],
-    playlist: [
-      { src: "/music/Fallcore/1Shutter.mp3", titleImg: "/next/image/Fallcore/Titles/1shutter.png" },
-      { src: "/music/Fallcore/2Velith.mp3", titleImg: "/next/image/Fallcore/Titles/2Velith.png" },
-      { src: "/music/Fallcore/3Animated.mp3", titleImg: "/next/image/Fallcore/Titles/3Animated.png" },
-      { src: "/music/Fallcore/4AFriend.mp3", titleImg: "/next/image/Fallcore/Titles/4AFriend.png" },
-    ],
-    links: [
-      {
-        href: "https://www.youtube.com/watch?v=9vqVzGTkRU4",
-        left: "63%",
-        top: "60%",
-        width: "15%",
-        height: "7%",
-        label: "Fallcore Velith",
-      },
-    ],
-  },
+
   {
     mainImg: "/next/image/St4r/Components/St4rCF.png",
     pageImg: "/next/image/St4r/Components/St4rPAGE.png",
