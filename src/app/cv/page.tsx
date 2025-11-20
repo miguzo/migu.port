@@ -10,17 +10,16 @@ export default function CVPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        overflow: "hidden",
       }}
     >
       <div
         style={{
           position: "relative",
-          width: "min(95vw, 430px)",                // ⬅ same as your menu
-          height: "min(85vh, calc(95vw * 1.4), 620px)", // ⬅ same as your menu
+          width: "min(95vw, 430px)",
+          height: "min(85vh, calc(95vw * 1.4), 620px)",
         }}
       >
-        {/* CV background image (same style as menu) */}
+        {/* CV background image */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
@@ -29,42 +28,48 @@ export default function CVPage() {
           style={{
             objectFit: "contain",
             objectPosition: "center",
-            userSelect: "none",
             pointerEvents: "none",
+            userSelect: "none",
           }}
         />
 
-        {/* Home icon PNG (visual only) */}
-        <Image
-          src="/next/image/home.png"
-          alt="Back to main"
-          width={90}              // adjust if you want larger
-          height={90}
+        {/* === CENTERED HOME BUTTON (PNG + hotspot) === */}
+        <div
           style={{
             position: "absolute",
             top: "4%",
-            left: "44%",
-            zIndex: 10,
-            pointerEvents: "none", // let clicks go to the link
-          }}
-        />
-
-        {/* Clickable hotspot that sends to igordubreucq.com */}
-        <a
-          href="https://igordubreucq.com"
-          style={{
-            position: "absolute",
-            top: "4%",
-            left: "44%",
-            width: "20%",          // roughly match the icon size
-            height: "12%",
+            left: "50%",
+            transform: "translateX(-50%)",  // ★ centers perfectly
             zIndex: 20,
-            background: "transparent",
-            cursor: "pointer",
-            display: "block",
           }}
-          aria-label="Back to main menu"
-        />
+        >
+          {/* Visual PNG */}
+          <Image
+            src="/next/image/home.png"
+            alt="Home button"
+            width={110}     // adjust size here
+            height={110}
+            style={{
+              pointerEvents: "none", // hotspot handles the click
+            }}
+          />
+
+          {/* Exact-size clickable hotspot */}
+          <a
+            href="https://igordubreucq.com"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              cursor: "pointer",
+              background: "transparent",
+            }}
+            aria-label="Back to main menu"
+          />
+        </div>
+
       </div>
     </main>
   );
