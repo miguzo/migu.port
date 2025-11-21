@@ -1,7 +1,10 @@
 "use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function CVPage() {
+  const router = useRouter();
+
   return (
     <main
       style={{
@@ -12,12 +15,43 @@ export default function CVPage() {
         justifyContent: "center",
         alignItems: "center",
         overflow: "hidden",
+        position: "relative",
       }}
     >
-      {/* Simple navigation buttons */}
-      <button onClick={() => (window.location.href = "/")}>Home</button>
-      <button onClick={() => (window.location.href = "/player")}>Player</button>
+      {/* --- INVISIBLE NAV BUTTONS (no text shown) --- */}
+      <button
+        onClick={() => router.push("/")}
+        aria-label="Home"
+        style={{
+          position: "absolute",
+          left: "5%",
+          top: "5%",
+          width: "10%",
+          height: "10%",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          zIndex: 50,
+        }}
+      />
 
+      <button
+        onClick={() => router.push("/player")}
+        aria-label="Player"
+        style={{
+          position: "absolute",
+          right: "5%",
+          top: "5%",
+          width: "10%",
+          height: "10%",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          zIndex: 50,
+        }}
+      />
+
+      {/* --- MAIN CV IMAGE --- */}
       <div
         style={{
           position: "relative",
@@ -27,7 +61,6 @@ export default function CVPage() {
           maxHeight: "1260px",
         }}
       >
-        {/* Background Image */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
@@ -40,7 +73,7 @@ export default function CVPage() {
           }}
         />
 
-        {/* --- Home Button (external link, no fade) --- */}
+        {/* --- HOME ICON (external link) --- */}
         <a
           href="https://igordubreucq.com"
           style={{
@@ -50,7 +83,7 @@ export default function CVPage() {
             top: "1%",
             width: "28%",
             aspectRatio: "1 / 1",
-            zIndex: 40,
+            zIndex: 60,
             cursor: "pointer",
           }}
         >
