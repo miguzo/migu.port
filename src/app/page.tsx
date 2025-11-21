@@ -137,21 +137,6 @@ export default function HomeMenu() {
     }
   };
 
-  const fadeOutAndNavigate = (path: string) => {
-    if (audioCtx.current && volumeGain.current) {
-      const ctx = audioCtx.current;
-      const v = volumeGain.current.gain;
-
-      v.cancelScheduledValues(ctx.currentTime);
-      v.setValueAtTime(v.value, ctx.currentTime);
-      v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
-    }
-
-    fadeScreenOut();
-
-    setTimeout(() => router.push(path), 600);
-  };
-
   // Hover handlers
   const onEnterButton = (type: "player" | "cv") => {
     setHovered(type);
