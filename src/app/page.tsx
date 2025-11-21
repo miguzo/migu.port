@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { useTransitionRouter } from "../lib/navigation";
+import { useRouter } from "next/navigation";
 export default function HomeMenu() {
 
 
@@ -11,9 +11,19 @@ export default function HomeMenu() {
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-  const navigateWithFade = useTransitionRouter();
 
+const router = useRouter();   // ⬅️ we need this now!
 
+  // ⬇️ PLACE FADEOUT HERE ⬇️
+  const fadeOut = (to: string) => {
+    const overlay = document.getElementById("transition-overlay");
+    if (!overlay) return;
+
+    overlay.style.pointerEvents = "auto"; 
+    overlay.style.opacity = "1";
+
+    setTimeout(() => router.push(to), 600);
+  };
   // Check if user already entered before
   useEffect(() => {
     const already = localStorage.getItem("entered");
@@ -245,7 +255,7 @@ export default function HomeMenu() {
           <button
             onMouseEnter={() => onEnterButton("player")}
             onMouseLeave={onLeaveButton}
-            onClick={() => navigateWithFade("/player")}
+           onClick={() => fadeOut("/player")}
             style={{
               position: "absolute",
               left: "19%",
@@ -262,7 +272,7 @@ export default function HomeMenu() {
           <button
             onMouseEnter={() => onEnterButton("cv")}
             onMouseLeave={onLeaveButton}
-            onClick={() => navigateWithFade("/cv")}
+           onClick={() => fadeOut("/cv")}
             style={{
               position: "absolute",
               left: "65%",

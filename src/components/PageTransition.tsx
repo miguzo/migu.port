@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function PageTransition() {
-  const [fadeIn, setFadeIn] = useState(true);
-
   useEffect(() => {
-    setTimeout(() => setFadeIn(false), 20);
+    const overlay = document.getElementById("transition-overlay");
+    if (overlay) {
+      overlay.style.opacity = "0";   // fade in on load
+    }
   }, []);
 
   return (
@@ -15,9 +16,9 @@ export default function PageTransition() {
         position: "fixed",
         inset: 0,
         background: "black",
+        zIndex: 9999,
         pointerEvents: "none",
-        zIndex: 9998,
-        opacity: fadeIn ? 1 : 0,
+        opacity: 1,
         transition: "opacity 0.6s ease",
       }}
     />

@@ -1,7 +1,28 @@
-"use client"
+"use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function CVPage() {
+  const router = useRouter();
+
+  // ⭐ Fade IN when the page loads
+  useEffect(() => {
+    const overlay = document.getElementById("transition-overlay");
+    if (overlay) overlay.style.opacity = "0";
+  }, []);
+
+  // ⭐ Fade OUT before navigating
+  const fadeOut = (to: string) => {
+    const overlay = document.getElementById("transition-overlay");
+    if (!overlay) return;
+
+    overlay.style.pointerEvents = "auto";
+    overlay.style.opacity = "1";
+
+    setTimeout(() => router.push(to), 600);
+  };
+
   return (
     <main
       style={{
@@ -14,57 +35,56 @@ export default function CVPage() {
         overflow: "hidden",
       }}
     >
+      {/* Internal navigation with fade-out */}
+      <button onClick={() => fadeOut("/")}>Home</button>
+      <button onClick={() => fadeOut("/player")}>Player</button>
+
       <div
         style={{
           position: "relative",
-
-          // ALLOWS BIGGER SIZE ON DESKTOP
           width: "min(100vw, 900px)",
           height: "min(calc(100vw * 1.4), 1260px)",
-
           maxWidth: "900px",
           maxHeight: "1260px",
         }}
       >
-        {/* === BACKGROUND IMAGE (cars.png) === */}
+        {/* Background Image */}
         <Image
           src="/next/image/cars.png"
           alt="CV Page"
           fill
           priority
-          /* ALLOWS UPSCALING */
           sizes="100vw"
           style={{
             objectFit: "contain",
             pointerEvents: "none",
           }}
         />
-{/* --- SIMPLE HOME BUTTON --- */}
-<a
-  href="https://igordubreucq.com"
 
-  style={{
-    position: "absolute",
-    left: "50%",                   // <-- must be a string
-    transform: "translateX(-50%)", // <-- must be a string
-    top: "1%",                     // position at the very top
-    width: "28%",                  // scales with screen
-    aspectRatio: "1 / 1",          // makes the image square so fill works
-    zIndex: 40,
-    cursor: "pointer",
-  }}
->
-  <Image
-    src="/next/image/home2.png"
-    alt="Home"
-    fill
-    style={{
-      objectFit: "contain",
-      pointerEvents: "none",
-    }}
-  />
-</a>
-
+        {/* --- Home Button (external link, no fade-out) --- */}
+        <a
+          href="https://igordubreucq.com"
+          style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            top: "1%",
+            width: "28%",
+            aspectRatio: "1 / 1",
+            zIndex: 40,
+            cursor: "pointer",
+          }}
+        >
+          <Image
+            src="/next/image/home2.png"
+            alt="Home"
+            fill
+            style={{
+              objectFit: "contain",
+              pointerEvents: "none",
+            }}
+          />
+        </a>
       </div>
     </main>
   );
