@@ -1,17 +1,13 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 
 export default function HomeMenu() {
-  const router = useRouter();
-
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-  // ✔ WebAudio refs
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -21,18 +17,12 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // ⭐ FADE OUT before changing pages
-  const fadeOut = (to: string) => {
-    const overlay = document.getElementById("transition-overlay");
-    if (!overlay) return;
-
-    overlay.style.pointerEvents = "auto";
-    overlay.style.opacity = "1";
-
-    setTimeout(() => router.push(to), 600);
+  // Simple navigation without fade
+  const goTo = (path: string) => {
+    window.location.href = path;
   };
 
-  // ⭐ Check if already entered
+  // Check if ENTER was clicked before
   useEffect(() => {
     const already = localStorage.getItem("entered");
     if (already === "true") {
@@ -40,13 +30,13 @@ export default function HomeMenu() {
     }
   }, []);
 
-  // ⭐ Load hover sound
+  // Load hover sound
   useEffect(() => {
     hoverSound.current = new Audio("/sounds/PageON.mp3");
     hoverSound.current.volume = 1;
   }, []);
 
-  // ⭐ Init audio & preload ambient
+  // Preload ambient audio
   useEffect(() => {
     const ctx = new AudioContext();
     audioCtx.current = ctx;
@@ -67,7 +57,7 @@ export default function HomeMenu() {
       });
   }, []);
 
-  // ⭐ Start ambient
+  // Start ambient audio
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -95,7 +85,7 @@ export default function HomeMenu() {
     ambientStarted.current = true;
   };
 
-  // ⭐ Correct ENTER handler
+  // ENTER button logic
   const handleEnter = async () => {
     if (!audioReady) return;
 
@@ -104,16 +94,11 @@ export default function HomeMenu() {
     }
 
     startAmbientSound();
-
-    // Fade out global overlay now
-    const overlay = document.getElementById("transition-overlay");
-    if (overlay) overlay.style.opacity = "0";
-
     setHasEntered(true);
     localStorage.setItem("entered", "true");
   };
 
-  // HOVER effects
+  // Hover effects
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
@@ -149,7 +134,7 @@ export default function HomeMenu() {
 
   return (
     <>
-      {/* ⭐ ENTER OVERLAY */}
+      {/* ENTER OVERLAY */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -166,10 +151,6 @@ export default function HomeMenu() {
             opacity: audioReady ? 1 : 0.3,
             transition: "opacity 0.4s ease",
             zIndex: 9999,
-<<<<<<< HEAD
-=======
-            transition: "opacity 0.4s ease",
->>>>>>> parent of 3b3bdff (Update page.tsx)
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
@@ -249,7 +230,7 @@ export default function HomeMenu() {
           <button
             onMouseEnter={() => onEnterButton("player")}
             onMouseLeave={onLeaveButton}
-            onClick={() => fadeOut("/player")}
+            onClick={() => goTo("/player")}
             style={{
               position: "absolute",
               left: "19%",
@@ -266,7 +247,7 @@ export default function HomeMenu() {
           <button
             onMouseEnter={() => onEnterButton("cv")}
             onMouseLeave={onLeaveButton}
-            onClick={() => fadeOut("/cv")}
+            onClick={() => goTo("/cv")}
             style={{
               position: "absolute",
               left: "65%",
