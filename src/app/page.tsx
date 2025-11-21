@@ -7,8 +7,9 @@ export default function HomeMenu() {
   const router = useRouter();
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // New: overlay state
+  // ENTER overlay states
   const [hasEntered, setHasEntered] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
 
   // AUDIO CONTEXT + NODES
   const audioCtx = useRef<AudioContext | null>(null);
@@ -26,11 +27,12 @@ export default function HomeMenu() {
     hoverSound.current.volume = 1.0;
   }, []);
 
-  // ---------- INIT WEB AUDIO + LOAD AMBIENT ----------
+  // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
   useEffect(() => {
     audioCtx.current = new AudioContext();
     const ctx = audioCtx.current;
 
+    // Create nodes
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
     lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
@@ -38,15 +40,17 @@ export default function HomeMenu() {
     volumeGain.current = ctx.createGain();
     volumeGain.current.gain.value = 0;
 
+    // Preload and decode ambient
     fetch("/sounds/Ambient.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => ctx.decodeAudioData(data))
       .then((decoded) => {
         ambientBuffer.current = decoded;
+        setAudioReady(true); // 🔥 AMBIENT IS READY
       });
   }, []);
 
-  // ---------- PLAY AMBIENT ----------
+  // ---------- START AMBIENT ----------
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -68,7 +72,7 @@ export default function HomeMenu() {
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
-    // fade in
+    // Fade in
     volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
     volumeGain.current.gain.linearRampToValueAtTime(
       0.3,
@@ -80,11 +84,14 @@ export default function HomeMenu() {
     ambientStarted.current = true;
   };
 
-  // ---------- ENTER PAGE (UNLOCK AUDIO) ----------
+  // ---------- ENTER BUTTON ----------
   const handleEnter = async () => {
+    if (!audioReady) return; // can't enter yet
+
     if (audioCtx.current?.state === "suspended") {
       await audioCtx.current.resume();
     }
+
     startAmbientSound();
     setHasEntered(true); // hide overlay
   };
@@ -134,7 +141,7 @@ export default function HomeMenu() {
     }, 600);
   };
 
-  // ---------- HOVER HANDLERS ----------
+  // ---------- BUTTON HOVER ----------
   const onEnter = (type: "player" | "cv") => {
     setHovered(type);
     playHoverSound();
@@ -148,10 +155,10 @@ export default function HomeMenu() {
 
   return (
     <>
-      {/* ===================== OVERLAY ===================== */}
+      {/* ===================== ENTER OVERLAY ===================== */}
       {!hasEntered && (
         <div
-          onClick={handleEnter}
+          onClick={audioReady ? handleEnter : undefined}
           style={{
             position: "fixed",
             inset: 0,
@@ -161,12 +168,13 @@ export default function HomeMenu() {
             justifyContent: "center",
             alignItems: "center",
             fontSize: "3rem",
-            cursor: "pointer",
+            cursor: audioReady ? "pointer" : "default",
+            opacity: audioReady ? 1 : 0.3,
             zIndex: 9999,
-            transition: "opacity 0.5s ease",
+            transition: "opacity 0.4s ease",
           }}
         >
-          ENTER
+          {audioReady ? "ENTER" : "LOADING..."}
         </div>
       )}
 
