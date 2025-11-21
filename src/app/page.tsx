@@ -9,7 +9,10 @@ export default function HomeMenu() {
   // Hover highlight
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // ENTER screen states
+  // Loading localStorage state
+  const [loadingLocalState, setLoadingLocalState] = useState(true);
+
+  // ENTER black screen
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
@@ -32,13 +35,12 @@ export default function HomeMenu() {
   }, []);
 
   // -------------------------------------------------------------
-  // CHECK IF USER ALREADY ENTERED BEFORE
+  // READ localStorage SAFELY
   // -------------------------------------------------------------
   useEffect(() => {
     const already = localStorage.getItem("entered");
-    if (already === "true") {
-      setHasEntered(true);
-    }
+    setHasEntered(already === "true"); 
+    setLoadingLocalState(false);       // <-- now safe to render
   }, []);
 
   // -------------------------------------------------------------
@@ -71,16 +73,14 @@ export default function HomeMenu() {
     if (
       !audioCtx.current ||
       !ambientBuffer.current ||
+      ambientStarted.current ||
       !lowpassFilter.current ||
-      !volumeGain.current ||
-      ambientStarted.current
-    ) {
-      return;
-    }
+      !volumeGain.current
+    ) return;
 
     const ctx = audioCtx.current;
-    const src = ctx.createBufferSource();
 
+    const src = ctx.createBufferSource();
     src.buffer = ambientBuffer.current;
     src.loop = true;
 
@@ -107,13 +107,13 @@ export default function HomeMenu() {
     }
 
     startAmbientSound();
-    setHasEntered(true);
 
+    setHasEntered(true);
     localStorage.setItem("entered", "true");
   };
 
   // -------------------------------------------------------------
-  // HOVER SOUND + LOWPASS
+  // HOVER + LOWPASS
   // -------------------------------------------------------------
   const playHoverSound = () => {
     if (!hoverSound.current) return;
@@ -138,7 +138,7 @@ export default function HomeMenu() {
   };
 
   // -------------------------------------------------------------
-  // PAGE FADE OUT + NAVIGATION
+  // NAVIGATION FADE
   // -------------------------------------------------------------
   const fadeOutAndNavigate = (path: string) => {
     if (!audioCtx.current || !volumeGain.current) {
@@ -171,11 +171,16 @@ export default function HomeMenu() {
   };
 
   // -------------------------------------------------------------
+  // DO NOT RENDER ANYTHING UNTIL LOCALSTORAGE IS LOADED
+  // -------------------------------------------------------------
+  if (loadingLocalState) return null;
+
+  // -------------------------------------------------------------
   // RENDER
   // -------------------------------------------------------------
   return (
     <>
-      {/* ENTER SCREEN — only first time */}
+      {/* FIRST VISIT BLACK SCREEN */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -190,8 +195,8 @@ export default function HomeMenu() {
             fontSize: "3rem",
             cursor: audioReady ? "pointer" : "default",
             opacity: audioReady ? 1 : 0.4,
-            transition: "opacity 0.4s ease",
             zIndex: 9999,
+            transition: "opacity 0.4s ease",
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
