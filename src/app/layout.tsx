@@ -24,6 +24,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* PRELOAD YOUR HOVER PNGS HERE */}
+        <link
+          rel="preload"
+          as="image"
+          href="/next/image/player_selected.png"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/next/image/cv_selected.png"
+        />
+      </head>
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
