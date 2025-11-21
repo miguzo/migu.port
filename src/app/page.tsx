@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { useTransitionRouter } from "@/lib/navigation";
 
 export default function HomeMenu() {
   const router = useRouter();
@@ -11,6 +12,9 @@ export default function HomeMenu() {
   // ENTER overlay + audio preload state
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
+
+  const navigateWithFade = useTransitionRouter();
+
 
   // Check if user already entered before
   useEffect(() => {
@@ -265,7 +269,7 @@ export default function HomeMenu() {
           <button
             onMouseEnter={() => onEnterButton("player")}
             onMouseLeave={onLeaveButton}
-            onClick={() => fadeOutAndNavigate("/player")}
+            onClick={() => navigateWithFade("/player")}
             style={{
               position: "absolute",
               left: "19%",
@@ -282,7 +286,7 @@ export default function HomeMenu() {
           <button
             onMouseEnter={() => onEnterButton("cv")}
             onMouseLeave={onLeaveButton}
-            onClick={() => fadeOutAndNavigate("/cv")}
+            onClick={() => navigateWithFade("/cv")}
             style={{
               position: "absolute",
               left: "65%",
