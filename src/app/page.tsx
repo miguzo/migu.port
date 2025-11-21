@@ -5,13 +5,15 @@ import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
   const router = useRouter();
+
+  // Hover highlight
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // ENTER overlay states
+  // ENTER screen states
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-  // AUDIO CONTEXT + NODES
+  // Audio refs
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -21,24 +23,30 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // ⭐ Restore ENTER state from previous visit
+  // -------------------------------------------------------------
+  // LOAD HOVER SOUND
+  // -------------------------------------------------------------
   useEffect(() => {
-    const enteredBefore = localStorage.getItem("hasEntered");
-    if (enteredBefore === "true") {
-      setHasEntered(true); // Skip ENTER screen
+    hoverSound.current = new Audio("/sounds/PageON.mp3");
+    hoverSound.current.volume = 1;
+  }, []);
+
+  // -------------------------------------------------------------
+  // CHECK IF USER ALREADY ENTERED BEFORE
+  // -------------------------------------------------------------
+  useEffect(() => {
+    const already = localStorage.getItem("entered");
+    if (already === "true") {
+      setHasEntered(true);
     }
   }, []);
 
-  // ---------- LOAD HOVER SOUND ----------
+  // -------------------------------------------------------------
+  // INIT AUDIO + PRELOAD AMBIENT
+  // -------------------------------------------------------------
   useEffect(() => {
-    hoverSound.current = new Audio("/sounds/PageON.mp3");
-    hoverSound.current.volume = 1.0;
-  }, []);
-
-  // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
-  useEffect(() => {
-    audioCtx.current = new AudioContext();
-    const ctx = audioCtx.current;
+    const ctx = new AudioContext();
+    audioCtx.current = ctx;
 
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
@@ -56,35 +64,41 @@ export default function HomeMenu() {
       });
   }, []);
 
-  // ---------- START AMBIENT ----------
+  // -------------------------------------------------------------
+  // START AMBIENT LOOP
+  // -------------------------------------------------------------
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
       !ambientBuffer.current ||
-      ambientStarted.current ||
       !lowpassFilter.current ||
-      !volumeGain.current
-    ) return;
+      !volumeGain.current ||
+      ambientStarted.current
+    ) {
+      return;
+    }
 
     const ctx = audioCtx.current;
+    const src = ctx.createBufferSource();
 
-    const source = ctx.createBufferSource();
-    source.buffer = ambientBuffer.current;
-    source.loop = true;
+    src.buffer = ambientBuffer.current;
+    src.loop = true;
 
-    source.connect(lowpassFilter.current);
+    src.connect(lowpassFilter.current);
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
     volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
     volumeGain.current.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1);
 
-    source.start();
-    ambientSource.current = source;
+    src.start();
+    ambientSource.current = src;
     ambientStarted.current = true;
   };
 
-  // ---------- ENTER BUTTON ----------
+  // -------------------------------------------------------------
+  // ENTER BUTTON
+  // -------------------------------------------------------------
   const handleEnter = async () => {
     if (!audioReady) return;
 
@@ -95,18 +109,18 @@ export default function HomeMenu() {
     startAmbientSound();
     setHasEntered(true);
 
-    // ⭐ Save so it doesn't show again
-    localStorage.setItem("hasEntered", "true");
+    localStorage.setItem("entered", "true");
   };
 
-  // ---------- HOVER SOUND ----------
+  // -------------------------------------------------------------
+  // HOVER SOUND + LOWPASS
+  // -------------------------------------------------------------
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
     hoverSound.current.play();
   };
 
-  // ---------- LOWPASS ----------
   const applyLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
@@ -123,27 +137,28 @@ export default function HomeMenu() {
     );
   };
 
-  // ---------- FADE OUT ----------
+  // -------------------------------------------------------------
+  // PAGE FADE OUT + NAVIGATION
+  // -------------------------------------------------------------
   const fadeOutAndNavigate = (path: string) => {
-    if (!audioCtx.current) {
+    if (!audioCtx.current || !volumeGain.current) {
       router.push(path);
       return;
     }
 
     const ctx = audioCtx.current;
+    const gain = volumeGain.current.gain;
 
-    if (volumeGain.current) {
-      const v = volumeGain.current.gain;
-      v.cancelScheduledValues(ctx.currentTime);
-      v.setValueAtTime(v.value, ctx.currentTime);
-      v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
-    }
+    gain.cancelScheduledValues(ctx.currentTime);
+    gain.setValueAtTime(gain.value, ctx.currentTime);
+    gain.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
 
-    setTimeout(() => {
-      router.push(path);
-    }, 600);
+    setTimeout(() => router.push(path), 600);
   };
 
+  // -------------------------------------------------------------
+  // HOVER HANDLERS
+  // -------------------------------------------------------------
   const onEnter = (type: "player" | "cv") => {
     setHovered(type);
     playHoverSound();
@@ -155,9 +170,12 @@ export default function HomeMenu() {
     removeLowpass();
   };
 
+  // -------------------------------------------------------------
+  // RENDER
+  // -------------------------------------------------------------
   return (
     <>
-      {/* ========= ENTER SCREEN ONLY FIRST TIME ========= */}
+      {/* ENTER SCREEN — only first time */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -171,16 +189,16 @@ export default function HomeMenu() {
             alignItems: "center",
             fontSize: "3rem",
             cursor: audioReady ? "pointer" : "default",
-            opacity: audioReady ? 1 : 0.3,
-            zIndex: 9999,
+            opacity: audioReady ? 1 : 0.4,
             transition: "opacity 0.4s ease",
+            zIndex: 9999,
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
         </div>
       )}
 
-      {/* ===================== MAIN PAGE ===================== */}
+      {/* MAIN PAGE */}
       <main
         style={{
           width: "100vw",
@@ -192,7 +210,90 @@ export default function HomeMenu() {
           overflow: "hidden",
         }}
       >
-        {/* ...rest identical */}
+        <div
+          style={{
+            position: "relative",
+            width: "min(100vw, 900px)",
+            height: "min(calc(100vw * 1.4), 1260px)",
+            maxWidth: "900px",
+            maxHeight: "1260px",
+          }}
+        >
+          {/* BACKGROUND */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              filter: hovered ? "blur(6px)" : "none",
+              transition: "filter 0.3s ease",
+            }}
+          >
+            <Image
+              src="/next/image/cars2.png"
+              alt="Menu"
+              fill
+              priority
+              sizes="100vw"
+              style={{ objectFit: "contain", pointerEvents: "none" }}
+            />
+          </div>
+
+          {/* HOVER IMAGES */}
+          {hovered === "player" && (
+            <Image
+              src="/next/image/player_selected.png"
+              alt=""
+              fill
+              style={{ objectFit: "contain", position: "absolute", inset: 0, zIndex: 10 }}
+            />
+          )}
+
+          {hovered === "cv" && (
+            <Image
+              src="/next/image/cv_selected.png"
+              alt=""
+              fill
+              style={{ objectFit: "contain", position: "absolute", inset: 0, zIndex: 10 }}
+            />
+          )}
+
+          {/* BUTTONS */}
+          <button
+            onMouseEnter={() => onEnter("player")}
+            onMouseLeave={onLeave}
+            onClick={() => fadeOutAndNavigate("/player")}
+            style={{
+              position: "absolute",
+              left: "19%",
+              top: "40%",
+              width: "15%",
+              height: "12%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 20,
+            }}
+          />
+
+          <button
+            onMouseEnter={() => onEnter("cv")}
+            onMouseLeave={onLeave}
+            onClick={() => fadeOutAndNavigate("/cv")}
+            style={{
+              position: "absolute",
+              left: "65%",
+              top: "40%",
+              width: "20%",
+              height: "20%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 20,
+            }}
+          />
+        </div>
       </main>
     </>
   );
