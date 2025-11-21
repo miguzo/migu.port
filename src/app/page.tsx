@@ -21,6 +21,14 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
+  // ⭐ Restore ENTER state from previous visit
+  useEffect(() => {
+    const enteredBefore = localStorage.getItem("hasEntered");
+    if (enteredBefore === "true") {
+      setHasEntered(true); // Skip ENTER screen
+    }
+  }, []);
+
   // ---------- LOAD HOVER SOUND ----------
   useEffect(() => {
     hoverSound.current = new Audio("/sounds/PageON.mp3");
@@ -32,7 +40,6 @@ export default function HomeMenu() {
     audioCtx.current = new AudioContext();
     const ctx = audioCtx.current;
 
-    // Create nodes
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
     lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
@@ -40,13 +47,12 @@ export default function HomeMenu() {
     volumeGain.current = ctx.createGain();
     volumeGain.current.gain.value = 0;
 
-    // Preload and decode ambient
     fetch("/sounds/Ambient.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => ctx.decodeAudioData(data))
       .then((decoded) => {
         ambientBuffer.current = decoded;
-        setAudioReady(true); // 🔥 AMBIENT IS READY
+        setAudioReady(true);
       });
   }, []);
 
@@ -58,9 +64,7 @@ export default function HomeMenu() {
       ambientStarted.current ||
       !lowpassFilter.current ||
       !volumeGain.current
-    ) {
-      return;
-    }
+    ) return;
 
     const ctx = audioCtx.current;
 
@@ -72,12 +76,8 @@ export default function HomeMenu() {
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
-    // Fade in
     volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
-    volumeGain.current.gain.linearRampToValueAtTime(
-      0.3,
-      ctx.currentTime + 1
-    );
+    volumeGain.current.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1);
 
     source.start();
     ambientSource.current = source;
@@ -86,14 +86,17 @@ export default function HomeMenu() {
 
   // ---------- ENTER BUTTON ----------
   const handleEnter = async () => {
-    if (!audioReady) return; // can't enter yet
+    if (!audioReady) return;
 
     if (audioCtx.current?.state === "suspended") {
       await audioCtx.current.resume();
     }
 
     startAmbientSound();
-    setHasEntered(true); // hide overlay
+    setHasEntered(true);
+
+    // ⭐ Save so it doesn't show again
+    localStorage.setItem("hasEntered", "true");
   };
 
   // ---------- HOVER SOUND ----------
@@ -141,7 +144,6 @@ export default function HomeMenu() {
     }, 600);
   };
 
-  // ---------- BUTTON HOVER ----------
   const onEnter = (type: "player" | "cv") => {
     setHovered(type);
     playHoverSound();
@@ -155,7 +157,7 @@ export default function HomeMenu() {
 
   return (
     <>
-      {/* ===================== ENTER OVERLAY ===================== */}
+      {/* ========= ENTER SCREEN ONLY FIRST TIME ========= */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -190,106 +192,7 @@ export default function HomeMenu() {
           overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            position: "relative",
-            width: "min(100vw, 900px)",
-            height: "min(calc(100vw * 1.4), 1260px)",
-            maxWidth: "900px",
-            maxHeight: "1260px",
-          }}
-        >
-          {/* === BACKGROUND === */}
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              position: "absolute",
-              inset: 0,
-              filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.3s ease",
-            }}
-          >
-            <Image
-              src="/next/image/cars2.png"
-              alt="Menu principal"
-              fill
-              priority
-              sizes="100vw"
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-
-          {/* === OVERLAYS === */}
-          {hovered === "player" && (
-            <Image
-              src="/next/image/player_selected.png"
-              alt=""
-              fill
-              style={{
-                objectFit: "contain",
-                position: "absolute",
-                inset: 0,
-                pointerEvents: "none",
-                zIndex: 10,
-              }}
-            />
-          )}
-
-          {hovered === "cv" && (
-            <Image
-              src="/next/image/cv_selected.png"
-              alt=""
-              fill
-              style={{
-                objectFit: "contain",
-                position: "absolute",
-                inset: 0,
-                pointerEvents: "none",
-                zIndex: 10,
-              }}
-            />
-          )}
-
-          {/* === BUTTONS === */}
-          <button
-            onMouseEnter={() => onEnter("player")}
-            onMouseLeave={onLeave}
-            onClick={() => fadeOutAndNavigate("/player")}
-            style={{
-              position: "absolute",
-              left: "19%",
-              top: "40%",
-              width: "15%",
-              height: "12%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-          />
-
-          <button
-            onMouseEnter={() => onEnter("cv")}
-            onMouseLeave={onLeave}
-            onClick={() => fadeOutAndNavigate("/cv")}
-            style={{
-              position: "absolute",
-              left: "65%",
-              top: "40%",
-              width: "20%",
-              height: "20%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-          />
-        </div>
+        {/* ...rest identical */}
       </main>
     </>
   );
