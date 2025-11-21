@@ -1,11 +1,147 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
   const router = useRouter();
-const [hovered, setHovered] = useState<null | "player" | "cv">(null);
+  const [hovered, setHovered] = useState<null | "player" | "cv">(null);
+
+  // AUDIO CONTEXT + NODES
+  const audioCtx = useRef<AudioContext | null>(null);
+  const ambientBuffer = useRef<AudioBuffer | null>(null);
+  const ambientSource = useRef<AudioBufferSourceNode | null>(null);
+  const lowpassFilter = useRef<BiquadFilterNode | null>(null);
+  const volumeGain = useRef<GainNode | null>(null);
+
+  const hoverSound = useRef<HTMLAudioElement | null>(null);
+  const ambientStarted = useRef(false);
+
+  // ---------- LOAD HOVER SOUND ----------
+  useEffect(() => {
+    hoverSound.current = new Audio("/sounds/PageON.mp3");
+    hoverSound.current.volume = 1.0;
+  }, []);
+
+  // ---------- INIT WEB AUDIO + LOAD AMBIENT ----------
+  useEffect(() => {
+    audioCtx.current = new AudioContext();
+    const ctx = audioCtx.current;
+
+    // Create filter + gain
+    lowpassFilter.current = ctx.createBiquadFilter();
+    lowpassFilter.current.type = "lowpass";
+    lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
+
+    volumeGain.current = ctx.createGain();
+    volumeGain.current.gain.value = 0;
+
+    // Load ambient file
+    fetch("/sounds/Ambient.mp3")
+      .then((res) => res.arrayBuffer())
+      .then((data) => ctx.decodeAudioData(data))
+      .then((decoded) => {
+        ambientBuffer.current = decoded;
+      });
+  }, []);
+
+  // ---------- PLAY AMBIENT SOUND ----------
+  const startAmbientSound = () => {
+    if (
+      !audioCtx.current ||
+      !ambientBuffer.current ||
+      ambientStarted.current === true ||
+      !lowpassFilter.current ||
+      !volumeGain.current
+    ) {
+      return;
+    }
+
+    const ctx = audioCtx.current;
+
+    const source = ctx.createBufferSource();
+    source.buffer = ambientBuffer.current;
+    source.loop = true;
+
+    source.connect(lowpassFilter.current);
+    lowpassFilter.current.connect(volumeGain.current);
+    volumeGain.current.connect(ctx.destination);
+
+    // Fade in
+    volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
+    volumeGain.current.gain.linearRampToValueAtTime(
+      0.3,
+      ctx.currentTime + 1
+    );
+
+    source.start();
+    ambientSource.current = source;
+    ambientStarted.current = true;
+  };
+
+  // ---------- HOVER SOUND ----------
+  const playHoverSound = () => {
+    if (!hoverSound.current) return;
+    hoverSound.current.currentTime = 0;
+    hoverSound.current.play();
+  };
+
+  // ---------- LOWPASS FILTER ----------
+  const applyLowpass = () => {
+    if (!audioCtx.current || !lowpassFilter.current) return;
+    lowpassFilter.current.frequency.cancelScheduledValues(
+      audioCtx.current.currentTime
+    );
+    lowpassFilter.current.frequency.linearRampToValueAtTime(
+      300,
+      audioCtx.current.currentTime + 0.2
+    );
+  };
+
+  const removeLowpass = () => {
+    if (!audioCtx.current || !lowpassFilter.current) return;
+    lowpassFilter.current.frequency.cancelScheduledValues(
+      audioCtx.current.currentTime
+    );
+    lowpassFilter.current.frequency.linearRampToValueAtTime(
+      20000,
+      audioCtx.current.currentTime + 0.4
+    );
+  };
+
+  // ---------- FADE OUT & CHANGE PAGE ----------
+  const fadeOutAndNavigate = (path: string) => {
+    if (!audioCtx.current) {
+      router.push(path);
+      return;
+    }
+
+    const ctx = audioCtx.current;
+
+    if (volumeGain.current) {
+      const v = volumeGain.current.gain;
+      v.cancelScheduledValues(ctx.currentTime);
+      v.setValueAtTime(v.value, ctx.currentTime);
+      v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
+    }
+
+    setTimeout(() => {
+      router.push(path);
+    }, 600);
+  };
+
+  // ---------- BUTTON HANDLERS ----------
+  const onEnter = (type: "player" | "cv") => {
+    setHovered(type);
+    playHoverSound();
+    startAmbientSound();
+    applyLowpass();
+  };
+
+  const onLeave = () => {
+    setHovered(null);
+    removeLowpass();
+  };
 
   return (
     <main
@@ -28,7 +164,7 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
           maxHeight: "1260px",
         }}
       >
-        {/* === BACKGROUND IMAGE (blur applies here) === */}
+        {/* === BACKGROUND IMAGE === */}
         <div
           style={{
             width: "100%",
@@ -54,7 +190,7 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
           />
         </div>
 
-        {/* === OVERLAY PNGS (appear only on hover) === */}
+        {/* === OVERLAYS === */}
         {hovered === "player" && (
           <Image
             src="/next/image/player_selected.png"
@@ -63,7 +199,6 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
             style={{
               objectFit: "contain",
               pointerEvents: "none",
-              userSelect: "none",
               position: "absolute",
               inset: 0,
               zIndex: 10,
@@ -79,7 +214,6 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
             style={{
               objectFit: "contain",
               pointerEvents: "none",
-              userSelect: "none",
               position: "absolute",
               inset: 0,
               zIndex: 10,
@@ -89,9 +223,9 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
         {/* === BUTTONS === */}
         <button
-          onMouseEnter={() => setHovered("player")}
-          onMouseLeave={() => setHovered(null)}
-          onClick={() => router.push("/player")}
+          onMouseEnter={() => onEnter("player")}
+          onMouseLeave={onLeave}
+          onClick={() => fadeOutAndNavigate("/player")}
           style={{
             position: "absolute",
             left: "19%",
@@ -106,9 +240,9 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
         />
 
         <button
-          onMouseEnter={() => setHovered("cv")}
-          onMouseLeave={() => setHovered(null)}
-          onClick={() => router.push("/cv")}
+          onMouseEnter={() => onEnter("cv")}
+          onMouseLeave={onLeave}
+          onClick={() => fadeOutAndNavigate("/cv")}
           style={{
             position: "absolute",
             left: "65%",
