@@ -2,37 +2,16 @@
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-export default function HomeMenu() {
 
+export default function HomeMenu() {
+  const router = useRouter();
 
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // ENTER overlay + audio preload state
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-
-const router = useRouter();   // ⬅️ we need this now!
-
-  // ⬇️ PLACE FADEOUT HERE ⬇️
-  const fadeOut = (to: string) => {
-    const overlay = document.getElementById("transition-overlay");
-    if (!overlay) return;
-
-    overlay.style.pointerEvents = "auto"; 
-    overlay.style.opacity = "1";
-
-    setTimeout(() => router.push(to), 600);
-  };
-  // Check if user already entered before
-  useEffect(() => {
-    const already = localStorage.getItem("entered");
-    if (already === "true") {
-      setHasEntered(true);
-    }
-  }, []);
-
-  // --- AUDIO SETUP ---
+  // ✔ WebAudio refs
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -42,20 +21,39 @@ const router = useRouter();   // ⬅️ we need this now!
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // Load hover sound
+  // ⭐ FADE OUT before changing pages
+  const fadeOut = (to: string) => {
+    const overlay = document.getElementById("transition-overlay");
+    if (!overlay) return;
+
+    overlay.style.pointerEvents = "auto";
+    overlay.style.opacity = "1";
+
+    setTimeout(() => router.push(to), 600);
+  };
+
+  // ⭐ Check if already entered
   useEffect(() => {
-    hoverSound.current = new Audio("/sounds/PageON.mp3");
-    hoverSound.current.volume = 1.0;
+    const already = localStorage.getItem("entered");
+    if (already === "true") {
+      setHasEntered(true);
+    }
   }, []);
 
-  // Initialize audio context and preload ambient
+  // ⭐ Load hover sound
+  useEffect(() => {
+    hoverSound.current = new Audio("/sounds/PageON.mp3");
+    hoverSound.current.volume = 1;
+  }, []);
+
+  // ⭐ Init audio & preload ambient
   useEffect(() => {
     const ctx = new AudioContext();
     audioCtx.current = ctx;
 
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
-    lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
+    lowpassFilter.current.frequency.value = 20000;
 
     volumeGain.current = ctx.createGain();
     volumeGain.current.gain.value = 0;
@@ -69,7 +67,7 @@ const router = useRouter();   // ⬅️ we need this now!
       });
   }, []);
 
-  // Start ambient audio
+  // ⭐ Start ambient
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -77,9 +75,8 @@ const router = useRouter();   // ⬅️ we need this now!
       ambientStarted.current ||
       !lowpassFilter.current ||
       !volumeGain.current
-    ) {
+    )
       return;
-    }
 
     const ctx = audioCtx.current;
 
@@ -91,7 +88,6 @@ const router = useRouter();   // ⬅️ we need this now!
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
-    volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
     volumeGain.current.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1);
 
     source.start();
@@ -99,7 +95,7 @@ const router = useRouter();   // ⬅️ we need this now!
     ambientStarted.current = true;
   };
 
-  // ENTER button logic
+  // ⭐ Correct ENTER handler
   const handleEnter = async () => {
     if (!audioReady) return;
 
@@ -108,18 +104,22 @@ const router = useRouter();   // ⬅️ we need this now!
     }
 
     startAmbientSound();
+
+    // Fade out global overlay now
+    const overlay = document.getElementById("transition-overlay");
+    if (overlay) overlay.style.opacity = "0";
+
     setHasEntered(true);
     localStorage.setItem("entered", "true");
   };
 
-  // Hover sound
+  // HOVER effects
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
     hoverSound.current.play();
   };
 
-  // Lowpass effects
   const applyLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
@@ -136,9 +136,6 @@ const router = useRouter();   // ⬅️ we need this now!
     );
   };
 
-
-
-  // Hover handlers
   const onEnterButton = (type: "player" | "cv") => {
     setHovered(type);
     playHoverSound();
@@ -152,7 +149,7 @@ const router = useRouter();   // ⬅️ we need this now!
 
   return (
     <>
-      {/* ENTER OVERLAY */}
+      {/* ⭐ ENTER OVERLAY */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -175,7 +172,7 @@ const router = useRouter();   // ⬅️ we need this now!
         </div>
       )}
 
-      {/* MAIN CONTENT */}
+      {/* MAIN PAGE */}
       <main
         style={{
           width: "100vw",
@@ -201,26 +198,21 @@ const router = useRouter();   // ⬅️ we need this now!
             style={{
               position: "absolute",
               inset: 0,
-              width: "100%",
-              height: "100%",
               filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.7s ease", // <-- slower blur
+              transition: "filter 0.7s ease",
             }}
           >
             <Image
               src="/next/image/cars2.png"
-              alt="Menu principal"
+              alt=""
               fill
               priority
               sizes="100vw"
-              style={{
-                objectFit: "contain",
-                pointerEvents: "none",
-              }}
+              style={{ objectFit: "contain", pointerEvents: "none" }}
             />
           </div>
 
-          {/* OVERLAY IMAGES */}
+          {/* HOVER IMAGES */}
           {hovered === "player" && (
             <Image
               src="/next/image/player_selected.png"
@@ -230,7 +222,6 @@ const router = useRouter();   // ⬅️ we need this now!
                 objectFit: "contain",
                 position: "absolute",
                 inset: 0,
-                pointerEvents: "none",
                 zIndex: 10,
               }}
             />
@@ -245,7 +236,6 @@ const router = useRouter();   // ⬅️ we need this now!
                 objectFit: "contain",
                 position: "absolute",
                 inset: 0,
-                pointerEvents: "none",
                 zIndex: 10,
               }}
             />
@@ -255,7 +245,7 @@ const router = useRouter();   // ⬅️ we need this now!
           <button
             onMouseEnter={() => onEnterButton("player")}
             onMouseLeave={onLeaveButton}
-           onClick={() => fadeOut("/player")}
+            onClick={() => fadeOut("/player")}
             style={{
               position: "absolute",
               left: "19%",
@@ -272,7 +262,7 @@ const router = useRouter();   // ⬅️ we need this now!
           <button
             onMouseEnter={() => onEnterButton("cv")}
             onMouseLeave={onLeaveButton}
-           onClick={() => fadeOut("/cv")}
+            onClick={() => fadeOut("/cv")}
             style={{
               position: "absolute",
               left: "65%",
