@@ -171,7 +171,7 @@ export default function HomeMenu() {
             cursor: audioReady ? "pointer" : "default",
             opacity: audioReady ? 1 : 0.3,
             zIndex: 9999,
-            transition: "opacity 0.4s ease",
+            transition: "opacity 0.7s ease",
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
@@ -207,7 +207,7 @@ export default function HomeMenu() {
               position: "absolute",
               inset: 0,
               filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.3s ease",
+              transition: "filter 0.7s ease",
             }}
           >
             <Image
