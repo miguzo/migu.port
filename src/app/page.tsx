@@ -1,8 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { useTransitionRouter } from "@/lib/navigation";
-
+import { useTransitionRouter } from "../lib/navigation";
 export default function HomeMenu() {
 
 
