@@ -166,6 +166,10 @@ export default function HomeMenu() {
             opacity: audioReady ? 1 : 0.3,
             transition: "opacity 0.4s ease",
             zIndex: 9999,
+<<<<<<< HEAD
+=======
+            transition: "opacity 0.4s ease",
+>>>>>>> parent of 3b3bdff (Update page.tsx)
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
@@ -199,7 +203,7 @@ export default function HomeMenu() {
               position: "absolute",
               inset: 0,
               filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.7s ease",
+              transition: "filter 0.3s ease",
             }}
           >
             <Image
