@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import PageTransition from "@/components/PageTransition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* PRELOAD YOUR HOVER PNGS HERE */}
+        {/* PRELOAD YOUR HOVER PNGS */}
         <link
           rel="preload"
           as="image"
@@ -36,11 +37,20 @@ export default function RootLayout({
           as="image"
           href="/next/image/cv_selected.png"
         />
+
+        {/* (Optional) Preload ambient sound for faster decode */}
+        <link
+          rel="preload"
+          as="audio"
+          href="/sounds/Ambient.mp3"
+        />
       </head>
 
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* GLOBAL PAGE FADE-IN */}
+        <PageTransition />
+
+        {/* PAGE CONTENT */}
         {children}
       </body>
     </html>

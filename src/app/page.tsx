@@ -5,13 +5,22 @@ import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
   const router = useRouter();
+
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // ENTER overlay states
+  // ENTER overlay + audio preload state
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-  // AUDIO CONTEXT + NODES
+  // Check if user already entered before
+  useEffect(() => {
+    const already = localStorage.getItem("entered");
+    if (already === "true") {
+      setHasEntered(true);
+    }
+  }, []);
+
+  // --- AUDIO SETUP ---
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -21,18 +30,17 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // ---------- LOAD HOVER SOUND ----------
+  // Load hover sound
   useEffect(() => {
     hoverSound.current = new Audio("/sounds/PageON.mp3");
     hoverSound.current.volume = 1.0;
   }, []);
 
-  // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
+  // Initialize audio context and preload ambient
   useEffect(() => {
-    audioCtx.current = new AudioContext();
-    const ctx = audioCtx.current;
+    const ctx = new AudioContext();
+    audioCtx.current = ctx;
 
-    // Create nodes
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
     lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
@@ -40,17 +48,16 @@ export default function HomeMenu() {
     volumeGain.current = ctx.createGain();
     volumeGain.current.gain.value = 0;
 
-    // Preload and decode ambient
     fetch("/sounds/Ambient.mp3")
-      .then((res) => res.arrayBuffer())
-      .then((data) => ctx.decodeAudioData(data))
+      .then((r) => r.arrayBuffer())
+      .then((ab) => ctx.decodeAudioData(ab))
       .then((decoded) => {
         ambientBuffer.current = decoded;
-        setAudioReady(true); // 🔥 AMBIENT IS READY
+        setAudioReady(true);
       });
   }, []);
 
-  // ---------- START AMBIENT ----------
+  // Start ambient audio
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -72,38 +79,35 @@ export default function HomeMenu() {
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
-    // Fade in
     volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
-    volumeGain.current.gain.linearRampToValueAtTime(
-      0.3,
-      ctx.currentTime + 1
-    );
+    volumeGain.current.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1);
 
     source.start();
     ambientSource.current = source;
     ambientStarted.current = true;
   };
 
-  // ---------- ENTER BUTTON ----------
+  // ENTER button logic
   const handleEnter = async () => {
-    if (!audioReady) return; // can't enter yet
+    if (!audioReady) return;
 
     if (audioCtx.current?.state === "suspended") {
       await audioCtx.current.resume();
     }
 
     startAmbientSound();
-    setHasEntered(true); // hide overlay
+    setHasEntered(true);
+    localStorage.setItem("entered", "true");
   };
 
-  // ---------- HOVER SOUND ----------
+  // Hover sound
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
     hoverSound.current.play();
   };
 
-  // ---------- LOWPASS ----------
+  // Lowpass effects
   const applyLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
@@ -120,42 +124,45 @@ export default function HomeMenu() {
     );
   };
 
-  // ---------- FADE OUT ----------
-  const fadeOutAndNavigate = (path: string) => {
-    if (!audioCtx.current) {
-      router.push(path);
-      return;
+  // --- SCREEN FADE & NAVIGATION ---
+  const fadeScreenOut = () => {
+    const overlay = document.getElementById("transition-overlay");
+    if (overlay) {
+      overlay.style.pointerEvents = "auto";
+      overlay.style.opacity = "1";
     }
+  };
 
-    const ctx = audioCtx.current;
-
-    if (volumeGain.current) {
+  const fadeOutAndNavigate = (path: string) => {
+    if (audioCtx.current && volumeGain.current) {
+      const ctx = audioCtx.current;
       const v = volumeGain.current.gain;
+
       v.cancelScheduledValues(ctx.currentTime);
       v.setValueAtTime(v.value, ctx.currentTime);
       v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
     }
 
-    setTimeout(() => {
-      router.push(path);
-    }, 600);
+    fadeScreenOut();
+
+    setTimeout(() => router.push(path), 600);
   };
 
-  // ---------- BUTTON HOVER ----------
-  const onEnter = (type: "player" | "cv") => {
+  // Hover handlers
+  const onEnterButton = (type: "player" | "cv") => {
     setHovered(type);
     playHoverSound();
     applyLowpass();
   };
 
-  const onLeave = () => {
+  const onLeaveButton = () => {
     setHovered(null);
     removeLowpass();
   };
 
   return (
     <>
-      {/* ===================== ENTER OVERLAY ===================== */}
+      {/* ENTER OVERLAY */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -170,15 +177,15 @@ export default function HomeMenu() {
             fontSize: "3rem",
             cursor: audioReady ? "pointer" : "default",
             opacity: audioReady ? 1 : 0.3,
+            transition: "opacity 0.4s ease",
             zIndex: 9999,
-            transition: "opacity 0.7s ease",
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
         </div>
       )}
 
-      {/* ===================== MAIN PAGE ===================== */}
+      {/* MAIN CONTENT */}
       <main
         style={{
           width: "100vw",
@@ -199,15 +206,15 @@ export default function HomeMenu() {
             maxHeight: "1260px",
           }}
         >
-          {/* === BACKGROUND === */}
+          {/* BACKGROUND */}
           <div
             style={{
-              width: "100%",
-              height: "100%",
               position: "absolute",
               inset: 0,
+              width: "100%",
+              height: "100%",
               filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.7s ease",
+              transition: "filter 0.7s ease", // <-- slower blur
             }}
           >
             <Image
@@ -218,13 +225,12 @@ export default function HomeMenu() {
               sizes="100vw"
               style={{
                 objectFit: "contain",
-                objectPosition: "center",
                 pointerEvents: "none",
               }}
             />
           </div>
 
-          {/* === OVERLAYS === */}
+          {/* OVERLAY IMAGES */}
           {hovered === "player" && (
             <Image
               src="/next/image/player_selected.png"
@@ -255,10 +261,10 @@ export default function HomeMenu() {
             />
           )}
 
-          {/* === BUTTONS === */}
+          {/* BUTTONS */}
           <button
-            onMouseEnter={() => onEnter("player")}
-            onMouseLeave={onLeave}
+            onMouseEnter={() => onEnterButton("player")}
+            onMouseLeave={onLeaveButton}
             onClick={() => fadeOutAndNavigate("/player")}
             style={{
               position: "absolute",
@@ -274,8 +280,8 @@ export default function HomeMenu() {
           />
 
           <button
-            onMouseEnter={() => onEnter("cv")}
-            onMouseLeave={onLeave}
+            onMouseEnter={() => onEnterButton("cv")}
+            onMouseLeave={onLeaveButton}
             onClick={() => fadeOutAndNavigate("/cv")}
             style={{
               position: "absolute",
