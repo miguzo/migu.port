@@ -5,11 +5,11 @@ import { useState, useEffect, useRef } from "react";
 export default function HomeMenu() {
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // ENTER overlay + audio preload state
+  // ENTER + preload state
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-  // WebAudio refs
+  // Audio
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -19,11 +19,12 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // Restore ENTER state
+  // Restore enter state
   useEffect(() => {
-    const already = localStorage.getItem("entered");
-    if (already === "true") {
+    if (localStorage.getItem("entered") === "true") {
       setHasEntered(true);
+      const overlay = document.getElementById("transition-overlay");
+      if (overlay) overlay.style.opacity = "0";
     }
   }, []);
 
@@ -54,7 +55,7 @@ export default function HomeMenu() {
       });
   }, []);
 
-  // Start ambient loop
+  // Start ambient looping
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -62,10 +63,10 @@ export default function HomeMenu() {
       ambientStarted.current ||
       !lowpassFilter.current ||
       !volumeGain.current
-    )
-      return;
+    ) return;
 
     const ctx = audioCtx.current;
+
     const source = ctx.createBufferSource();
     source.buffer = ambientBuffer.current;
     source.loop = true;
@@ -81,7 +82,7 @@ export default function HomeMenu() {
     ambientStarted.current = true;
   };
 
-  // ENTER click → start ambient
+  // ENTER click
   const handleEnter = async () => {
     if (!audioReady) return;
 
@@ -92,9 +93,13 @@ export default function HomeMenu() {
     startAmbientSound();
     setHasEntered(true);
     localStorage.setItem("entered", "true");
+
+    // Fade out the black overlay
+    const overlay = document.getElementById("transition-overlay");
+    if (overlay) overlay.style.opacity = "0";
   };
 
-  // Hover sound + lowpass
+  // Hover sound + effects
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
@@ -104,16 +109,14 @@ export default function HomeMenu() {
   const applyLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
-      300,
-      audioCtx.current.currentTime + 0.2
+      300, audioCtx.current.currentTime + 0.2
     );
   };
 
   const removeLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
-      20000,
-      audioCtx.current.currentTime + 0.4
+      20000, audioCtx.current.currentTime + 0.4
     );
   };
 
@@ -130,7 +133,7 @@ export default function HomeMenu() {
 
   return (
     <>
-      {/* ENTER OVERLAY */}
+      {/* ⭐ ENTER SCREEN */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -144,7 +147,7 @@ export default function HomeMenu() {
             alignItems: "center",
             fontSize: "3rem",
             cursor: audioReady ? "pointer" : "default",
-            opacity: audioReady ? 1 : 0.3,
+            opacity: audioReady ? 1 : 0.4,
             transition: "opacity 0.4s ease",
             zIndex: 9999,
           }}
@@ -200,9 +203,10 @@ export default function HomeMenu() {
               alt=""
               fill
               style={{
-                objectFit: "contain",
                 position: "absolute",
                 inset: 0,
+                objectFit: "contain",
+                pointerEvents: "none",
                 zIndex: 10,
               }}
             />
@@ -214,9 +218,10 @@ export default function HomeMenu() {
               alt=""
               fill
               style={{
-                objectFit: "contain",
                 position: "absolute",
                 inset: 0,
+                objectFit: "contain",
+                pointerEvents: "none",
                 zIndex: 10,
               }}
             />
@@ -233,7 +238,7 @@ export default function HomeMenu() {
               top: "40%",
               width: "15%",
               height: "12%",
-              background: "transparent",
+              background: "none",
               border: "none",
               cursor: "pointer",
               zIndex: 20,
@@ -251,7 +256,7 @@ export default function HomeMenu() {
               top: "40%",
               width: "20%",
               height: "20%",
-              background: "transparent",
+              background: "none",
               border: "none",
               cursor: "pointer",
               zIndex: 20,
