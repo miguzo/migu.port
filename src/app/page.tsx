@@ -5,9 +5,11 @@ import { useState, useEffect, useRef } from "react";
 export default function HomeMenu() {
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
+  // ENTER overlay + audio preload state
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
+  // WebAudio refs
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -17,12 +19,7 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // Simple navigation without fade
-  const goTo = (path: string) => {
-    window.location.href = path;
-  };
-
-  // Check if ENTER was clicked before
+  // Restore ENTER state
   useEffect(() => {
     const already = localStorage.getItem("entered");
     if (already === "true") {
@@ -36,7 +33,7 @@ export default function HomeMenu() {
     hoverSound.current.volume = 1;
   }, []);
 
-  // Preload ambient audio
+  // Init audio + preload ambient
   useEffect(() => {
     const ctx = new AudioContext();
     audioCtx.current = ctx;
@@ -57,7 +54,7 @@ export default function HomeMenu() {
       });
   }, []);
 
-  // Start ambient audio
+  // Start ambient loop
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -69,7 +66,6 @@ export default function HomeMenu() {
       return;
 
     const ctx = audioCtx.current;
-
     const source = ctx.createBufferSource();
     source.buffer = ambientBuffer.current;
     source.loop = true;
@@ -85,7 +81,7 @@ export default function HomeMenu() {
     ambientStarted.current = true;
   };
 
-  // ENTER button logic
+  // ENTER click → start ambient
   const handleEnter = async () => {
     if (!audioReady) return;
 
@@ -98,7 +94,7 @@ export default function HomeMenu() {
     localStorage.setItem("entered", "true");
   };
 
-  // Hover effects
+  // Hover sound + lowpass
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
@@ -184,7 +180,7 @@ export default function HomeMenu() {
               position: "absolute",
               inset: 0,
               filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.3s ease",
+              transition: "filter 0.7s ease",
             }}
           >
             <Image
@@ -226,11 +222,11 @@ export default function HomeMenu() {
             />
           )}
 
-          {/* BUTTONS */}
+          {/* BUTTON: PLAYER */}
           <button
             onMouseEnter={() => onEnterButton("player")}
             onMouseLeave={onLeaveButton}
-            onClick={() => goTo("/player")}
+            onClick={() => (window.location.href = "/player")}
             style={{
               position: "absolute",
               left: "19%",
@@ -244,10 +240,11 @@ export default function HomeMenu() {
             }}
           />
 
+          {/* BUTTON: CV */}
           <button
             onMouseEnter={() => onEnterButton("cv")}
             onMouseLeave={onLeaveButton}
-            onClick={() => goTo("/cv")}
+            onClick={() => (window.location.href = "/cv")}
             style={{
               position: "absolute",
               left: "65%",
