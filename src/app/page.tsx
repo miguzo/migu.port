@@ -1,11 +1,10 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useTransitionRouter } from "@/lib/navigation";
 
 export default function HomeMenu() {
-  const router = useRouter();
+
 
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
@@ -128,14 +127,7 @@ export default function HomeMenu() {
     );
   };
 
-  // --- SCREEN FADE & NAVIGATION ---
-  const fadeScreenOut = () => {
-    const overlay = document.getElementById("transition-overlay");
-    if (overlay) {
-      overlay.style.pointerEvents = "auto";
-      overlay.style.opacity = "1";
-    }
-  };
+
 
   // Hover handlers
   const onEnterButton = (type: "player" | "cv") => {
