@@ -1,15 +1,17 @@
 "use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
+  const router = useRouter();
   const [hovered, setHovered] = useState<null | "player" | "cv">(null);
 
-  // ENTER + preload state
+  // ENTER overlay states
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
 
-  // Audio
+  // AUDIO CONTEXT + NODES
   const audioCtx = useRef<AudioContext | null>(null);
   const ambientBuffer = useRef<AudioBuffer | null>(null);
   const ambientSource = useRef<AudioBufferSourceNode | null>(null);
@@ -19,43 +21,36 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-  // Restore enter state
-  useEffect(() => {
-    if (localStorage.getItem("entered") === "true") {
-      setHasEntered(true);
-      const overlay = document.getElementById("transition-overlay");
-      if (overlay) overlay.style.opacity = "0";
-    }
-  }, []);
-
-  // Load hover sound
+  // ---------- LOAD HOVER SOUND ----------
   useEffect(() => {
     hoverSound.current = new Audio("/sounds/PageON.mp3");
-    hoverSound.current.volume = 1;
+    hoverSound.current.volume = 1.0;
   }, []);
 
-  // Init audio + preload ambient
+  // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
   useEffect(() => {
-    const ctx = new AudioContext();
-    audioCtx.current = ctx;
+    audioCtx.current = new AudioContext();
+    const ctx = audioCtx.current;
 
+    // Create nodes
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
-    lowpassFilter.current.frequency.value = 20000;
+    lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
 
     volumeGain.current = ctx.createGain();
     volumeGain.current.gain.value = 0;
 
+    // Preload and decode ambient
     fetch("/sounds/Ambient.mp3")
-      .then((r) => r.arrayBuffer())
-      .then((ab) => ctx.decodeAudioData(ab))
+      .then((res) => res.arrayBuffer())
+      .then((data) => ctx.decodeAudioData(data))
       .then((decoded) => {
         ambientBuffer.current = decoded;
-        setAudioReady(true);
+        setAudioReady(true); // 🔥 AMBIENT IS READY
       });
   }, []);
 
-  // Start ambient looping
+  // ---------- START AMBIENT ----------
   const startAmbientSound = () => {
     if (
       !audioCtx.current ||
@@ -63,7 +58,9 @@ export default function HomeMenu() {
       ambientStarted.current ||
       !lowpassFilter.current ||
       !volumeGain.current
-    ) return;
+    ) {
+      return;
+    }
 
     const ctx = audioCtx.current;
 
@@ -75,65 +72,90 @@ export default function HomeMenu() {
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
-    volumeGain.current.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1);
+    // Fade in
+    volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
+    volumeGain.current.gain.linearRampToValueAtTime(
+      0.3,
+      ctx.currentTime + 1
+    );
 
     source.start();
     ambientSource.current = source;
     ambientStarted.current = true;
   };
 
-  // ENTER click
+  // ---------- ENTER BUTTON ----------
   const handleEnter = async () => {
-    if (!audioReady) return;
+    if (!audioReady) return; // can't enter yet
 
     if (audioCtx.current?.state === "suspended") {
       await audioCtx.current.resume();
     }
 
     startAmbientSound();
-    setHasEntered(true);
-    localStorage.setItem("entered", "true");
-
-    // Fade out the black overlay
-    const overlay = document.getElementById("transition-overlay");
-    if (overlay) overlay.style.opacity = "0";
+    setHasEntered(true); // hide overlay
   };
 
-  // Hover sound + effects
+  // ---------- HOVER SOUND ----------
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
     hoverSound.current.play();
   };
 
+  // ---------- LOWPASS ----------
   const applyLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
-      300, audioCtx.current.currentTime + 0.2
+      300,
+      audioCtx.current.currentTime + 0.2
     );
   };
 
   const removeLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
-      20000, audioCtx.current.currentTime + 0.4
+      20000,
+      audioCtx.current.currentTime + 0.4
     );
   };
 
-  const onEnterButton = (type: "player" | "cv") => {
+  // ---------- FADE OUT ----------
+  const fadeOutAndNavigate = (path: string) => {
+    if (!audioCtx.current) {
+      router.push(path);
+      return;
+    }
+
+    const ctx = audioCtx.current;
+
+    if (volumeGain.current) {
+      const v = volumeGain.current.gain;
+      v.cancelScheduledValues(ctx.currentTime);
+      v.setValueAtTime(v.value, ctx.currentTime);
+      v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
+    }
+
+    setTimeout(() => {
+      router.push(path);
+    }, 600);
+  };
+
+  // ---------- BUTTON HOVER ----------
+  const onEnter = (type: "player" | "cv") => {
     setHovered(type);
     playHoverSound();
     applyLowpass();
   };
 
-  const onLeaveButton = () => {
+  const onLeave = () => {
     setHovered(null);
     removeLowpass();
   };
 
   return (
     <>
-      {/* ⭐ ENTER SCREEN */}
+      {/* ===================== ENTER OVERLAY ===================== */}
       {!hasEntered && (
         <div
           onClick={audioReady ? handleEnter : undefined}
@@ -147,16 +169,16 @@ export default function HomeMenu() {
             alignItems: "center",
             fontSize: "3rem",
             cursor: audioReady ? "pointer" : "default",
-            opacity: audioReady ? 1 : 0.4,
-            transition: "opacity 0.4s ease",
+            opacity: audioReady ? 1 : 0.3,
             zIndex: 9999,
+            transition: "opacity 0.4s ease",
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
         </div>
       )}
 
-      {/* MAIN PAGE */}
+      {/* ===================== MAIN PAGE ===================== */}
       <main
         style={{
           width: "100vw",
@@ -177,35 +199,41 @@ export default function HomeMenu() {
             maxHeight: "1260px",
           }}
         >
-          {/* BACKGROUND */}
+          {/* === BACKGROUND === */}
           <div
             style={{
+              width: "100%",
+              height: "100%",
               position: "absolute",
               inset: 0,
               filter: hovered ? "blur(6px)" : "none",
-              transition: "filter 0.7s ease",
+              transition: "filter 0.3s ease",
             }}
           >
             <Image
               src="/next/image/cars2.png"
-              alt=""
+              alt="Menu principal"
               fill
               priority
               sizes="100vw"
-              style={{ objectFit: "contain", pointerEvents: "none" }}
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                pointerEvents: "none",
+              }}
             />
           </div>
 
-          {/* HOVER IMAGES */}
+          {/* === OVERLAYS === */}
           {hovered === "player" && (
             <Image
               src="/next/image/player_selected.png"
               alt=""
               fill
               style={{
+                objectFit: "contain",
                 position: "absolute",
                 inset: 0,
-                objectFit: "contain",
                 pointerEvents: "none",
                 zIndex: 10,
               }}
@@ -218,45 +246,44 @@ export default function HomeMenu() {
               alt=""
               fill
               style={{
+                objectFit: "contain",
                 position: "absolute",
                 inset: 0,
-                objectFit: "contain",
                 pointerEvents: "none",
                 zIndex: 10,
               }}
             />
           )}
 
-          {/* BUTTON: PLAYER */}
+          {/* === BUTTONS === */}
           <button
-            onMouseEnter={() => onEnterButton("player")}
-            onMouseLeave={onLeaveButton}
-            onClick={() => (window.location.href = "/player")}
+            onMouseEnter={() => onEnter("player")}
+            onMouseLeave={onLeave}
+            onClick={() => fadeOutAndNavigate("/player")}
             style={{
               position: "absolute",
               left: "19%",
               top: "40%",
               width: "15%",
               height: "12%",
-              background: "none",
+              background: "transparent",
               border: "none",
               cursor: "pointer",
               zIndex: 20,
             }}
           />
 
-          {/* BUTTON: CV */}
           <button
-            onMouseEnter={() => onEnterButton("cv")}
-            onMouseLeave={onLeaveButton}
-            onClick={() => (window.location.href = "/cv")}
+            onMouseEnter={() => onEnter("cv")}
+            onMouseLeave={onLeave}
+            onClick={() => fadeOutAndNavigate("/cv")}
             style={{
               position: "absolute",
               left: "65%",
               top: "40%",
               width: "20%",
               height: "20%",
-              background: "none",
+              background: "transparent",
               border: "none",
               cursor: "pointer",
               zIndex: 20,
