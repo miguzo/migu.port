@@ -606,8 +606,7 @@ export default function Home() {
 {!loading && splashDone && (
   <a
     href="https://igordubreucq.com"
-    target="_blank"
-    rel="noopener noreferrer"
+
     style={{
       position: "absolute",
       left: "50%",
@@ -620,7 +619,7 @@ export default function Home() {
     }}
   >
     <Image
-      src="/next/image/home.png"
+      src="/next/image/home2.png"
       alt="Home Button"
       fill
       style={{

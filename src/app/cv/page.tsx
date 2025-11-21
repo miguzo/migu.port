@@ -42,8 +42,7 @@ export default function CVPage() {
 {/* --- SIMPLE HOME BUTTON --- */}
 <a
   href="https://igordubreucq.com"
-  target="_blank"
-  rel="noopener noreferrer"
+
   style={{
     position: "absolute",
     left: "50%",                   // <-- must be a string
@@ -56,7 +55,7 @@ export default function CVPage() {
   }}
 >
   <Image
-    src="/next/image/home.png"
+    src="/next/image/home2.png"
     alt="Home"
     fill
     style={{
