@@ -94,10 +94,10 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
           onClick={() => router.push("/player")}
           style={{
             position: "absolute",
-            left: "14%",
-            top: "30%",
-            width: "20%",
-            height: "40%",
+            left: "19%",
+            top: "40%",
+            width: "15%",
+            height: "12%",
             background: "transparent",
             border: "none",
             cursor: "pointer",
@@ -111,10 +111,10 @@ const [hovered, setHovered] = useState<null | "player" | "cv">(null);
           onClick={() => router.push("/cv")}
           style={{
             position: "absolute",
-            left: "50%",
-            top: "30%",
+            left: "65%",
+            top: "40%",
             width: "20%",
-            height: "40%",
+            height: "20%",
             background: "transparent",
             border: "none",
             cursor: "pointer",
