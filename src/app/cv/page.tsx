@@ -1,28 +1,7 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function CVPage() {
-  const router = useRouter();
-
-  // ⭐ Fade IN when the page loads
-  useEffect(() => {
-    const overlay = document.getElementById("transition-overlay");
-    if (overlay) overlay.style.opacity = "0";
-  }, []);
-
-  // ⭐ Fade OUT before navigating
-  const fadeOut = (to: string) => {
-    const overlay = document.getElementById("transition-overlay");
-    if (!overlay) return;
-
-    overlay.style.pointerEvents = "auto";
-    overlay.style.opacity = "1";
-
-    setTimeout(() => router.push(to), 600);
-  };
-
   return (
     <main
       style={{
@@ -35,9 +14,9 @@ export default function CVPage() {
         overflow: "hidden",
       }}
     >
-      {/* Internal navigation with fade-out */}
-      <button onClick={() => fadeOut("/")}>Home</button>
-      <button onClick={() => fadeOut("/player")}>Player</button>
+      {/* Simple navigation buttons */}
+      <button onClick={() => (window.location.href = "/")}>Home</button>
+      <button onClick={() => (window.location.href = "/player")}>Player</button>
 
       <div
         style={{
@@ -61,7 +40,7 @@ export default function CVPage() {
           }}
         />
 
-        {/* --- Home Button (external link, no fade-out) --- */}
+        {/* --- Home Button (external link, no fade) --- */}
         <a
           href="https://igordubreucq.com"
           style={{
