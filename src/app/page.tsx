@@ -301,10 +301,10 @@ const toggleAmbient = () => {
             onClick={() => fadeOutAndNavigate("/player")}
             style={{
               position: "absolute",
-              left: "19%",
-              top: "40%",
+              left: "18%",
+              top: "36%",
               width: "15%",
-              height: "12%",
+              height: "10%",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -318,10 +318,10 @@ const toggleAmbient = () => {
             onClick={() => fadeOutAndNavigate("/cv")}
             style={{
               position: "absolute",
-              left: "65%",
-              top: "40%",
-              width: "20%",
-              height: "20%",
+              left: "73%",
+              top: "43%",
+              width: "15%",
+              height: "10%",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -335,10 +335,10 @@ const toggleAmbient = () => {
             onClick={toggleAmbient}
             style={{
               position: "absolute",
-              left: "50%",
-              top: "25%",
-              width: "20%",
-              height: "20%",
+              left: "54%",
+              top: "28%",
+              width: "15%",
+              height: "10%",
               background: "transparent",
               border: "none",
               cursor: "pointer",
