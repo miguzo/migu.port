@@ -19,15 +19,24 @@ export default function HomeMenu() {
   const volumeGain = useRef<GainNode | null>(null);
 
   const hoverSound = useRef<HTMLAudioElement | null>(null);
+  const clickSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 const isAmbientPlaying = useRef(true); // start playing after ENTER
 
   // ---------- LOAD HOVER SOUND ----------
-  useEffect(() => {
-    hoverSound.current = new Audio("/sounds/PageON.mp3");
-    hoverSound.current.volume = 1.0;
-  }, []);
+useEffect(() => {
+  hoverSound.current = new Audio("/sounds/PageON.mp3");
+  hoverSound.current.volume = 1.0;
 
+  clickSound.current = new Audio("/sounds/Button.mp3"); // your click file
+  clickSound.current.volume = 1.0;
+}, []);
+
+const playClickSound = () => {
+  if (!clickSound.current) return;
+  clickSound.current.currentTime = 0;
+  clickSound.current.play();
+};
   // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
   useEffect(() => {
     audioCtx.current = new AudioContext();
@@ -82,8 +91,9 @@ const isAmbientPlaying = useRef(true); // start playing after ENTER
     ambientStarted.current = true;
   };
 const toggleAmbient = () => {
-  if (!audioCtx.current || !volumeGain.current) return;
+  playClickSound(); // CLICK SOUND
 
+  if (!audioCtx.current || !volumeGain.current) return;
   const ctx = audioCtx.current;
 
   // If audio hasn’t started yet → start it
