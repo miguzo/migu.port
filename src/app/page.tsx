@@ -83,11 +83,20 @@ const isAmbientPlaying = useRef(true); // start playing after ENTER
   };
 const toggleAmbient = () => {
   if (!audioCtx.current || !volumeGain.current) return;
+
   const ctx = audioCtx.current;
 
-  // --- If playing → FADE OUT + STOP ---
+  // If audio hasn’t started yet → start it
+  if (!ambientStarted.current) {
+    startAmbientSound();
+    isAmbientPlaying.current = true;
+    return;
+  }
+
+  // --- If currently playing → fade out + stop ---
   if (isAmbientPlaying.current && ambientSource.current) {
     const v = volumeGain.current.gain;
+
     v.cancelScheduledValues(ctx.currentTime);
     v.setValueAtTime(v.value, ctx.currentTime);
     v.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
@@ -104,7 +113,7 @@ const toggleAmbient = () => {
     return;
   }
 
-  // --- If paused → RESTART AMBIENT ---
+  // --- If paused → restart ambient properly ---
   startAmbientSound();
   isAmbientPlaying.current = true;
 };
