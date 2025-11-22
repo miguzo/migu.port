@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
   const router = useRouter();
-  const [hovered, setHovered] = useState<null | "player" | "cv">(null);
+  const [hovered, setHovered] = useState<null | "player" | "recorder" |"cv">(null);
 
   // ENTER overlay states
   const [hasEntered, setHasEntered] = useState(false);
@@ -20,6 +20,7 @@ export default function HomeMenu() {
 
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
+const isAmbientPlaying = useRef(true); // start playing after ENTER
 
   // ---------- LOAD HOVER SOUND ----------
   useEffect(() => {
@@ -80,6 +81,33 @@ export default function HomeMenu() {
     ambientSource.current = source;
     ambientStarted.current = true;
   };
+const toggleAmbient = () => {
+  if (!audioCtx.current || !volumeGain.current) return;
+  const ctx = audioCtx.current;
+
+  // --- If playing → FADE OUT + STOP ---
+  if (isAmbientPlaying.current && ambientSource.current) {
+    const v = volumeGain.current.gain;
+    v.cancelScheduledValues(ctx.currentTime);
+    v.setValueAtTime(v.value, ctx.currentTime);
+    v.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+
+    setTimeout(() => {
+      try {
+        ambientSource.current?.stop();
+      } catch {}
+      ambientSource.current = null;
+      ambientStarted.current = false;
+      isAmbientPlaying.current = false;
+    }, 400);
+
+    return;
+  }
+
+  // --- If paused → RESTART AMBIENT ---
+  startAmbientSound();
+  isAmbientPlaying.current = true;
+};
 
   // ---------- ENTER BUTTON ----------
   const handleEnter = async () => {
@@ -139,7 +167,7 @@ export default function HomeMenu() {
   };
 
   // ---------- BUTTON HOVER ----------
-  const onEnter = (type: "player" | "cv") => {
+  const onEnter = (type: "player" | "recorder" |"cv") => {
     setHovered(type);
     playHoverSound();
     applyLowpass();
@@ -208,7 +236,7 @@ export default function HomeMenu() {
             }}
           >
             <Image
-              src="/next/image/cars2.png"
+              src="/next/image/carsnew.png"
               alt="Menu principal"
               fill
               priority
@@ -251,6 +279,20 @@ export default function HomeMenu() {
               }}
             />
           )}
+               {hovered === "recorder" && (
+            <Image
+              src="/next/image/recorder.png"
+              alt=""
+              fill
+              style={{
+                objectFit: "contain",
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                zIndex: 10,
+              }}
+            />
+          )}
 
           {/* === BUTTONS === */}
           <button
@@ -278,6 +320,23 @@ export default function HomeMenu() {
               position: "absolute",
               left: "65%",
               top: "40%",
+              width: "20%",
+              height: "20%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 20,
+            }}
+          />
+          
+          <button
+            onMouseEnter={() => onEnter("recorder")}
+            onMouseLeave={onLeave}
+            onClick={toggleAmbient}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "25%",
               width: "20%",
               height: "20%",
               background: "transparent",
