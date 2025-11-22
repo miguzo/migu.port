@@ -336,10 +336,10 @@ const playClickSound = () => {
   onClick={playNextRecorderSound}
   style={{
     position: "absolute",
-    left: "65%",
-    top: "40%",
-    width: "20%",
-    height: "20%",
+    left: "54%",
+    top: "26%",
+    width: "15%",
+    height: "10%",
     background: "transparent",
     border: "none",
     cursor: "pointer",
