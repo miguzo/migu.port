@@ -106,43 +106,7 @@ const playClickSound = () => {
     ambientSource.current = source;
     ambientStarted.current = true;
   };
-const toggleAmbient = () => {
-  playClickSound(); // CLICK SOUND
 
-  if (!audioCtx.current || !volumeGain.current) return;
-  const ctx = audioCtx.current;
-
-  // If audio hasn’t started yet → start it
-  if (!ambientStarted.current) {
-    startAmbientSound();
-    isAmbientPlaying.current = true;
-    return;
-  }
-
-  // --- If currently playing → fade out + stop ---
-  if (isAmbientPlaying.current && ambientSource.current) {
-    const v = volumeGain.current.gain;
-
-    v.cancelScheduledValues(ctx.currentTime);
-    v.setValueAtTime(v.value, ctx.currentTime);
-    v.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
-
-    setTimeout(() => {
-      try {
-        ambientSource.current?.stop();
-      } catch {}
-      ambientSource.current = null;
-      ambientStarted.current = false;
-      isAmbientPlaying.current = false;
-    }, 400);
-
-    return;
-  }
-
-  // --- If paused → restart ambient properly ---
-  startAmbientSound();
-  isAmbientPlaying.current = true;
-};
 
   // ---------- ENTER BUTTON ----------
   const handleEnter = async () => {
