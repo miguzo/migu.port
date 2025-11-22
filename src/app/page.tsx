@@ -27,6 +27,7 @@ const recorderSounds = [
   "/sounds/Climbing.mp3",
 
 ];
+const recorderIndex = useRef(0);
 const playNextRecorderSound = () => {
   const index = recorderIndex.current;
   const sound = new Audio(recorderSounds[index]);
@@ -37,7 +38,7 @@ const playNextRecorderSound = () => {
   // Move to next index (loop back at the end)
   recorderIndex.current = (index + 1) % recorderSounds.length;
 };
-const recorderIndex = useRef(0);
+
   // ---------- LOAD HOVER SOUND ----------
 useEffect(() => {
   hoverSound.current = new Audio("/sounds/PageON.mp3");
