@@ -25,7 +25,7 @@ const isAmbientPlaying = useRef(true); // start playing after ENTER
   // ---------- LOAD HOVER SOUND ----------
   useEffect(() => {
     hoverSound.current = new Audio("/sounds/PageON.mp3");
-    hoverSound.current.volume = 1.0;
+    hoverSound.current.volume = 1.5;
   }, []);
 
   // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
