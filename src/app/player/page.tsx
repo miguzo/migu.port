@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
-
+import { useRouter } from "next/navigation";
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
@@ -440,48 +440,23 @@ export default function Home() {
         style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
       >
 
+<div
+  style={{
+    position: "absolute",
+    left: "50%",
+    top: "35%",
+    width: "140vw",
+    height: "140vw",
+    transform: "translate(-50%, -50%)",
+    background: "radial-gradient(circle, rgba(216,204,175,0.25) 0%, rgba(25,25,27,0) 60%)",
+    filter: "blur(40px)",
+    opacity: 0.7,
+    zIndex: 0,
+    pointerEvents: "none",
+    userSelect: "none",
+  }}
+/>
 
-        {/* --- Spherical Glow BG --- */}
-        <div
-          style={{
-            position: "absolute",
-            left: "46%",
-            top: "30%",
-            width: "60vw",
-            height: "60vw",
-            maxWidth: "600px",
-            maxHeight: "600px",
-            transform: "translate(-50%, -50%)",
-            background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
-            filter: "blur(80px)",
-            opacity: 0.7,
-            zIndex: 0,
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        />
-
-
-        {/* --- Spherical Glow BG (duplicate, aria-hidden) --- */}
-        <div
-          style={{
-            position: "absolute",
-            left: "46%",
-            top: "30%",
-            width: "60vw",
-            height: "60vw",
-            maxWidth: "600px",
-            maxHeight: "600px",
-            transform: "translate(-50%, -50%)",
-            background: "radial-gradient(circle, #d8ccaf55 0%, #19191b 70%, #19191b 100%)",
-            filter: "blur(80px)",
-            opacity: 0.7,
-            zIndex: 0,
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-          aria-hidden
-        />
 
         {/* --- FADE NOIR FULLSCREEN --- */}
         {blackFade && (
