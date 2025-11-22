@@ -29,6 +29,8 @@ const recorderSounds = [
 ];
 const recorderIndex = useRef(0);
 const playNextRecorderSound = () => {
+  playClickSound();  // <-- CLICK SOUND FIRST
+
   const index = recorderIndex.current;
   const sound = new Audio(recorderSounds[index]);
 
