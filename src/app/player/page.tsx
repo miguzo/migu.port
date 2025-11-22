@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import Head from "next/head";
 import { Howl } from "howler";
-import { useRouter } from "next/navigation";
+//import { useRouter } from "next/navigation";
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
 type TopButtonPos = { left: string; top: string; width: string; height: string };
@@ -440,7 +440,8 @@ export default function Home() {
         style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}
       >
 
-<div
+
+    <div
   style={{
     position: "absolute",
     left: "50%",
