@@ -34,7 +34,7 @@ const playNextRecorderSound = () => {
   const index = recorderIndex.current;
   const sound = new Audio(recorderSounds[index]);
 
-  sound.volume = 1;
+  sound.volume = 1.2;
   sound.play();
 
   // Move to next index (loop back at the end)
