@@ -34,7 +34,7 @@ const playNextRecorderSound = () => {
   const index = recorderIndex.current;
   const sound = new Audio(recorderSounds[index]);
 
-  sound.volume = 0.85;
+  sound.volume = 1;
   sound.play();
 
   // Move to next index (loop back at the end)
@@ -102,7 +102,7 @@ const playClickSound = () => {
 
     // Fade in
     volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
-    volumeGain.current.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1);
+    volumeGain.current.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 1);
 
     source.start();
     ambientSource.current = source;
