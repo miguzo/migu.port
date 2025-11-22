@@ -22,7 +22,22 @@ export default function HomeMenu() {
   const clickSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 const isAmbientPlaying = useRef(true); // start playing after ENTER
+const recorderSounds = [
+  "/sounds/Sadness.mp3",
+  "/sounds/Climbing.mp3",
 
+];
+const playNextRecorderSound = () => {
+  const index = recorderIndex.current;
+  const sound = new Audio(recorderSounds[index]);
+
+  sound.volume = 1.0;
+  sound.play();
+
+  // Move to next index (loop back at the end)
+  recorderIndex.current = (index + 1) % recorderSounds.length;
+};
+const recorderIndex = useRef(0);
   // ---------- LOAD HOVER SOUND ----------
 useEffect(() => {
   hoverSound.current = new Audio("/sounds/PageON.mp3");
@@ -348,22 +363,22 @@ const toggleAmbient = () => {
             }}
           />
           
-          <button
-            onMouseEnter={() => onEnter("recorder")}
-            onMouseLeave={onLeave}
-            onClick={toggleAmbient}
-            style={{
-              position: "absolute",
-              left: "54%",
-              top: "28%",
-              width: "15%",
-              height: "10%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-          />
+         <button
+  onMouseEnter={() => onEnter("recorder")}
+  onMouseLeave={onLeave}
+  onClick={playNextRecorderSound}
+  style={{
+    position: "absolute",
+    left: "65%",
+    top: "40%",
+    width: "20%",
+    height: "20%",
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    zIndex: 20,
+  }}
+/>
         </div>
       </main>
     </>
