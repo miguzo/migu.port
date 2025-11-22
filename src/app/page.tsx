@@ -21,7 +21,7 @@ export default function HomeMenu() {
   const hoverSound = useRef<HTMLAudioElement | null>(null);
   const clickSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
-const isAmbientPlaying = useRef(true); // start playing after ENTER
+
 const recorderSounds = [
   "/sounds/Sadness.mp3",
   "/sounds/Climbing.mp3",
