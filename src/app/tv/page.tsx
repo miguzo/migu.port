@@ -62,7 +62,7 @@ export default function VideoPage() {
         style={{
           position: "relative",
           width: "min(100vw, 900px)",
-          height: "min(calc(100vw * 1.4), 1260px)", // SAME RATIO as your background pages
+          height: "min(calc(100vw * 1.4), 1260px)",
           maxWidth: "900px",
           maxHeight: "1260px",
         }}
@@ -82,18 +82,18 @@ export default function VideoPage() {
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
-              width: "65%",        // your original proportions
+              width: "65%",
               height: "40%",
               border: "none",
 
-              // 👉 now tilted in perspective to the right
-              transform: "rotateY(-4deg)",
+              // ⭐ Reverse tilt + shift right by 5%
+              transform: "translateX(5%) rotateY(4deg)",
             }}
             allowFullScreen
           ></iframe>
         </div>
 
-        {/* === PNG FRAME OVERLAY — EXACT SAME BEHAVIOR AS BACKGROUND === */}
+        {/* === PNG FRAME OVERLAY === */}
         <Image
           src="/next/image/tv_frame.png"
           alt="TV Frame"
