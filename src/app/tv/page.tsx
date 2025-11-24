@@ -83,11 +83,11 @@ export default function VideoPage() {
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
               width: "65%",
-              height: "40%",
+              height: "42%",
               border: "none",
 
               // ⭐ Reverse tilt + shift right by 5%
-              transform: "translateX(5%) rotateY(4deg)",
+              transform: "translateX(3%) rotateY(20deg)",
             }}
             allowFullScreen
           ></iframe>
