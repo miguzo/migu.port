@@ -6,32 +6,41 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* PURE BLACK BACKGROUND (no texture) */
-html, body {
+/* ------------------------------------------------------
+   GLOBAL PURE BLACK BACKGROUND (no texture, no gray)
+------------------------------------------------------- */
+html,
+body,
+#__next,
+:root {
   background-color: #000000 !important;
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
+  color: #e5c06c;
   cursor: url('/cursor.png') 16 16, auto;
   font-family: 'Cinzel', serif;
-  color: #e5c06c;
 }
-html, body, #__next, :root {
-  background-color: #000000 !important;
+
+/* In some browsers, body can create an extra layer */
+body {
+  background: #000000 !important;
 }
+
 /* Keyframes for fade-in-out */
 @keyframes fadeInOut {
-  0% { opacity: 0; transform: translateY(8px);}
-  12% { opacity: 1; transform: none;}
+  0% { opacity: 0; transform: translateY(8px); }
+  12% { opacity: 1; transform: none; }
   88% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-8px);}
+  100% { opacity: 0; transform: translateY(-8px); }
 }
+
 .animate-fade-in-out {
   animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
 }
 
-/* Tailwind base layer adjustments */
+/* Tailwind base adjustments */
 @layer base {
   * {
     border-color: var(--color-border);
