@@ -365,11 +365,11 @@ const playClickSound = () => {
         <button
   onMouseEnter={() => onEnter("tv")}
   onMouseLeave={onLeave}
-  onClick={playNextRecorderSound}
+onClick={() => fadeOutAndNavigate("/tv")}
   style={{
     position: "absolute",
-    left: "36%",
-    top: "52%",
+    left: "38%",
+    top: "45%",
     width: "15%",
     height: "10%",
     background: "transparent",
