@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
   const router = useRouter();
-  const [hovered, setHovered] = useState<null | "player" | "recorder" |"cv">(null);
+  const [hovered, setHovered] = useState<null | "player" | "recorder" | "cv" | "tv" >(null);
 
   // ENTER overlay states
   const [hasEntered, setHasEntered] = useState(false);
@@ -168,7 +168,7 @@ const playClickSound = () => {
   };
 
   // ---------- BUTTON HOVER ----------
-  const onEnter = (type: "player" | "recorder" |"cv") => {
+  const onEnter = (type: "player" | "recorder" | "cv" | "tv") => {
     setHovered(type);
     playHoverSound();
     applyLowpass();
@@ -294,6 +294,21 @@ const playClickSound = () => {
               }}
             />
           )}
+                         {hovered === "tv" && (
+            <Image
+              src="/next/image/tv.png"
+              alt=""
+              fill
+              style={{
+                objectFit: "contain",
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                zIndex: 10,
+              }}
+            />
+          )}
+
 
           {/* === BUTTONS === */}
           <button
@@ -338,6 +353,23 @@ const playClickSound = () => {
     position: "absolute",
     left: "54%",
     top: "26%",
+    width: "15%",
+    height: "10%",
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    zIndex: 20,
+  }}
+/>
+
+        <button
+  onMouseEnter={() => onEnter("tv")}
+  onMouseLeave={onLeave}
+  onClick={playNextRecorderSound}
+  style={{
+    position: "absolute",
+    left: "36%",
+    top: "52%",
     width: "15%",
     height: "10%",
     background: "transparent",
