@@ -23,18 +23,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ background: "#000000" }}>
       <head>
         {/* Preload hover overlays */}
         <link rel="preload" as="image" href="/next/image/player_selected.png" />
         <link rel="preload" as="image" href="/next/image/cv_selected.png" />
         <link rel="preload" as="image" href="/next/image/tv.png" />
         <link rel="preload" as="image" href="/next/image/recorder.png" />
+
         {/* Preload ambient sound */}
         <link rel="preload" as="audio" href="/sounds/Ambient.mp3" />
       </head>
 
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      {/* PURE BLACK PAGE BACKGROUND (does NOT touch images!) */}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ backgroundColor: "#000000" }}
+      >
         {children}
       </body>
     </html>
