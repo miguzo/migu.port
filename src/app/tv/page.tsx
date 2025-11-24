@@ -35,7 +35,7 @@ export default function VideoPage() {
         }}
       />
 
-      {/* --- HOME ICON --- */}
+      {/* --- HOME ICON (smaller version) --- */}
       <a
         href="https://igordubreucq.com"
         style={{
@@ -43,7 +43,7 @@ export default function VideoPage() {
           left: "50%",
           transform: "translateX(-50%)",
           top: "1%",
-          width: "12%",
+          width: "14%",       // <-- fixed size
           aspectRatio: "1 / 1",
           zIndex: 60,
           cursor: "pointer",
@@ -57,19 +57,17 @@ export default function VideoPage() {
         />
       </a>
 
-      {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
+      {/* === MAIN CONTAINER MATCHING OTHER PAGES === */}
       <div
         style={{
           position: "relative",
           width: "min(100vw, 900px)",
-          height: "min(calc(100vw * 1.4), 1260px)", // SAME RATIO as your background pages
+          height: "min(calc(100vw * 1.4), 1260px)",
           maxWidth: "900px",
           maxHeight: "1260px",
         }}
       >
-  
-
-        {/* === ABSOLUTE VIDEO INSIDE THE FRAME === */}
+        {/* === CENTER VIDEO === */}
         <div
           style={{
             position: "absolute",
@@ -83,16 +81,24 @@ export default function VideoPage() {
         >
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
-            style={{
-              width: "65%",        // adjust to match your frame hole
-              height: "40%",       // adjust to match your frame hole
-              border: "none",
-            }}
+            title="YouTube video"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-          ></iframe>
+            style={{
+              width: "80%",
+              height: "45%",
+              border: "none",
+              
+              // ⭐ slight tilt to the right
+              transform: "rotateZ(2deg)",
+              transformOrigin: "center",
+              borderRadius: "12px",
+            }}
+          />
         </div>
 
-        {/* === PNG FRAME OVERLAY — EXACT SAME BEHAVIOR AS BACKGROUND === */}
+        {/* === TV FRAME OVERLAY === */}
         <Image
           src="/next/image/tv_frame.png"
           alt="TV Frame"
