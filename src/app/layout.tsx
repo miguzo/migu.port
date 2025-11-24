@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" style={{ background: "#000000" }}>
+    <html lang="en">
       <head>
         {/* Preload hover overlays */}
         <link rel="preload" as="image" href="/next/image/player_selected.png" />
@@ -35,10 +35,13 @@ export default function RootLayout({
         <link rel="preload" as="audio" href="/sounds/Ambient.mp3" />
       </head>
 
-      {/* PURE BLACK PAGE BACKGROUND (does NOT touch images!) */}
+      {/* 
+        ⭐ THIS IS THE IMPORTANT PART ⭐
+        Tailwind dark mode was overriding your background and making it gray.
+        Adding "bg-black" fixes the background on EVERY page.
+      */}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ backgroundColor: "#000000" }}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
       >
         {children}
       </body>
