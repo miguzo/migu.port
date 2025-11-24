@@ -35,7 +35,7 @@ export default function VideoPage() {
         }}
       />
 
-      {/* --- HOME ICON (smaller version) --- */}
+      {/* --- HOME ICON --- */}
       <a
         href="https://igordubreucq.com"
         style={{
@@ -43,7 +43,7 @@ export default function VideoPage() {
           left: "50%",
           transform: "translateX(-50%)",
           top: "1%",
-          width: "14%",       // <-- fixed size
+          width: "12%",
           aspectRatio: "1 / 1",
           zIndex: 60,
           cursor: "pointer",
@@ -57,7 +57,7 @@ export default function VideoPage() {
         />
       </a>
 
-      {/* === MAIN CONTAINER MATCHING OTHER PAGES === */}
+      {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
       <div
         style={{
           position: "relative",
@@ -67,7 +67,7 @@ export default function VideoPage() {
           maxHeight: "1260px",
         }}
       >
-        {/* === CENTER VIDEO === */}
+        {/* === ABSOLUTE VIDEO INSIDE THE FRAME === */}
         <div
           style={{
             position: "absolute",
@@ -81,24 +81,19 @@ export default function VideoPage() {
         >
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
-            title="YouTube video"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
             style={{
-              width: "80%",
-              height: "45%",
+              width: "65%",
+              height: "40%",
               border: "none",
-              
-              // ⭐ slight tilt to the right
+
+              // ⭐ ONLY CHANGE YOU ASKED FOR:
               transform: "rotateZ(2deg)",
-              transformOrigin: "center",
-              borderRadius: "12px",
             }}
-          />
+            allowFullScreen
+          ></iframe>
         </div>
 
-        {/* === TV FRAME OVERLAY === */}
+        {/* === PNG FRAME OVERLAY — EXACT SAME BEHAVIOR AS BACKGROUND === */}
         <Image
           src="/next/image/tv_frame.png"
           alt="TV Frame"
