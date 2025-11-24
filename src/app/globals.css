@@ -6,35 +6,23 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ------------------------------------------------------
-   PURE BLACK BACKGROUND FOR THE ENTIRE WEBSITE
-   Covers:
-   - html element
-   - body element
-   - Next.js root wrapper (#__next)
-------------------------------------------------------- */
-html,
-body,
-#__next,
-:root {
+/* PURE BLACK PAGE BACKGROUND (does NOT touch PNG transparency) */
+html, body {
   background-color: #000000 !important;
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
+}
+
+/* Optional: ensure body text and cursor */
+body {
   color: #e5c06c;
   font-family: 'Cinzel', serif;
   cursor: url('/cursor.png') 16 16, auto;
 }
 
-/* Prevent Tailwind or browser from adding background */
-body {
-  background: #000000 !important;
-}
-
-/* ------------------------------------------------------
-   OPTIONAL ANIMATION (you already had this)
-------------------------------------------------------- */
+/* Your fade animation */
 @keyframes fadeInOut {
   0% { opacity: 0; transform: translateY(8px); }
   12% { opacity: 1; transform: none; }
@@ -45,9 +33,7 @@ body {
   animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
 }
 
-/* ------------------------------------------------------
-   Tailwind base layer adjustments
-------------------------------------------------------- */
+/* Tailwind base (leave unchanged, but DO NOT force backgrounds) */
 @layer base {
   * {
     border-color: var(--color-border);
