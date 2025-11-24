@@ -3,54 +3,68 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
+// --- YOUTUBE IFRAME API TYPES ---
+declare global {
+  interface Window {
+    YT: {
+      Player: new (
+        element: HTMLIFrameElement | string,
+        config: Record<string, unknown>
+      ) => YTPlayer;
+      PlayerState: Record<string, number>;
+    };
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
+interface YTPlayer {
+  playVideo: () => void;
+  pauseVideo: () => void;
+}
+
 export default function VideoPage() {
   const router = useRouter();
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
 
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [locked, setLocked] = useState(false);
 
   // === LOAD YOUTUBE API ===
   useEffect(() => {
-    // If API already loaded, skip
-    if ((window as any).YT && (window as any).YT.Player) {
+    if (window.YT && window.YT.Player) {
       createPlayer();
       return;
     }
 
-    // Inject script
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    (window as any).onYouTubeIframeAPIReady = () => {
+    window.onYouTubeIframeAPIReady = () => {
       createPlayer();
     };
   }, []);
 
   // === CREATE PLAYER ===
   const createPlayer = () => {
-    if (!iframeRef.current) return;
+    if (!iframeRef.current || !window.YT || !window.YT.Player) return;
 
-    playerRef.current = new (window as any).YT.Player(iframeRef.current, {
+    playerRef.current = new window.YT.Player(iframeRef.current, {
       events: {},
     });
   };
 
-  // === HANDLE CUSTOM PLAY BUTTON ===
+  // === PLAY BUTTON ===
   const handlePlay = () => {
     if (!playerRef.current) return;
 
-    // Play with sound (allowed because user clicked)
-    playerRef.current.playVideo();
+    playerRef.current.playVideo(); // play WITH sound
 
-    // Fade out overlay
     setOverlayVisible(false);
 
-    // Disable clicking on video so YouTube UI is locked
-    setTimeout(() => setLocked(true), 600);
+    setTimeout(() => setLocked(true), 600); // lock UI
   };
 
   return (
@@ -105,7 +119,7 @@ export default function VideoPage() {
         />
       </a>
 
-      {/* === FULL PAGE CONTAINER === */}
+      {/* === MAIN FRAME CONTAINER === */}
       <div
         style={{
           position: "relative",
@@ -115,13 +129,13 @@ export default function VideoPage() {
           maxHeight: "1260px",
         }}
       >
-        {/* === INVISIBLE PLAY BUTTON (YOU MOVE THIS) === */}
+        {/* === INVISIBLE CUSTOM PLAY BUTTON (YOU POSITION THIS) === */}
         <button
           onClick={handlePlay}
           style={{
             position: "absolute",
-            left: "20%",   // <--- CHANGE THIS
-            top: "70%",    // <--- CHANGE THIS
+            left: "20%",  // CHANGE THIS where you want
+            top: "70%",   // CHANGE THIS where you want
             width: "20%",
             height: "10%",
             background: "transparent",
@@ -165,8 +179,6 @@ export default function VideoPage() {
               height: "62%",
               border: "none",
               transform: "translateX(3%) rotateY(20deg)",
-
-              // Disable clicking after play
               pointerEvents: locked ? "none" : "auto",
             }}
             allow="autoplay; encrypted-media"
