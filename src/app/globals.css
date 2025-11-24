@@ -22,7 +22,9 @@ body,
   cursor: url('/cursor.png') 16 16, auto;
   font-family: 'Cinzel', serif;
 }
-
+img {
+  background-color: #000 !important;
+}
 /* In some browsers, body can create an extra layer */
 body {
   background: #000000 !important;
