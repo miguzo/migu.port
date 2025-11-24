@@ -2,13 +2,13 @@
 @import "tailwindcss";
 
 /* Remove iOS blue tap highlight */
-html { -webkit-tap-highlight-color: transparent; }
+html {
+  -webkit-tap-highlight-color: transparent;
+}
 
-/* GLOBAL PAGE BACKGROUND (html + body) */
+/* PURE BLACK BACKGROUND (no texture) */
 html, body {
   background-color: #000000 !important;
-  background-image: url('https://www.transparenttextures.com/patterns/dark-fish-skin.png');
-  background-repeat: repeat;
   margin: 0;
   padding: 0;
   width: 100%;
