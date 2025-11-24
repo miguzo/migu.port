@@ -82,8 +82,8 @@ export default function VideoPage() {
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
-              width: "65%",
-              height: "62%",    
+              width: "75%",
+              height: "57%",    
               border: "none",
 
               // ⭐ Reverse tilt + shift right by 5%
