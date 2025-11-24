@@ -1,10 +1,7 @@
 "use client";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function VideoPage() {
-  const router = useRouter();
-
   return (
     <main
       style={{
@@ -18,7 +15,6 @@ export default function VideoPage() {
         position: "relative",
       }}
     >
-
       {/* --- HOME ICON ONLY (visible) --- */}
       <a
         href="https://igordubreucq.com"
@@ -67,7 +63,7 @@ export default function VideoPage() {
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
               width: "80%",
-              height: "54%",
+              height: "55%",
               border: "none",
               transform: "translateX(3%) rotateY(20deg)",
             }}
