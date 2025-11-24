@@ -7,7 +7,11 @@ html {
 }
 
 /* ------------------------------------------------------
-   GLOBAL PURE BLACK BACKGROUND (no texture, no gray)
+   PURE BLACK BACKGROUND FOR THE ENTIRE WEBSITE
+   Covers:
+   - html element
+   - body element
+   - Next.js root wrapper (#__next)
 ------------------------------------------------------- */
 html,
 body,
@@ -19,30 +23,31 @@ body,
   width: 100%;
   height: 100%;
   color: #e5c06c;
-  cursor: url('/cursor.png') 16 16, auto;
   font-family: 'Cinzel', serif;
+  cursor: url('/cursor.png') 16 16, auto;
 }
-img {
-  background-color: #000 !important;
-}
-/* In some browsers, body can create an extra layer */
+
+/* Prevent Tailwind or browser from adding background */
 body {
   background: #000000 !important;
 }
 
-/* Keyframes for fade-in-out */
+/* ------------------------------------------------------
+   OPTIONAL ANIMATION (you already had this)
+------------------------------------------------------- */
 @keyframes fadeInOut {
   0% { opacity: 0; transform: translateY(8px); }
   12% { opacity: 1; transform: none; }
   88% { opacity: 1; }
   100% { opacity: 0; transform: translateY(-8px); }
 }
-
 .animate-fade-in-out {
   animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
 }
 
-/* Tailwind base adjustments */
+/* ------------------------------------------------------
+   Tailwind base layer adjustments
+------------------------------------------------------- */
 @layer base {
   * {
     border-color: var(--color-border);
