@@ -1,9 +1,18 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRef, useEffect, useState } from "react";
 
 export default function VideoPage() {
   const router = useRouter();
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [locked, setLocked] = useState(false);
+
+  // ⚡ Disable interaction AFTER first click (so user can start sound)
+  const handleFirstClick = () => {
+    if (locked) return; // already locked
+    setTimeout(() => setLocked(true), 300); // small delay so Play works
+  };
 
   return (
     <main
@@ -78,17 +87,22 @@ export default function VideoPage() {
             overflow: "hidden",
             zIndex: 20,
           }}
+          onClick={handleFirstClick} // detect first interaction
         >
           <iframe
-            src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
+            ref={iframeRef}
+            src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=1&modestbranding=1&rel=0&showinfo=0"
             style={{
               width: "65%",
               height: "42%",
               border: "none",
 
-              // ⭐ Reverse tilt + shift right by 5%
               transform: "translateX(3%) rotateY(20deg)",
+
+              // ⭐ Disable mouse AFTER the user presses Play
+              pointerEvents: locked ? "none" : "auto",
             }}
+            allow="autoplay; encrypted-media"
             allowFullScreen
           ></iframe>
         </div>
