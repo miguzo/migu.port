@@ -18,7 +18,7 @@ html { -webkit-tap-highlight-color: transparent; }
 
 /* Dark background for the app */
 body {
-  background: #19191b;
+  background: #000000;
   background-image: url('https://www.transparenttextures.com/patterns/dark-fish-skin.png');
   font-family: 'Cinzel', serif;
 }
@@ -30,7 +30,7 @@ body {
     outline-color: color-mix(in srgb, var(--color-ring) 50%, transparent);
   }
   body {
-    background-color: #19191b;
+    background-color: #000000;
     color: #e5c06c; /* or your main foreground color */
   }
 }

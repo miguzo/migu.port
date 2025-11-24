@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The migu Player",
-  description: "Music Library",
+  title: "IGOR DUBREUCQ",
+  description: "Emma's place",
 };
 
 export default function RootLayout({
@@ -28,7 +28,8 @@ export default function RootLayout({
         {/* Preload hover overlays */}
         <link rel="preload" as="image" href="/next/image/player_selected.png" />
         <link rel="preload" as="image" href="/next/image/cv_selected.png" />
-
+        <link rel="preload" as="image" href="/next/image/tv.png" />
+        <link rel="preload" as="image" href="/next/image/recorder.png" />
         {/* Preload ambient sound */}
         <link rel="preload" as="audio" href="/sounds/Ambient.mp3" />
       </head>
