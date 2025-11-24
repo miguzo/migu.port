@@ -83,7 +83,7 @@ export default function VideoPage() {
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
               width: "65%",
-              height: "50%",
+              height: "55%",
               border: "none",
 
               // ⭐ Reverse tilt + shift right by 5%
