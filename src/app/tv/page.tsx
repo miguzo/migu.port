@@ -43,7 +43,7 @@ export default function VideoPage() {
           left: "50%",
           transform: "translateX(-50%)",
           top: "1%",
-          width: "15%",
+          width: "12%",
           aspectRatio: "1 / 1",
           zIndex: 60,
           cursor: "pointer",
@@ -84,8 +84,8 @@ export default function VideoPage() {
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
-              width: "60%",        // adjust to match your frame hole
-              height: "35%",       // adjust to match your frame hole
+              width: "65%",        // adjust to match your frame hole
+              height: "40%",       // adjust to match your frame hole
               border: "none",
             }}
             allowFullScreen
