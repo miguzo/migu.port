@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function VideoPage() {
   const router = useRouter();
@@ -34,45 +35,83 @@ export default function VideoPage() {
         }}
       />
 
-      <button
-        onClick={() => router.push("/player")}
-        aria-label="Player"
+      {/* --- HOME ICON --- */}
+      <a
+        href="https://igordubreucq.com"
         style={{
           position: "absolute",
-          right: "5%",
-          top: "5%",
-          width: "10%",
-          height: "10%",
-          background: "transparent",
-          border: "none",
+          left: "50%",
+          transform: "translateX(-50%)",
+          top: "1%",
+          width: "28%",
+          aspectRatio: "1 / 1",
+          zIndex: 60,
           cursor: "pointer",
-          zIndex: 50,
         }}
-      />
+      >
+        <Image
+          src="/next/image/home2.png"
+          alt="Home"
+          fill
+          style={{ objectFit: "contain", pointerEvents: "none" }}
+        />
+      </a>
 
-      {/* --- VIDEO CONTAINER --- */}
+      {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
       <div
         style={{
           position: "relative",
           width: "min(100vw, 900px)",
-          height: "min(calc(100vw * 0.56), 504px)", // 16:9 ratio
+          height: "min(calc(100vw * 1.4), 1260px)", // SAME RATIO as your background pages
           maxWidth: "900px",
-          maxHeight: "504px",
-          borderRadius: "12px",
-          overflow: "hidden",
-          boxShadow: "0 0 25px rgba(0,0,0,0.4)",
+          maxHeight: "1260px",
         }}
       >
-        <iframe
-          src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
-          title="YouTube video"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
+        {/* --- MAIN BACKGROUND (optional) --- */}
+        <Image
+          src="/next/image/tv_background.png" // optional BG behind video
+          alt=""
+          fill
           style={{
-            width: "100%",
-            height: "100%",
-            border: "none",
+            objectFit: "contain",
+            objectPosition: "center",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* === ABSOLUTE VIDEO INSIDE THE FRAME === */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "hidden",
+            zIndex: 20,
+          }}
+        >
+          <iframe
+            src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
+            style={{
+              width: "80%",        // adjust to match your frame hole
+              height: "45%",       // adjust to match your frame hole
+              border: "none",
+            }}
+            allowFullScreen
+          ></iframe>
+        </div>
+
+        {/* === PNG FRAME OVERLAY — EXACT SAME BEHAVIOR AS BACKGROUND === */}
+        <Image
+          src="/next/image/tv_frame.png"
+          alt="TV Frame"
+          fill
+          style={{
+            objectFit: "contain",
+            objectPosition: "center",
+            pointerEvents: "none",
+            zIndex: 200,
           }}
         />
       </div>
