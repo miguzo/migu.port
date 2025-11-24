@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function HomeMenu() {
   const router = useRouter();
-  const [hovered, setHovered] = useState<null | "player" | "recorder" | "cv" | "tv" >(null);
+  const [hovered, setHovered] = useState<null | "player" | "recorder" | "cv" | "tv">(null);
 
   // ENTER overlay states
   const [hasEntered, setHasEntered] = useState(false);
@@ -22,45 +22,51 @@ export default function HomeMenu() {
   const clickSound = useRef<HTMLAudioElement | null>(null);
   const ambientStarted = useRef(false);
 
-const recorderSounds = [
-  "/sounds/Sadness.mp3",
-  "/sounds/Climbing.mp3",
+  // ⭐ Recorder audio (persistent, no overlapping)
+  const recorderAudioRef = useRef<HTMLAudioElement | null>(null);
 
-];
-const recorderIndex = useRef(0);
-const playNextRecorderSound = () => {
-  playClickSound();  // <-- CLICK SOUND FIRST
+  const recorderSounds = ["/sounds/Sadness.mp3", "/sounds/Climbing.mp3"];
+  const recorderIndex = useRef(0);
 
-  const index = recorderIndex.current;
-  const sound = new Audio(recorderSounds[index]);
+  const playNextRecorderSound = () => {
+    playClickSound(); // CLICK SOUND FIRST
 
-  sound.volume = 1;
-  sound.play();
+    // Stop previous playing sound to prevent overlap
+    if (recorderAudioRef.current) {
+      recorderAudioRef.current.pause();
+      recorderAudioRef.current.currentTime = 0;
+    }
 
-  // Move to next index (loop back at the end)
-  recorderIndex.current = (index + 1) % recorderSounds.length;
-};
+    const index = recorderIndex.current;
+    const audio = new Audio(recorderSounds[index]);
+    recorderAudioRef.current = audio;
+
+    audio.volume = 1;
+    audio.play();
+
+    recorderIndex.current = (index + 1) % recorderSounds.length;
+  };
 
   // ---------- LOAD HOVER SOUND ----------
-useEffect(() => {
-  hoverSound.current = new Audio("/sounds/PageON.mp3");
-  hoverSound.current.volume = 1.0;
+  useEffect(() => {
+    hoverSound.current = new Audio("/sounds/PageON.mp3");
+    hoverSound.current.volume = 1.0;
 
-  clickSound.current = new Audio("/sounds/Button.mp3"); // your click file
-  clickSound.current.volume = 1.0;
-}, []);
+    clickSound.current = new Audio("/sounds/Button.mp3");
+    clickSound.current.volume = 1.0;
+  }, []);
 
-const playClickSound = () => {
-  if (!clickSound.current) return;
-  clickSound.current.currentTime = 0;
-  clickSound.current.play();
-};
+  const playClickSound = () => {
+    if (!clickSound.current) return;
+    clickSound.current.currentTime = 0;
+    clickSound.current.play();
+  };
+
   // ---------- INIT AUDIO + PRELOAD AMBIENT ----------
   useEffect(() => {
     audioCtx.current = new AudioContext();
     const ctx = audioCtx.current;
 
-    // Create nodes
     lowpassFilter.current = ctx.createBiquadFilter();
     lowpassFilter.current.type = "lowpass";
     lowpassFilter.current.frequency.setValueAtTime(20000, ctx.currentTime);
@@ -68,13 +74,12 @@ const playClickSound = () => {
     volumeGain.current = ctx.createGain();
     volumeGain.current.gain.value = 0;
 
-    // Preload and decode ambient
     fetch("/sounds/Ambient.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => ctx.decodeAudioData(data))
       .then((decoded) => {
         ambientBuffer.current = decoded;
-        setAudioReady(true); // 🔥 AMBIENT IS READY
+        setAudioReady(true);
       });
   }, []);
 
@@ -100,7 +105,6 @@ const playClickSound = () => {
     lowpassFilter.current.connect(volumeGain.current);
     volumeGain.current.connect(ctx.destination);
 
-    // Fade in
     volumeGain.current.gain.setValueAtTime(0, ctx.currentTime);
     volumeGain.current.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 1);
 
@@ -109,27 +113,25 @@ const playClickSound = () => {
     ambientStarted.current = true;
   };
 
-
   // ---------- ENTER BUTTON ----------
   const handleEnter = async () => {
-    if (!audioReady) return; // can't enter yet
+    if (!audioReady) return;
 
     if (audioCtx.current?.state === "suspended") {
       await audioCtx.current.resume();
     }
 
     startAmbientSound();
-    setHasEntered(true); // hide overlay
+    setHasEntered(true);
   };
 
-  // ---------- HOVER SOUND ----------
+  // ---------- HOVER ----------
   const playHoverSound = () => {
     if (!hoverSound.current) return;
     hoverSound.current.currentTime = 0;
     hoverSound.current.play();
   };
 
-  // ---------- LOWPASS ----------
   const applyLowpass = () => {
     if (!audioCtx.current || !lowpassFilter.current) return;
     lowpassFilter.current.frequency.linearRampToValueAtTime(
@@ -146,8 +148,18 @@ const playClickSound = () => {
     );
   };
 
-  // ---------- FADE OUT ----------
+  // ⭐ STOP recorder sound on navigate
+  const stopRecorderSound = () => {
+    if (recorderAudioRef.current) {
+      recorderAudioRef.current.pause();
+      recorderAudioRef.current.currentTime = 0;
+    }
+  };
+
+  // ---------- FADE OUT + NAVIGATION ----------
   const fadeOutAndNavigate = (path: string) => {
+    stopRecorderSound(); // <--- IMPORTANT FIX
+
     if (!audioCtx.current) {
       router.push(path);
       return;
@@ -280,7 +292,8 @@ const playClickSound = () => {
               }}
             />
           )}
-               {hovered === "recorder" && (
+
+          {hovered === "recorder" && (
             <Image
               src="/next/image/recorder.png"
               alt=""
@@ -294,7 +307,8 @@ const playClickSound = () => {
               }}
             />
           )}
-                         {hovered === "tv" && (
+
+          {hovered === "tv" && (
             <Image
               src="/next/image/tv.png"
               alt=""
@@ -308,7 +322,6 @@ const playClickSound = () => {
               }}
             />
           )}
-
 
           {/* === BUTTONS === */}
           <button
@@ -344,40 +357,40 @@ const playClickSound = () => {
               zIndex: 20,
             }}
           />
-          
-         <button
-  onMouseEnter={() => onEnter("recorder")}
-  onMouseLeave={onLeave}
-  onClick={playNextRecorderSound}
-  style={{
-    position: "absolute",
-    left: "54%",
-    top: "26%",
-    width: "15%",
-    height: "10%",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    zIndex: 20,
-  }}
-/>
 
-        <button
-  onMouseEnter={() => onEnter("tv")}
-  onMouseLeave={onLeave}
-onClick={() => fadeOutAndNavigate("/tv")}
-  style={{
-    position: "absolute",
-    left: "38%",
-    top: "45%",
-    width: "15%",
-    height: "10%",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    zIndex: 20,
-  }}
-/>
+          <button
+            onMouseEnter={() => onEnter("recorder")}
+            onMouseLeave={onLeave}
+            onClick={playNextRecorderSound}
+            style={{
+              position: "absolute",
+              left: "54%",
+              top: "26%",
+              width: "15%",
+              height: "10%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 20,
+            }}
+          />
+
+          <button
+            onMouseEnter={() => onEnter("tv")}
+            onMouseLeave={onLeave}
+            onClick={() => fadeOutAndNavigate("/tv")}
+            style={{
+              position: "absolute",
+              left: "38%",
+              top: "45%",
+              width: "15%",
+              height: "10%",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              zIndex: 20,
+            }}
+          />
         </div>
       </main>
     </>
