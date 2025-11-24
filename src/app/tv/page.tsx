@@ -18,22 +18,6 @@ export default function VideoPage() {
         position: "relative",
       }}
     >
-      {/* --- INVISIBLE NAV BUTTONS --- */}
-      <button
-        onClick={() => router.push("/")}
-        aria-label="Home"
-        style={{
-          position: "absolute",
-          left: "5%",
-          top: "5%",
-          width: "10%",
-          height: "10%",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          zIndex: 50,
-        }}
-      />
 
       {/* --- HOME ICON --- */}
       <a
@@ -82,8 +66,8 @@ export default function VideoPage() {
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
-              width: "75%",
-              height: "57%",    
+              width: "76%",
+              height: "55%",    
               border: "none",
 
               // ⭐ Reverse tilt + shift right by 5%
