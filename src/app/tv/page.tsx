@@ -19,7 +19,7 @@ export default function VideoPage() {
       }}
     >
 
-      {/* --- HOME ICON --- */}
+      {/* --- HOME ICON ONLY (visible) --- */}
       <a
         href="https://igordubreucq.com"
         style={{
@@ -67,10 +67,8 @@ export default function VideoPage() {
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
               width: "76%",
-              height: "55%",    
+              height: "55%",
               border: "none",
-
-              // ⭐ Reverse tilt + shift right by 5%
               transform: "translateX(3%) rotateY(20deg)",
             }}
             allowFullScreen
