@@ -17,7 +17,9 @@ html, body {
   font-family: 'Cinzel', serif;
   color: #e5c06c;
 }
-
+html, body, #__next, :root {
+  background-color: #000000 !important;
+}
 /* Keyframes for fade-in-out */
 @keyframes fadeInOut {
   0% { opacity: 0; transform: translateY(8px);}
