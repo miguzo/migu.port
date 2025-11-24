@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-// --- YOUTUBE IFRAME API TYPES ---
+// === TYPES: no-any YouTube Player API ===
 declare global {
   interface Window {
     YT: {
@@ -11,7 +11,6 @@ declare global {
         element: HTMLIFrameElement | string,
         config: Record<string, unknown>
       ) => YTPlayer;
-      PlayerState: Record<string, number>;
     };
     onYouTubeIframeAPIReady: () => void;
   }
@@ -19,7 +18,6 @@ declare global {
 
 interface YTPlayer {
   playVideo: () => void;
-  pauseVideo: () => void;
 }
 
 export default function VideoPage() {
@@ -31,7 +29,7 @@ export default function VideoPage() {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [locked, setLocked] = useState(false);
 
-  // === LOAD YOUTUBE API ===
+  // == Load YouTube API ==
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       createPlayer();
@@ -47,24 +45,27 @@ export default function VideoPage() {
     };
   }, []);
 
-  // === CREATE PLAYER ===
   const createPlayer = () => {
-    if (!iframeRef.current || !window.YT || !window.YT.Player) return;
+    if (!iframeRef.current) return;
 
     playerRef.current = new window.YT.Player(iframeRef.current, {
       events: {},
     });
   };
 
-  // === PLAY BUTTON ===
+  // == Invisible play button triggers sound + fade ==
   const handlePlay = () => {
     if (!playerRef.current) return;
 
-    playerRef.current.playVideo(); // play WITH sound
+    playerRef.current.playVideo(); // plays WITH sound
 
+    // Start fade-out
     setOverlayVisible(false);
 
-    setTimeout(() => setLocked(true), 600); // lock UI
+    // Lock interaction after fade
+    setTimeout(() => {
+      setLocked(true);
+    }, 800);
   };
 
   return (
@@ -119,7 +120,7 @@ export default function VideoPage() {
         />
       </a>
 
-      {/* === MAIN FRAME CONTAINER === */}
+      {/* === YOUR EXACT CONTAINER (unchanged) === */}
       <div
         style={{
           position: "relative",
@@ -129,15 +130,15 @@ export default function VideoPage() {
           maxHeight: "1260px",
         }}
       >
-        {/* === INVISIBLE CUSTOM PLAY BUTTON (YOU POSITION THIS) === */}
+        {/* === INVISIBLE CUSTOM PLAY BUTTON (place wherever) === */}
         <button
           onClick={handlePlay}
           style={{
             position: "absolute",
-            left: "20%",  // CHANGE THIS where you want
-            top: "70%",   // CHANGE THIS where you want
+            left: "22%", // you can adjust this
+            top: "70%", // you can adjust this
             width: "20%",
-            height: "10%",
+            height: "8%",
             background: "transparent",
             border: "none",
             cursor: "pointer",
@@ -145,7 +146,7 @@ export default function VideoPage() {
           }}
         />
 
-        {/* === BLACK OVERLAY (FADES OUT) === */}
+        {/* === BLACK FADE OVERLAY (NOW WORKS) === */}
         <div
           style={{
             position: "absolute",
@@ -153,7 +154,7 @@ export default function VideoPage() {
             background: "black",
             opacity: overlayVisible ? 1 : 0,
             transition: "opacity 0.8s ease",
-            zIndex: 150,
+            zIndex: 150,       // BELOW FRAME
             pointerEvents: "none",
           }}
         />
@@ -186,7 +187,7 @@ export default function VideoPage() {
           ></iframe>
         </div>
 
-        {/* === TV FRAME === */}
+        {/* === TV FRAME (TOP) === */}
         <Image
           src="/next/image/tv_frame.png"
           alt="TV Frame"
