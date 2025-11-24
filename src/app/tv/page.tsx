@@ -1,72 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-
-// === TYPES: no-any YouTube Player API ===
-declare global {
-  interface Window {
-    YT: {
-      Player: new (
-        element: HTMLIFrameElement | string,
-        config: Record<string, unknown>
-      ) => YTPlayer;
-    };
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
-
-interface YTPlayer {
-  playVideo: () => void;
-}
 
 export default function VideoPage() {
   const router = useRouter();
-
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const playerRef = useRef<YTPlayer | null>(null);
-
-  const [overlayVisible, setOverlayVisible] = useState(true);
-  const [locked, setLocked] = useState(false);
-
-  // == Load YouTube API ==
-  useEffect(() => {
-    if (window.YT && window.YT.Player) {
-      createPlayer();
-      return;
-    }
-
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
-
-    window.onYouTubeIframeAPIReady = () => {
-      createPlayer();
-    };
-  }, []);
-
-  const createPlayer = () => {
-    if (!iframeRef.current) return;
-
-    playerRef.current = new window.YT.Player(iframeRef.current, {
-      events: {},
-    });
-  };
-
-  // == Invisible play button triggers sound + fade ==
-  const handlePlay = () => {
-    if (!playerRef.current) return;
-
-    playerRef.current.playVideo(); // plays WITH sound
-
-    // Start fade-out
-    setOverlayVisible(false);
-
-    // Lock interaction after fade
-    setTimeout(() => {
-      setLocked(true);
-    }, 800);
-  };
 
   return (
     <main
@@ -120,7 +57,7 @@ export default function VideoPage() {
         />
       </a>
 
-      {/* === YOUR EXACT CONTAINER (unchanged) === */}
+      {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
       <div
         style={{
           position: "relative",
@@ -130,36 +67,7 @@ export default function VideoPage() {
           maxHeight: "1260px",
         }}
       >
-        {/* === INVISIBLE CUSTOM PLAY BUTTON (place wherever) === */}
-        <button
-          onClick={handlePlay}
-          style={{
-            position: "absolute",
-            left: "22%", // you can adjust this
-            top: "70%", // you can adjust this
-            width: "20%",
-            height: "8%",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            zIndex: 300,
-          }}
-        />
-
-        {/* === BLACK FADE OVERLAY (NOW WORKS) === */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "black",
-            opacity: overlayVisible ? 1 : 0,
-            transition: "opacity 0.8s ease",
-            zIndex: 150,       // BELOW FRAME
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* === VIDEO === */}
+        {/* === ABSOLUTE VIDEO INSIDE THE FRAME === */}
         <div
           style={{
             position: "absolute",
@@ -172,22 +80,20 @@ export default function VideoPage() {
           }}
         >
           <iframe
-            ref={iframeRef}
-            id="ytplayer"
-            src="https://www.youtube.com/embed/rTYdjkZaPh0?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0"
+            src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
             style={{
               width: "65%",
-              height: "62%",
+              height: "62%",    
               border: "none",
+
+              // ⭐ Reverse tilt + shift right by 5%
               transform: "translateX(3%) rotateY(20deg)",
-              pointerEvents: locked ? "none" : "auto",
             }}
-            allow="autoplay; encrypted-media"
             allowFullScreen
           ></iframe>
         </div>
 
-        {/* === TV FRAME (TOP) === */}
+        {/* === PNG FRAME OVERLAY === */}
         <Image
           src="/next/image/tv_frame.png"
           alt="TV Frame"
