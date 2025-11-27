@@ -1,5 +1,10 @@
+/* Load Google Font FIRST */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
-@import "tailwindcss";
+
+/* Load Tailwind properly */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Remove iOS blue tap highlight */
 html {
@@ -26,7 +31,7 @@ html, body {
   animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
 }
 
-/* Tailwind base (leave unchanged, but DO NOT force backgrounds) */
+/* Tailwind base adjustments */
 @layer base {
   * {
     border-color: var(--color-border);
