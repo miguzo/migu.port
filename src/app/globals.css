@@ -15,13 +15,6 @@ html, body {
   height: 100%;
 }
 
-/* Optional: ensure body text and cursor */
-body {
-  color: #e5c06c;
-  font-family: 'Cinzel', serif;
-  cursor: url('/cursor.png') 16 16, auto;
-}
-
 /* Your fade animation */
 @keyframes fadeInOut {
   0% { opacity: 0; transform: translateY(8px); }
