@@ -1,5 +1,5 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
       "destination": "/player",
@@ -8,7 +8,8 @@
           "type": "host",
           "value": "migu-player.com"
         }
-      ]
+      ],
+      "permanent": true
     }
   ]
 }

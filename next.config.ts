@@ -11,20 +11,6 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  async rewrites() {
-    return [
-      {
-        source: "/",
-        destination: "/player",
-        has: [
-          {
-            type: "host",
-            value: "migu-player.com",
-          },
-        ],
-      },
-    ];
-  },
 };
 
 export default nextConfig;
