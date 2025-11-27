@@ -1,4 +1,3 @@
-// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -6,9 +5,25 @@ const nextConfig: NextConfig = {
     config.module.rules.push({
       test: /\.svg$/,
       issuer: /\.[jt]sx?$/,
-      use: ['@svgr/webpack'],
+      use: ["@svgr/webpack"],
     });
+
     return config;
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/player",
+        has: [
+          {
+            type: "host",
+            value: "migu-player.com",
+          },
+        ],
+      },
+    ];
   },
 };
 
