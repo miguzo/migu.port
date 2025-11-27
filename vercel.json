@@ -1,15 +1,14 @@
 {
-  "redirects": [
+  "rewrites": [
     {
       "source": "/",
-      "destination": "https://igordubreucq.com/player",
+      "destination": "/player",
       "has": [
         {
           "type": "host",
           "value": "migu-player.com"
         }
-      ],
-      "permanent": true
+      ]
     }
   ]
 }
