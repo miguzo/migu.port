@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://igordubreucq.com/player",
+      "has": [
+        {
+          "type": "host",
+          "value": "migu-player.com"
+        }
+      ],
+      "permanent": true
+    }
+  ]
+}
