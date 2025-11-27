@@ -3,13 +3,7 @@
     {
       "source": "/",
       "destination": "/player",
-      "has": [
-        {
-          "type": "host",
-          "value": "migu-player.com"
-        }
-      ],
-      "permanent": true
+      "permanent": false
     }
   ]
 }
