@@ -146,8 +146,7 @@ const projects: Project[] = [
       }
     ]
   },
-
-
+  
   {
     mainImg: "/next/image/St4r/Components/St4rCF.png",
     pageImg: "/next/image/St4r/Components/St4rPAGE.png",
