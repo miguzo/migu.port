@@ -10,6 +10,9 @@ import { projects } from "@/data/projects";
  */
 export const FRAME_SIZES = "(max-width: 439px) 98vw, 430px";
 
+/** The hub / cv / tv pages use a wider box: min(100vw, 900px). */
+export const HUB_SIZES = "(max-width: 900px) 100vw, 900px";
+
 /** Layer order, previously scattered as inline magic numbers up to 10005. */
 export const Z = {
   glow: 0,

@@ -9,9 +9,10 @@ import { useEffect } from "react";
  *   ArrowRight  next track
  *   ArrowDown   next project
  *   Escape      close the open overlay
+ *   I           leave the player for the hub menu
  */
 export function useKeyboardControls({
-  enabled, overlayOpen, onToggle, onNextTrack, onNextProject, onEscape,
+  enabled, overlayOpen, onToggle, onNextTrack, onNextProject, onEscape, onOpenHub,
 }: {
   /** False while the splash is up or a fade is running. */
   enabled: boolean;
@@ -21,11 +22,19 @@ export function useKeyboardControls({
   onNextTrack: () => void;
   onNextProject: () => void;
   onEscape: () => void;
+  onOpenHub: () => void;
 }) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (overlayOpen) { e.preventDefault(); onEscape(); }
+        return;
+      }
+      // Navigation works even with an overlay up — you are leaving the page,
+      // so there is nothing to dismiss first.
+      if (e.code === "KeyI" && enabled) {
+        e.preventDefault();
+        onOpenHub();
         return;
       }
       if (!enabled || overlayOpen) return;
@@ -53,5 +62,5 @@ export function useKeyboardControls({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [enabled, overlayOpen, onToggle, onNextTrack, onNextProject, onEscape]);
+  }, [enabled, overlayOpen, onToggle, onNextTrack, onNextProject, onEscape, onOpenHub]);
 }

@@ -24,6 +24,30 @@ a:focus-visible {
   animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
 }
 
+/* Back-to-hub control on the cv / tv pages. */
+.back-to-menu {
+  position: fixed;
+  left: 2.5%;
+  top: 3%;
+  z-index: 500;
+  padding: 0.45rem 0.9rem;
+  background: rgba(25, 25, 27, 0.6);
+  border: 1px solid rgba(229, 192, 108, 0.35);
+  border-radius: 3px;
+  color: #e5c06c;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.25s ease, border-color 0.25s ease;
+}
+.back-to-menu:hover,
+.back-to-menu:focus-visible {
+  opacity: 1;
+  border-color: rgba(229, 192, 108, 0.8);
+}
+
 /* Dark background for the app. Texture is self-hosted (was transparenttextures.com). */
 body {
   background: #19191b;

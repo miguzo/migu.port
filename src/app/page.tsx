@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Howl } from "howler";
 
 import { TOP_BUTTON_POSITIONS, BTN } from "@/data/projects";
@@ -13,6 +14,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useKeyboardControls } from "@/hooks/useKeyboardControls";
 
 export default function Home() {
+  const router = useRouter();
   const player = usePlayer();
   const { project, track, isPlaying, hasStarted } = player;
 
@@ -173,6 +175,13 @@ export default function Home() {
     }
   }, [overlayOpen, aboutMeOpen, player, handleNextTrack, handleNextProject]);
 
+  /** "i" leaves the player for the hub menu. Pause first so the track does not
+   *  keep playing underneath the hub's ambient bed. */
+  const openHub = useCallback(() => {
+    player.pause();
+    router.push("/hub");
+  }, [player, router]);
+
   useKeyboardControls({
     enabled: splashDone && !blackFade,
     overlayOpen,
@@ -180,6 +189,7 @@ export default function Home() {
     onNextTrack: handleNextTrack,
     onNextProject: handleNextProject,
     onEscape: handleEscape,
+    onOpenHub: openHub,
   });
 
   /**
