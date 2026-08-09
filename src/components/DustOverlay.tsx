@@ -92,6 +92,13 @@ export function DustOverlay({
       const dt = Math.min(t - last, 50);
       last = t;
       ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      // Hard-clip to the picture: the container is taller than carsnew.png, and
+      // motes (or their glows) drifting over the letterbox bars break the
+      // illusion that the dust is inside the room.
+      ctx.beginPath();
+      ctx.rect(art.x, art.y, art.w, art.h);
+      ctx.clip();
       ctx.globalCompositeOperation = "lighter";
 
       for (const m of motes) {
@@ -121,6 +128,7 @@ export function DustOverlay({
         ctx.fill();
       }
 
+      ctx.restore();
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
