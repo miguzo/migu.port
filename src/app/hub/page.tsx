@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HUB_SIZES } from "@/lib/player-config";
+import { DustOverlay } from "@/components/DustOverlay";
 
 /** Remembers that the ambient bed has already been unlocked this session. */
 const ENTERED_KEY = "hub:entered";
@@ -405,6 +406,9 @@ export default function HomeMenu() {
               }}
             />
           </div>
+
+          {/* Dust drifts in front of the scene, behind the hotzones. */}
+          <DustOverlay />
 
           {/* === OVERLAYS === */}
           {hovered && (
