@@ -1,8 +1,26 @@
 "use client";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { BackToMenu } from "@/components/BackToMenu";
+import { HUB_SIZES } from "@/lib/player-config";
+
+/** Never hold the page black longer than this, even if YouTube never loads. */
+const REVEAL_TIMEOUT_MS = 3000;
 
 export default function VideoPage() {
+  const [frameLoaded, setFrameLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Continues the hub's fade-to-black: arrive black, then reveal once the TV
+  // frame and the embed are actually up, instead of showing a half-built page.
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), REVEAL_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  const ready = (frameLoaded && videoLoaded) || timedOut;
+
   return (
     <main
       style={{
@@ -16,6 +34,19 @@ export default function VideoPage() {
         position: "relative",
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "black",
+          opacity: ready ? 0 : 1,
+          pointerEvents: "none",
+          transition: "opacity 0.6s ease",
+          zIndex: 900,
+        }}
+      />
+
       <BackToMenu />
 
       {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
@@ -42,6 +73,8 @@ export default function VideoPage() {
         >
           <iframe
             src="https://www.youtube.com/embed/rTYdjkZaPh0?controls=0&modestbranding=1&rel=0&showinfo=0"
+            title="Video"
+            onLoad={() => setVideoLoaded(true)}
             style={{
               width: "80%",
               height: "54%",
@@ -57,6 +90,10 @@ export default function VideoPage() {
           src="/next/image/tv_frame.png"
           alt="TV Frame"
           fill
+          sizes={HUB_SIZES}
+          priority
+          onLoad={() => setFrameLoaded(true)}
+          onError={() => setFrameLoaded(true)}
           style={{
             objectFit: "contain",
             objectPosition: "center",
