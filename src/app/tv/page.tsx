@@ -18,7 +18,15 @@ const REVEAL_TIMEOUT_MS = 3000;
 const MIN_STATIC_MS = 4000;
 const MAX_STATIC_MS = 9000;
 
-/** The snow does not cut, it dissolves — long enough to swallow any last glyph. */
+/**
+ * How long YouTube's start-up glyph takes to fade once playback begins. The
+ * snow is held for at least this long *after* the player reports PLAYING,
+ * measured rather than assumed: the icon outlives the first frame by about a
+ * second, so ending the snow the instant the picture arrives shows it.
+ */
+const GLYPH_HOLD_MS = 1400;
+
+/** The snow does not cut, it dissolves. */
 const SNOW_FADE_MS = 500;
 
 /**
@@ -103,9 +111,13 @@ export default function VideoPage() {
   const maxTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Runs from PLAYING to the moment the start-up glyph has faded. */
+  const glyphTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** The floor has passed, so the snow may end as soon as the picture is up. */
   const minElapsed = useRef(false);
   /** The player has reported PLAYING for the channel now being tuned. */
+  const playingSeen = useRef(false);
+  /** PLAYING, plus long enough for the start-up glyph to have gone. */
   const pictureUp = useRef(false);
   /** False when switching the set off — there is no picture to wait for. */
   const awaitingPicture = useRef(false);
@@ -192,8 +204,11 @@ export default function VideoPage() {
   const beginTuning = useCallback(
     (waitForPicture: boolean) => {
       minElapsed.current = false;
+      playingSeen.current = false;
       pictureUp.current = false;
       awaitingPicture.current = waitForPicture;
+      if (glyphTimer.current) clearTimeout(glyphTimer.current);
+      glyphTimer.current = null;
 
       setTuning(true);
       startNoise();
@@ -245,9 +260,12 @@ export default function VideoPage() {
       try {
         const msg = JSON.parse(e.data);
         // 1 is PLAYING in the IFrame API's state enum.
-        if (msg?.info?.playerState === 1) {
-          pictureUp.current = true;
-          maybeEnd();
+        if (msg?.info?.playerState === 1 && !glyphTimer.current) {
+          playingSeen.current = true;
+          glyphTimer.current = setTimeout(() => {
+            pictureUp.current = true;
+            maybeEnd();
+          }, GLYPH_HOLD_MS);
         }
       } catch {
         // The player also sends things that are not JSON. Nothing to do.
@@ -276,7 +294,7 @@ export default function VideoPage() {
     // play glyph, which is exactly what the snow is there to hide.
     if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
     nudgeTimer.current = setTimeout(() => {
-      if (pictureUp.current) return;
+      if (playingSeen.current) return;
       post("playVideo");
       post("unMute");
     }, 1200);
@@ -290,6 +308,7 @@ export default function VideoPage() {
       if (maxTimer.current) clearTimeout(maxTimer.current);
       if (fadeTimer.current) clearTimeout(fadeTimer.current);
       if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
+      if (glyphTimer.current) clearTimeout(glyphTimer.current);
       audioCtx.current?.close();
       audioCtx.current = null;
     };
