@@ -21,6 +21,52 @@ const EXIT_FADE_MS = 300;
 /** Matches the 0.6s audio gain ramp, so the sound finishes fading too. */
 const NAVIGATE_DELAY_MS = 600;
 
+type ZoneId = "player" | "recorder" | "cv" | "tv";
+
+/** The lit-up artwork shown while a zone is hovered. */
+const HOVER_ART: Record<ZoneId, string> = {
+  player: "/next/image/player_selected.png",
+  cv: "/next/image/cv_selected.png",
+  recorder: "/next/image/recorder.png",
+  tv: "/next/image/tv.png",
+};
+
+type Zone = {
+  id: ZoneId;
+  label: string;
+  left: string;
+  top: string;
+  width: string;
+  height: string;
+  /** An app route, a full URL, or "recorder" to play a sound instead. */
+  target: string;
+};
+
+/**
+ * Hotzones over the artwork. Several zones may share an id: they then light
+ * the same overlay and do the same thing, which is how the note, and the other
+ * player objects in the scene, all lead to the music player.
+ *
+ * Percentages are of the container box, not of the image. The container is
+ * portrait (900x1260) while carsnew.png is landscape, so `contain` letterboxes
+ * it: the picture occupies the full width but only the middle ~54% of the
+ * height. That is why the vertical numbers look compressed.
+ */
+const ZONES: Zone[] = [
+  // The handwritten note on the plinth.
+  { id: "player",   label: "Music player",           left: "18%",   top: "36%",   width: "15%", height: "10%",  target: "/" },
+  // The keypad unit standing on top of the plinth.
+  { id: "player",   label: "Music player",           left: "23%",   top: "29.8%", width: "11%", height: "5.2%", target: "/" },
+  // The keypad unit on the floor, against the base of the plinth.
+  { id: "player",   label: "Music player",           left: "16.5%", top: "61%",   width: "9%",  height: "8%",   target: "/" },
+
+  { id: "cv",       label: "CV (igordubreucq.com)",  left: "73%",   top: "43%",   width: "15%", height: "10%",  target: CV_URL },
+  { id: "recorder", label: "Tape recorder",          left: "54%",   top: "26%",   width: "15%", height: "10%",  target: "recorder" },
+  { id: "tv",       label: "TV",                     left: "38%",   top: "45%",   width: "15%", height: "10%",  target: "/tv" },
+];
+
+const isExternal = (target: string) => /^https?:\/\//i.test(target);
+
 export default function HomeMenu() {
   const router = useRouter();
   const [hovered, setHovered] = useState<null | "player" | "recorder" | "cv" | "tv">(null);
@@ -361,12 +407,13 @@ export default function HomeMenu() {
           </div>
 
           {/* === OVERLAYS === */}
-          {hovered === "player" && (
+          {hovered && (
             <Image
-              src="/next/image/player_selected.png"
+              src={HOVER_ART[hovered]}
               alt=""
               fill
               sizes={HUB_SIZES}
+              priority
               style={{
                 objectFit: "contain",
                 position: "absolute",
@@ -377,144 +424,59 @@ export default function HomeMenu() {
             />
           )}
 
-          {hovered === "cv" && (
-            <Image
-              src="/next/image/cv_selected.png"
-              alt=""
-              fill
-              sizes={HUB_SIZES}
-              style={{
-                objectFit: "contain",
-                position: "absolute",
-                inset: 0,
-                pointerEvents: "none",
-                zIndex: 10,
-              }}
-            />
-          )}
+          {/* === HOTZONES === */}
+          {ZONES.map((z, i) => {
+            const shared = {
+              onMouseEnter: () => onEnter(z.id),
+              onMouseLeave: onLeave,
+              onFocus: () => onEnter(z.id),
+              onBlur: onLeave,
+              style: {
+                position: "absolute" as const,
+                left: z.left,
+                top: z.top,
+                width: z.width,
+                height: z.height,
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                display: "block",
+                zIndex: 20,
+              },
+            };
 
-          {hovered === "recorder" && (
-            <Image
-              src="/next/image/recorder.png"
-              alt=""
-              fill
-              sizes={HUB_SIZES}
-              style={{
-                objectFit: "contain",
-                position: "absolute",
-                inset: 0,
-                pointerEvents: "none",
-                zIndex: 10,
-              }}
-            />
-          )}
+            // Leaving the site: a real <a> so ctrl/cmd/middle-click still
+            // opens a new tab the normal way.
+            if (isExternal(z.target)) {
+              return (
+                <a
+                  key={`${z.id}-${i}`}
+                  href={z.target}
+                  aria-label={z.label}
+                  {...shared}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    fadeOutAndNavigate(z.target);
+                  }}
+                />
+              );
+            }
 
-          {hovered === "tv" && (
-            <Image
-              src="/next/image/tv.png"
-              alt=""
-              fill
-              sizes={HUB_SIZES}
-              style={{
-                objectFit: "contain",
-                position: "absolute",
-                inset: 0,
-                pointerEvents: "none",
-                zIndex: 10,
-              }}
-            />
-          )}
-
-          {/* === BUTTONS === */}
-          <button
-            aria-label="Music player"
-            onMouseEnter={() => onEnter("player")}
-            onMouseLeave={onLeave}
-            onFocus={() => onEnter("player")}
-            onBlur={onLeave}
-            // The player used to live at /player; it is the site root now.
-            onClick={() => fadeOutAndNavigate("/")}
-            style={{
-              position: "absolute",
-              left: "18%",
-              top: "36%",
-              width: "15%",
-              height: "10%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-          />
-
-          {/* An <a> rather than a <button>: this one leaves the site, so
-              ctrl/cmd/middle-click should open a new tab the normal way. */}
-          <a
-            href={CV_URL}
-            aria-label="CV (igordubreucq.com)"
-            onMouseEnter={() => onEnter("cv")}
-            onMouseLeave={onLeave}
-            onFocus={() => onEnter("cv")}
-            onBlur={onLeave}
-            onClick={(e) => {
-              // Let the browser handle "open in new tab" itself.
-              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-              e.preventDefault();
-              fadeOutAndNavigate(CV_URL);
-            }}
-            style={{
-              position: "absolute",
-              left: "73%",
-              top: "43%",
-              width: "15%",
-              height: "10%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              display: "block",
-              zIndex: 20,
-            }}
-          />
-
-          <button
-            aria-label="Tape recorder"
-            onMouseEnter={() => onEnter("recorder")}
-            onMouseLeave={onLeave}
-            onFocus={() => onEnter("recorder")}
-            onBlur={onLeave}
-            onClick={playNextRecorderSound}
-            style={{
-              position: "absolute",
-              left: "54%",
-              top: "26%",
-              width: "15%",
-              height: "10%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-          />
-
-          <button
-            aria-label="TV"
-            onMouseEnter={() => onEnter("tv")}
-            onMouseLeave={onLeave}
-            onFocus={() => onEnter("tv")}
-            onBlur={onLeave}
-            onClick={() => fadeOutAndNavigate("/tv")}
-            style={{
-              position: "absolute",
-              left: "38%",
-              top: "45%",
-              width: "15%",
-              height: "10%",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              zIndex: 20,
-            }}
-          />
+            return (
+              <button
+                key={`${z.id}-${i}`}
+                type="button"
+                aria-label={z.label}
+                {...shared}
+                onClick={
+                  z.target === "recorder"
+                    ? playNextRecorderSound
+                    : () => fadeOutAndNavigate(z.target)
+                }
+              />
+            );
+          })}
         </div>
       </main>
     </>
