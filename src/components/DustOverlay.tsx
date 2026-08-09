@@ -13,7 +13,7 @@ import { useEffect, useRef } from "react";
  * dust behaves.
  */
 export function DustOverlay({
-  count = 150,
+  count = 115,
   /** Aspect ratio of the artwork, so motes stay inside the letterboxed picture. */
   aspect = 2127 / 1619,
   zIndex = 15,
@@ -74,7 +74,7 @@ export function DustOverlay({
       x: art.x + Math.random() * art.w,
       y: seedY ?? art.y + Math.random() * art.h,
       // A spread of sizes: mostly tiny, a few nearer/larger ones.
-      r: 0.45 + Math.random() * Math.random() * 1.7,
+      r: 0.4 + Math.random() * Math.random() * 1.35,
       a: 0.20 + Math.random() * 0.42,
       vx: (Math.random() - 0.5) * 0.18,
       vy: -0.05 - Math.random() * 0.15,
