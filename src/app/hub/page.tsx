@@ -10,6 +10,17 @@ const ENTERED_KEY = "hub:entered";
 /** The CV zone leaves the site rather than opening the local /cv page. */
 const CV_URL = "https://igordubreucq.com";
 
+/**
+ * Visual fade to black on exit. Deliberately shorter than NAVIGATE_DELAY_MS:
+ * when both were 600ms the next page could mount while the screen was still
+ * translucent, so you saw it loading through the fade. Now the screen is
+ * solid black for ~300ms before anything changes.
+ */
+const EXIT_FADE_MS = 300;
+
+/** Matches the 0.6s audio gain ramp, so the sound finishes fading too. */
+const NAVIGATE_DELAY_MS = 600;
+
 export default function HomeMenu() {
   const router = useRouter();
   const [hovered, setHovered] = useState<null | "player" | "recorder" | "cv" | "tv">(null);
@@ -243,7 +254,7 @@ export default function HomeMenu() {
       v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
     }
 
-    setTimeout(go, 600);
+    setTimeout(go, NAVIGATE_DELAY_MS);
   };
 
   // ---------- BUTTON HOVER ----------
@@ -270,7 +281,7 @@ export default function HomeMenu() {
           opacity: leaving ? 1 : 0,
           // Swallows further clicks once the exit has started.
           pointerEvents: leaving ? "auto" : "none",
-          transition: "opacity 0.6s ease",
+          transition: `opacity ${EXIT_FADE_MS}ms ease`,
           zIndex: 10000,
         }}
       />
