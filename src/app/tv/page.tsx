@@ -15,8 +15,8 @@ const REVEAL_TIMEOUT_MS = 3000;
  * The floor is high on purpose: YouTube flashes its own play/pause glyph in
  * the first moments of playback, and the snow has to outlast it.
  */
-const MIN_STATIC_MS = 4000;
-const MAX_STATIC_MS = 9000;
+const MIN_STATIC_MS = 5000;
+const MAX_STATIC_MS = 10000;
 
 /**
  * How long YouTube's start-up glyph takes to fade once playback begins. The
@@ -161,7 +161,7 @@ export default function VideoPage() {
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
 
     src.connect(lp).connect(gain).connect(ctx.destination);
     src.start();
@@ -188,6 +188,13 @@ export default function VideoPage() {
     if (maxTimer.current) clearTimeout(maxTimer.current);
     stopNoise();
     setTuning(false);
+
+    // The picture is clear, so let it be heard. A no-op when the set is being
+    // switched off, since the embed is already gone by then.
+    embed.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: "unMute", args: [] }),
+      "*"
+    );
 
     setFading(true);
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
@@ -287,16 +294,15 @@ export default function VideoPage() {
       JSON.stringify({ event: "listening", id: 1, channel: "widget" }),
       "*"
     );
-    // YouTube honours `autoplay=1` off the back of the press in most browsers,
-    // but not all — iOS in particular can ignore a gesture delegated into a
-    // cross-origin frame. Nudge only a player that has not started by itself:
+    // A muted autoplay is honoured almost everywhere, but nudge anything that
+    // still has not started. Only a player that has not reported PLAYING:
     // calling playVideo on one that is already running makes it flash its own
-    // play glyph, which is exactly what the snow is there to hide.
+    // play glyph, which is exactly what the snow is there to hide. Unmuting is
+    // left to the end of the snow.
     if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
     nudgeTimer.current = setTimeout(() => {
       if (playingSeen.current) return;
       post("playVideo");
-      post("unMute");
     }, 1200);
   }, []);
 
@@ -345,9 +351,12 @@ export default function VideoPage() {
   }, [tuning, fading]);
 
   const current = CHANNELS[channel];
-  // `enablejsapi` exists only so the handshake above can be received.
+  // `enablejsapi` exists only so the handshake above can be received. The
+  // embed starts muted and is unmuted when the snow clears: nothing but noise
+  // should be audible while the set is tuning, and a muted start is also the
+  // one form of autoplay every browser allows.
   const params =
-    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&enablejsapi=1";
+    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&mute=1&enablejsapi=1";
 
   return (
     <main
