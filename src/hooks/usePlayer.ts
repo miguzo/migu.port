@@ -83,11 +83,6 @@ export function usePlayer() {
     audioRef.current?.pause();
   }, []);
 
-  const toggle = useCallback(() => {
-    if (isPlaying) pause();
-    else play();
-  }, [isPlaying, play, pause]);
-
   /** Advance one track and start playing it. */
   const nextTrack = useCallback(() => {
     const len = projects[projectIdx].playlist.length;
@@ -115,6 +110,6 @@ export function usePlayer() {
     audioRef,
     projectIdx, trackIdx, project, track,
     isPlaying, hasStarted,
-    play, pause, toggle, nextTrack, goToProject, nextProjectIdx,
+    play, pause, nextTrack, goToProject, nextProjectIdx,
   };
 }

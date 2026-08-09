@@ -11,7 +11,7 @@ import { ButtonHotzone } from "@/components/player/ButtonHotzone";
 import { ImageOverlay } from "@/components/player/ImageOverlay";
 import { Splash } from "@/components/player/Splash";
 import { usePlayer } from "@/hooks/usePlayer";
-import { useKeyboardControls } from "@/hooks/useKeyboardControls";
+import { useHubShortcut } from "@/hooks/useHubShortcut";
 
 export default function Home() {
   const router = useRouter();
@@ -111,13 +111,6 @@ export default function Home() {
     setMainPageVisible(false);
   }, []);
 
-  /** Escape dismisses whichever overlay is on top. */
-  const handleEscape = useCallback(() => {
-    if (aboutMeOpen) return closeAboutMe();
-    if (mainPageVisible) return closeMainPage();
-    if (pageOpen) return closePage();
-  }, [aboutMeOpen, mainPageVisible, pageOpen, closeAboutMe, closeMainPage, closePage]);
-
   const { goToProject, nextProjectIdx } = player;
   const handleNextProject = useCallback(() => {
     if (blackFade) return;
@@ -182,15 +175,7 @@ export default function Home() {
     router.push("/hub");
   }, [player, router]);
 
-  useKeyboardControls({
-    enabled: splashDone && !blackFade,
-    overlayOpen,
-    onToggle: player.toggle,
-    onNextTrack: handleNextTrack,
-    onNextProject: handleNextProject,
-    onEscape: handleEscape,
-    onOpenHub: openHub,
-  });
+  useHubShortcut({ enabled: splashDone && !blackFade, onOpenHub: openHub });
 
   /**
    * Which button art shows its ON frame. Play and Pause reflect real playback

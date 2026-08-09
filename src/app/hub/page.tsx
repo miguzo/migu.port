@@ -7,6 +7,9 @@ import { HUB_SIZES } from "@/lib/player-config";
 /** Remembers that the ambient bed has already been unlocked this session. */
 const ENTERED_KEY = "hub:entered";
 
+/** The CV zone leaves the site rather than opening the local /cv page. */
+const CV_URL = "https://igordubreucq.com";
+
 export default function HomeMenu() {
   const router = useRouter();
   const [hovered, setHovered] = useState<null | "player" | "recorder" | "cv" | "tv">(null);
@@ -14,6 +17,8 @@ export default function HomeMenu() {
   // ENTER overlay states
   const [hasEntered, setHasEntered] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
+  /** Fading to black on the way out. */
+  const [leaving, setLeaving] = useState(false);
 
   // AUDIO CONTEXT + NODES
   const audioCtx = useRef<AudioContext | null>(null);
@@ -212,11 +217,20 @@ export default function HomeMenu() {
   };
 
   // ---------- FADE OUT + NAVIGATION ----------
+  /** Accepts an app route or a full external URL. */
   const fadeOutAndNavigate = (path: string) => {
     stopRecorderSound(); // <--- IMPORTANT FIX
+    // Fade the picture out with the sound. Without it you watched the hub sit
+    // there for 600ms and then land on a half-loaded page.
+    setLeaving(true);
+
+    const go = () => {
+      if (/^https?:\/\//i.test(path)) window.location.href = path;
+      else router.push(path);
+    };
 
     if (!audioCtx.current) {
-      router.push(path);
+      go();
       return;
     }
 
@@ -229,9 +243,7 @@ export default function HomeMenu() {
       v.linearRampToValueAtTime(0, ctx.currentTime + 0.6);
     }
 
-    setTimeout(() => {
-      router.push(path);
-    }, 600);
+    setTimeout(go, 600);
   };
 
   // ---------- BUTTON HOVER ----------
@@ -248,6 +260,21 @@ export default function HomeMenu() {
 
   return (
     <>
+      {/* ===================== FADE TO BLACK ON EXIT ===================== */}
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "black",
+          opacity: leaving ? 1 : 0,
+          // Swallows further clicks once the exit has started.
+          pointerEvents: leaving ? "auto" : "none",
+          transition: "opacity 0.6s ease",
+          zIndex: 10000,
+        }}
+      />
+
       {/* ===================== ENTER OVERLAY ===================== */}
       {!hasEntered && (
         <button
@@ -409,13 +436,21 @@ export default function HomeMenu() {
             }}
           />
 
-          <button
-            aria-label="CV"
+          {/* An <a> rather than a <button>: this one leaves the site, so
+              ctrl/cmd/middle-click should open a new tab the normal way. */}
+          <a
+            href={CV_URL}
+            aria-label="CV (igordubreucq.com)"
             onMouseEnter={() => onEnter("cv")}
             onMouseLeave={onLeave}
             onFocus={() => onEnter("cv")}
             onBlur={onLeave}
-            onClick={() => fadeOutAndNavigate("/cv")}
+            onClick={(e) => {
+              // Let the browser handle "open in new tab" itself.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+              e.preventDefault();
+              fadeOutAndNavigate(CV_URL);
+            }}
             style={{
               position: "absolute",
               left: "73%",
@@ -425,6 +460,7 @@ export default function HomeMenu() {
               background: "transparent",
               border: "none",
               cursor: "pointer",
+              display: "block",
               zIndex: 20,
             }}
           />

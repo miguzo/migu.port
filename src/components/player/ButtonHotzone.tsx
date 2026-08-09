@@ -6,9 +6,9 @@ import { Z } from "@/lib/player-config";
 /**
  * An invisible hit area over the painted button in the artwork.
  *
- * These used to carry tabIndex={-1}, which made the entire player unreachable
- * by keyboard. They are now in the natural tab order; globals.css draws a
- * focus ring on :focus-visible so the focused zone is actually findable.
+ * tabIndex={-1} keeps these out of the tab order: the player is mouse and
+ * touch driven, and a focused hotzone would have no visible indicator anyway
+ * now that focus rings are off.
  */
 export const ButtonHotzone = memo(function ButtonHotzone({
   idx, pos, onClick, disabled,
@@ -22,15 +22,9 @@ export const ButtonHotzone = memo(function ButtonHotzone({
     <button
       type="button"
       aria-label={BUTTON_LABELS[idx]}
-      onClick={e => {
-        // A mouse or touch press must not leave focus parked on the hotzone,
-        // or the global Space shortcut would re-fire this button instead of
-        // toggling playback. Keyboard activation reports detail === 0, and
-        // keeps focus so tabbing through the controls still works.
-        if (e.detail > 0) e.currentTarget.blur();
-        onClick();
-      }}
+      onClick={onClick}
       disabled={disabled}
+      tabIndex={-1}
       style={{
         ...pos,
         position: "absolute",
