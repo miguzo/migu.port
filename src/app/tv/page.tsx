@@ -23,14 +23,28 @@ const CHANNELS = [
 ];
 
 /**
- * The channel knob painted into the bottom-left of `tv_frame.png`.
+ * The two balls painted at the bottom corners of `tv_frame.png`: play on the
+ * left, next on the right. Restored from commit 3629004, which is the only
+ * version of the frame that has them.
  *
  * Percentages are of the container, not of the image. The container is
  * portrait (900×1260) while the frame art is landscape, so `object-fit:
  * contain` letterboxes it into the middle ~54% of the height — which is why
- * the vertical number looks large for something near the bottom of the TV.
+ * the vertical numbers look large for something sitting near the bottom of
+ * the picture.
  */
-const KNOB = { left: "23%", top: "70.6%", width: "8%", height: "6%" };
+const PLAY_BALL = { left: "3%", top: "69.5%", width: "12%", height: "8%" };
+const NEXT_BALL = { left: "83.5%", top: "69.5%", width: "12%", height: "8%" };
+
+/** Shared by both balls; only the rectangle differs. */
+const BALL_STYLE: CSSProperties = {
+  position: "absolute",
+  zIndex: 300,
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  cursor: "pointer",
+};
 
 /** Geometry of the picture inside the frame. The static must match it exactly. */
 const SCREEN: CSSProperties = {
@@ -47,10 +61,10 @@ export default function VideoPage() {
   /** True while the screen is showing static, mid-turn of the dial. */
   const [tuning, setTuning] = useState(false);
   /**
-   * The set is off until the visitor presses the dead screen. That press is
-   * not only staging: an unmuted embed will not start without a real user
-   * gesture, so the dark screen is what buys the right to autoplay — and the
-   * visitor never sees YouTube's red play button.
+   * The set is off until the play ball is pressed. That press is not only
+   * staging: an unmuted embed will not start without a real user gesture, so
+   * the dark screen is what buys the right to autoplay — and the visitor
+   * never sees YouTube's red play button.
    */
   const [on, setOn] = useState(false);
 
@@ -129,8 +143,12 @@ export default function VideoPage() {
     [tuning, playStatic]
   );
 
-  /** Press the dead screen: the set warms up on whatever channel it was left on. */
-  const powerOn = useCallback(() => burst(() => setOn(true)), [burst]);
+  /**
+   * The play ball. Warms the set up on whatever channel it was left on, and
+   * kills it again on a second press — unmounting the embed is also the only
+   * reliable way to stop its sound.
+   */
+  const togglePower = useCallback(() => burst(() => setOn(o => !o)), [burst]);
 
   /** Turn the dial: static, then the next channel is simply there. */
   const turnDial = useCallback(
@@ -260,9 +278,11 @@ export default function VideoPage() {
         </div>
 
         {/* === THE DEAD SCREEN === */}
-        {/* Black glass, and the only thing on the page worth pressing. */}
+        {/* Black glass while the set is off. Not itself pressable: the play
+            ball painted into the frame is the way in. */}
         {!on && (
           <div
+            aria-hidden
             style={{
               position: "absolute",
               inset: 0,
@@ -271,21 +291,10 @@ export default function VideoPage() {
               alignItems: "center",
               overflow: "hidden",
               zIndex: 50,
+              pointerEvents: "none",
             }}
           >
-            <button
-              type="button"
-              aria-label="Turn on the television"
-              tabIndex={-1}
-              onClick={powerOn}
-              style={{
-                ...SCREEN,
-                background: "#000",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-              }}
-            />
+            <div style={{ ...SCREEN, background: "#000" }} />
           </div>
         )}
 
@@ -325,23 +334,22 @@ export default function VideoPage() {
           }}
         />
 
-        {/* === THE DIAL === */}
-        {/* Invisible, like every other control in the project: it sits on the
-            knob that is already painted into the frame. */}
+        {/* === THE TWO BALLS === */}
+        {/* Invisible, like every other control in the project: they sit on the
+            symbols already painted into the frame. */}
         <button
           type="button"
-          aria-label="Change channel"
+          aria-label={on ? "Turn the television off" : "Turn the television on"}
+          tabIndex={-1}
+          onClick={togglePower}
+          style={{ ...BALL_STYLE, ...PLAY_BALL }}
+        />
+        <button
+          type="button"
+          aria-label="Next channel"
           tabIndex={-1}
           onClick={turnDial}
-          style={{
-            position: "absolute",
-            ...KNOB,
-            zIndex: 300,
-            background: "transparent",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-          }}
+          style={{ ...BALL_STYLE, ...NEXT_BALL }}
         />
       </div>
     </main>
