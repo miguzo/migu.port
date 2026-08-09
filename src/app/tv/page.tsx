@@ -9,11 +9,17 @@ const REVEAL_TIMEOUT_MS = 3000;
 
 /**
  * The snow lasts as long as the video takes to start, between these two
- * bounds: never a flash, never a hang. The embed is mounted *underneath* the
- * snow, so the loading happens during the noise rather than after it.
+ * bounds. The embed is mounted *underneath* the snow, so the loading happens
+ * during the noise rather than after it.
+ *
+ * The floor is high on purpose: YouTube flashes its own play/pause glyph in
+ * the first moments of playback, and the snow has to outlast it.
  */
-const MIN_STATIC_MS = 700;
-const MAX_STATIC_MS = 5000;
+const MIN_STATIC_MS = 4000;
+const MAX_STATIC_MS = 9000;
+
+/** The snow does not cut, it dissolves — long enough to swallow any last glyph. */
+const SNOW_FADE_MS = 500;
 
 /**
  * The dial cycles through these in order and wraps. There is deliberately no
@@ -77,6 +83,8 @@ export default function VideoPage() {
   const [channel, setChannel] = useState(0);
   /** True while the screen is showing snow. */
   const [tuning, setTuning] = useState(false);
+  /** True for the moment the snow spends dissolving into the picture. */
+  const [fading, setFading] = useState(false);
   /**
    * The set is off until the play ball is pressed. That press is not only
    * staging: an unmuted embed will not start without a real user gesture, so
@@ -93,6 +101,8 @@ export default function VideoPage() {
 
   const minTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** The floor has passed, so the snow may end as soon as the picture is up. */
   const minElapsed = useRef(false);
   /** The player has reported PLAYING for the channel now being tuned. */
@@ -166,6 +176,10 @@ export default function VideoPage() {
     if (maxTimer.current) clearTimeout(maxTimer.current);
     stopNoise();
     setTuning(false);
+
+    setFading(true);
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
   }, [stopNoise]);
 
   /** Ends the snow once both the floor has passed and the picture is up. */
@@ -257,12 +271,15 @@ export default function VideoPage() {
     );
     // YouTube honours `autoplay=1` off the back of the press in most browsers,
     // but not all — iOS in particular can ignore a gesture delegated into a
-    // cross-origin frame. Nudging recovers those cases and is otherwise a
-    // no-op.
-    setTimeout(() => {
+    // cross-origin frame. Nudge only a player that has not started by itself:
+    // calling playVideo on one that is already running makes it flash its own
+    // play glyph, which is exactly what the snow is there to hide.
+    if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
+    nudgeTimer.current = setTimeout(() => {
+      if (pictureUp.current) return;
       post("playVideo");
       post("unMute");
-    }, 400);
+    }, 1200);
   }, []);
 
   // Closing the context on unmount, for the same reason the hub does: a bed
@@ -271,6 +288,8 @@ export default function VideoPage() {
     return () => {
       if (minTimer.current) clearTimeout(minTimer.current);
       if (maxTimer.current) clearTimeout(maxTimer.current);
+      if (fadeTimer.current) clearTimeout(fadeTimer.current);
+      if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
       audioCtx.current?.close();
       audioCtx.current = null;
     };
@@ -281,7 +300,7 @@ export default function VideoPage() {
   // Drawn at a low resolution and scaled up by the canvas itself, which is
   // both cheaper and coarser — closer to analogue snow than per-pixel noise.
   useEffect(() => {
-    if (!tuning) return;
+    if (!tuning && !fading) return;
     const canvas = staticCanvas.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
@@ -304,7 +323,7 @@ export default function VideoPage() {
     draw();
 
     return () => cancelAnimationFrame(frame);
-  }, [tuning]);
+  }, [tuning, fading]);
 
   const current = CHANNELS[channel];
   // `enablejsapi` exists only so the handshake above can be received.
@@ -380,20 +399,34 @@ export default function VideoPage() {
           </div>
         )}
 
-        {/* === THE DEAD SCREEN === */}
-        {/* Black glass while the set is off, and behind the snow while it
-            warms up. Not itself pressable: the play ball painted into the
-            frame is the way in. */}
-        {(!on || tuning) && (
+        {/* === THE DEAD SCREEN AND THE SNOW === */}
+        {/* One layer, so black and noise dissolve into the picture together
+            rather than cutting. Never pressable: the play ball painted into
+            the frame is the way in. */}
+        {(!on || tuning || fading) && (
           <div aria-hidden style={layer(80)}>
-            <div style={{ ...SCREEN, background: "#000" }} />
-          </div>
-        )}
-
-        {/* === SNOW, over the picture and under the frame === */}
-        {tuning && (
-          <div aria-hidden style={layer(100)}>
-            <canvas ref={staticCanvas} style={{ ...SCREEN, opacity: 0.85 }} />
+            <div
+              style={{
+                ...SCREEN,
+                position: "relative",
+                background: "#000",
+                opacity: !on || tuning ? 1 : 0,
+                transition: `opacity ${SNOW_FADE_MS}ms ease`,
+              }}
+            >
+              {(tuning || fading) && (
+                <canvas
+                  ref={staticCanvas}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    opacity: 0.85,
+                  }}
+                />
+              )}
+            </div>
           </div>
         )}
 
