@@ -277,6 +277,28 @@ export default function VideoPage() {
           )}
         </div>
 
+        {/* === GLASS === */}
+        {/* A transparent sheet over the picture, so the pointer never reaches
+            the embed. Without it, moving the mouse across the screen wakes
+            YouTube's own play/pause overlay and title bar, which breaks the
+            illusion that this is a television. */}
+        {on && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              overflow: "hidden",
+              zIndex: 60,
+            }}
+          >
+            <div style={{ ...SCREEN, cursor: "default" }} />
+          </div>
+        )}
+
         {/* === THE DEAD SCREEN === */}
         {/* Black glass while the set is off. Not itself pressable: the play
             ball painted into the frame is the way in. */}
