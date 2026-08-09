@@ -1,8 +1,13 @@
 "use client";
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Image from "next/image";
-import Head from "next/head";
 import { Howl } from "howler";
+
+// Every image in the player is laid out inside the same box:
+//   width: min(98vw, 430px)
+// Without this, next/image assumes 100vw and serves a far larger candidate
+// than the box can ever display.
+const FRAME_SIZES = "(max-width: 439px) 98vw, 430px";
 
 // --- Types & Data ---
 type ButtonImage = { on: string; off: string };
@@ -40,7 +45,7 @@ const projects: Project[] = [
       { on: "/next/image/Fragments/Buttons/Button 2 ON.png", off: "/next/image/Fragments/Buttons/Button 2 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button 3 ON.png", off: "/next/image/Fragments/Buttons/Button 3 Off.png" },
       { on: "/next/image/Fragments/Buttons/Button 4 On.png", off: "/next/image/Fragments/Buttons/Button 4 Off.png" },
-      { on: "/next/image/Fragments/Buttons/Button5On.png", off: "/next/image/Fragments/Buttons/Button5Off.png" },
+      { on: "/next/image/Fragments/Buttons/Button5ON.png", off: "/next/image/Fragments/Buttons/Button5Off.png" },
       { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
@@ -77,7 +82,7 @@ const projects: Project[] = [
       { on: "/next/image/Aggragate/Buttons/Button 2 ON.png", off: "/next/image/Aggragate/Buttons/Button 2 Off.png" },
       { on: "/next/image/Aggragate/Buttons/Button 3 ON.png", off: "/next/image/Aggragate/Buttons/Button 3 Off.png" },
       { on: "/next/image/Aggragate/Buttons/Button 4 On.png", off: "/next/image/Aggragate/Buttons/Button 4 Off.png" },
-      { on: "/next/image/Aggragate/Buttons/Button5On.png", off: "/next/image/Aggragate/Buttons/Button5Off.png" },
+      { on: "/next/image/Aggragate/Buttons/Button5ON.png", off: "/next/image/Aggragate/Buttons/Button5Off.png" },
       { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
@@ -126,7 +131,7 @@ const projects: Project[] = [
       { on: "/next/image/Fallcore/Buttons/Button 2 ON.png", off: "/next/image/Fallcore/Buttons/Button 2 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 3 ON.png", off: "/next/image/Fallcore/Buttons/Button 3 Off.png" },
       { on: "/next/image/Fallcore/Buttons/Button 4 ON.png", off: "/next/image/Fallcore/Buttons/Button 4 Off.png" },
-      { on: "/next/image/Fallcore/Buttons/Button5On.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
+      { on: "/next/image/Fallcore/Buttons/Button5ON.png", off: "/next/image/Fallcore/Buttons/Button5Off.png" },
       { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
@@ -155,7 +160,7 @@ const projects: Project[] = [
       { on: "/next/image/St4r/Buttons/Button 2 ON.png", off: "/next/image/St4r/Buttons/Button 2 Off.png" },
       { on: "/next/image/St4r/Buttons/Button 3 ON.png", off: "/next/image/St4r/Buttons/Button 3 Off.png" },
       { on: "/next/image/St4r/Buttons/Button 4 On.png", off: "/next/image/St4r/Buttons/Button 4 Off.png" },
-      { on: "/next/image/St4r/Buttons/Button5On.png", off: "/next/image/St4r/Buttons/Button5Off.png" },
+      { on: "/next/image/St4r/Buttons/Button5ON.png", off: "/next/image/St4r/Buttons/Button5Off.png" },
       { on: "/next/image/AboutMeButtonON.png", off: "/next/image/AboutMeButton.png" },
     ],
     playlist: [
@@ -188,17 +193,64 @@ const BUTTON_LABELS = [
   "Play", "Pause", "Next Track", "Next Project", "Show Project Page", "Show About Me Page"
 ];
 
-// --- Preload helper (for button images only) ---
-function preloadImage(src: string) {
-  return new Promise<void>((resolve, reject) => {
-    const img = new window.Image();
-    img.onload = () => resolve();
-    img.onerror = () => reject();
-    img.src = src;
-  });
-}
+// --- Preloading ---
+// These are preloaded through next/image (not `new window.Image()`) so the
+// request is byte-for-byte the one the real render makes. Warming the raw
+// /next/image/... path instead meant every asset was downloaded twice: once
+// by the preloader and again as /_next/image?url=...
+//
+// Blocks the splash: everything needed to show project 0 and the overlays.
+const CRITICAL_IMAGES: string[] = Array.from(
+  new Set([
+    ...projects.flatMap(p => [p.mainImg, p.pageImg]),
+    ...projects[0].buttons.flatMap(btn => [btn.on, btn.off]),
+    projects[0].playlist[0].titleImg,
+    "/next/image/MainPage.png",
+    "/next/image/AboutMe.png",
+  ])
+);
+
+// Fetched quietly once the splash is dismissed. The old preloader closed over
+// `project` inside a mount-only effect, so it only ever warmed project 0's
+// buttons and every other project popped in mid-fade.
+const DEFERRED_IMAGES: string[] = Array.from(
+  new Set([
+    ...projects.flatMap(p => p.buttons.flatMap(btn => [btn.on, btn.off])),
+    ...projects.flatMap(p => p.playlist.map(t => t.titleImg)),
+  ])
+).filter(src => !CRITICAL_IMAGES.includes(src));
 
 // --- Subcomponents ---
+const HiddenPreload = memo(function HiddenPreload({
+  sources, onSettled,
+}: {
+  sources: string[];
+  onSettled?: (src: string) => void;
+}) {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "fixed", left: 0, top: 0, width: 1, height: 1,
+        overflow: "hidden", opacity: 0, pointerEvents: "none", zIndex: -1,
+      }}
+    >
+      {sources.map(src => (
+        <Image
+          key={src}
+          src={src}
+          alt=""
+          fill
+          sizes={FRAME_SIZES}
+          loading="eager"
+          onLoad={() => onSettled?.(src)}
+          onError={() => onSettled?.(src)}
+        />
+      ))}
+    </div>
+  );
+});
+
 const ButtonHotzone = memo(function ButtonHotzone({
   idx, pos, onClick, pressed, disabled, blackFade
 }: {
@@ -241,11 +293,9 @@ export default function Home() {
   // overlay state: always open on project switch
   const [pageOpen, setPageOpen] = useState(true);
 
-  const [loading, setLoading] = useState(true);
-  const [mainPageLoaded, setMainPageLoaded] = useState(false);
+  const [loadedCount, setLoadedCount] = useState(0);
   const [splashDone, setSplashDone] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [blackFade, setBlackFade] = useState(false);
   const [blackOpacity, setBlackOpacity] = useState(0);
   const [mainPageVisible, setMainPageVisible] = useState(false);
@@ -259,33 +309,27 @@ export default function Home() {
   const project = projects[projectIdx];
   const currentTrack = project.playlist[trackIdx];
 
-  // --- Preload only button ON/OFF images and current title image ---
-  useEffect(() => {
-    let isMounted = true;
-    async function doPreload() {
-      const buttonImages = [
-        ...projects.flatMap(p => [p.mainImg, p.pageImg]),
-        ...project.buttons.flatMap(btn => [btn.on, btn.off]),
-        currentTrack.titleImg,
-        "/next/image/Loading.png",
-        "/next/image/MainPage.png",
-        "/next/image/AboutMe.png",
-      ];
+  // --- Loading progress, driven by the real <Image> loads ---
+  const settledRef = useRef<Set<string>>(new Set());
+  const handleCriticalSettled = useCallback((src: string) => {
+    if (settledRef.current.has(src)) return;
+    settledRef.current.add(src);
+    setLoadedCount(settledRef.current.size);
+  }, []);
 
-      let loaded = 0;
-      const inc = () => { loaded++; if (isMounted) setLoadingProgress(loaded / buttonImages.length); };
-      await Promise.all(buttonImages.map(src => preloadImage(src).then(inc).catch(inc)));
-      if (!isMounted) return;
-      // Only preload SFX, not music tracks yet
-      buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
-      pageOnSound.current = new Howl({ src: ["/sounds/PageON.mp3"], html5: true });
-      pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
-      setLoading(false);
-    }
-    doPreload();
-    return () => { isMounted = false; };
-    // Only run on first render (button images only)
-    // eslint-disable-next-line
+  const loading = loadedCount < CRITICAL_IMAGES.length;
+  const loadingProgress = loadedCount / CRITICAL_IMAGES.length;
+
+  // --- SFX (music tracks are never preloaded) ---
+  useEffect(() => {
+    buttonSound.current = new Howl({ src: ["/sounds/Button.mp3"], html5: true });
+    pageOnSound.current = new Howl({ src: ["/sounds/PageON.mp3"], html5: true });
+    pageOffSound.current = new Howl({ src: ["/sounds/PageOFF.mp3"], html5: true });
+    return () => {
+      buttonSound.current?.unload();
+      pageOnSound.current?.unload();
+      pageOffSound.current?.unload();
+    };
   }, []);
 
   // --- Lock scroll while overlay is open ---
@@ -305,7 +349,7 @@ export default function Home() {
 
   // --- SPLASH (lock until everything is loaded) ---
   const handleSplashClick = useCallback(() => {
-    if (!loading && mainPageLoaded) {
+    if (!loading) {
       setSplashFading(true);
       setTimeout(() => {
         setSplashDone(true);
@@ -314,7 +358,7 @@ export default function Home() {
         setMainPageVisible(true);
       }, 500);
     }
-  }, [loading, mainPageLoaded]);
+  }, [loading]);
 
   // --- Fade and switch project ---
   const handleNextProject = useCallback(() => {
@@ -362,6 +406,10 @@ export default function Home() {
         audioRef.current.load();
         audioRef.current.oncanplaythrough = () => {
           audioRef.current?.play();
+          // One-shot: without this a later buffer stall re-fires canplaythrough
+          // and restarts playback. With preload="none" this is now the normal
+          // path, not an edge case.
+          if (audioRef.current) audioRef.current.oncanplaythrough = null;
         };
       }
     }, [pressedIdx, pageOpen, aboutMeOpen]),
@@ -407,12 +455,9 @@ export default function Home() {
   // --- Render ---
   return (
     <>
-      <Head>
-        <title>Victor Clavelly</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=portrait" />
-        <link rel="preload" as="image" href="/next/image/MainPage.png" />
-        <link rel="preload" as="image" href="/next/image/AboutMe.png" />
-      </Head>
+      {/* Warms the optimized URLs the render below will request. */}
+      <HiddenPreload sources={CRITICAL_IMAGES} onSettled={handleCriticalSettled} />
+      {splashDone && <HiddenPreload sources={DEFERRED_IMAGES} />}
     <main className="fixed inset-0 flex items-center justify-center bg-[#19191b]" style={{ minHeight: "100vh", minWidth: "100vw", position: "relative" }}>
   {/* --- Spherical Glow BG --- */}
   <div
@@ -465,7 +510,7 @@ export default function Home() {
               style={{
                 position: "fixed", inset: 0, background: "#111", zIndex: 10000,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: loading || !mainPageLoaded ? "default" : "pointer",
+                cursor: loading ? "default" : "pointer",
                 transition: "opacity 0.5s", opacity: splashFading ? 0 : 1,
               }}
               onClick={handleSplashClick}
@@ -497,27 +542,6 @@ export default function Home() {
                   }}
                 />
               </div>
-              {/* Preload MainPage & AboutMe as invisible images */}
-              <Image
-                src="/next/image/MainPage.png"
-                alt=""
-                style={{ display: "none" }}
-                width={10} height={10} priority onLoad={() => setMainPageLoaded(true)}
-              />
-              <Image
-                src="/next/image/AboutMe.png"
-                alt=""
-                style={{ display: "none" }}
-                width={10} height={10} priority
-              />
-              {(!loading && !mainPageLoaded) && (
-                <div
-                  style={{
-                    position: "absolute", top: "55%", width: "100%",
-                    textAlign: "center", color: "#fff", fontSize: 16,
-                  }}
-                >Loading main page image...</div>
-              )}
             </div>
           )}
 
@@ -526,6 +550,7 @@ export default function Home() {
             src={project.mainImg}
             alt="Main Visual Frame"
             fill
+            sizes={FRAME_SIZES}
             style={{
               objectFit: "contain", objectPosition: "center",
               background: "transparent", zIndex: 2, pointerEvents: "none", userSelect: "none",
@@ -538,6 +563,7 @@ export default function Home() {
             src={project.playlist[trackIdx].titleImg}
             alt="Song Title"
             fill
+            sizes={FRAME_SIZES}
             style={{
               objectFit: "contain", objectPosition: "center",
               zIndex: 16, pointerEvents: "none", userSelect: "none",
@@ -562,6 +588,7 @@ export default function Home() {
                 src={project.pageImg}
                 alt="Project Page"
                 fill
+                sizes={FRAME_SIZES}
                 style={{
                   objectFit: "contain", objectPosition: "center",
                   zIndex: 31, pointerEvents: "none", userSelect: "none",
@@ -606,6 +633,7 @@ export default function Home() {
                 src="/next/image/MainPage.png"
                 alt="MainPage"
                 fill
+                sizes={FRAME_SIZES}
                 style={{
                   objectFit: "contain", objectPosition: "center",
                   zIndex: 10002, pointerEvents: "none", userSelect: "none",
@@ -638,6 +666,7 @@ export default function Home() {
                 src="/next/image/AboutMe.png"
                 alt="About Me"
                 fill
+                sizes={FRAME_SIZES}
                 style={{
                   objectFit: "contain", objectPosition: "center",
                   zIndex: 10004, pointerEvents: "none", userSelect: "none",
@@ -675,6 +704,7 @@ export default function Home() {
               src={pressedIdx === idx ? img.on : img.off}
               alt=""
               fill
+              sizes={FRAME_SIZES}
               style={{
                 objectFit: "contain", objectPosition: "center",
                 zIndex: 11, pointerEvents: "none", userSelect: "none",
@@ -700,6 +730,7 @@ export default function Home() {
           <audio
             ref={audioRef}
             hidden
+            preload="none"
             src={currentTrack.src}
             onEnded={() => {
               const nextIdx = (trackIdx + 1) % project.playlist.length;

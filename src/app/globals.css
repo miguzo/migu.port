@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
-
 @import "tailwindcss";
 
 /* Remove iOS blue tap highlight */
@@ -16,11 +14,11 @@ html { -webkit-tap-highlight-color: transparent; }
   animation: fadeInOut 2s cubic-bezier(.4,0,.2,1) both;
 }
 
-/* Dark background for the app */
+/* Dark background for the app. Texture is self-hosted (was transparenttextures.com). */
 body {
   background: #19191b;
-  background-image: url('https://www.transparenttextures.com/patterns/dark-fish-skin.png');
-  font-family: 'Cinzel', serif;
+  background-image: url('/texture.png');
+  font-family: var(--font-cinzel), serif;
 }
 
 /* Tailwind @layer base: keep if you use custom border/outline colors */
@@ -33,7 +31,4 @@ body {
     background-color: #19191b;
     color: #e5c06c; /* or your main foreground color */
   }
-}
-html, body {
-  cursor: url('/cursor.png') 16 16, auto;
 }
