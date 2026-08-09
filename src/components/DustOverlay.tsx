@@ -114,13 +114,12 @@ export function DustOverlay({
         if (m.x < art.x - 6) m.x = art.x + art.w + 6;
         if (m.x > art.x + art.w + 6) m.x = art.x - 6;
 
-        // A soft halo rather than a hard dot: a 1px circle is invisible at
-        // these alphas, and the glow is what makes a mote read as catching
-        // the light instead of looking like a dead pixel.
-        const glow = m.r * 3;
+        // Just enough halo to keep a sub-pixel mote from disappearing —
+        // a tight falloff, not a bloom.
+        const glow = m.r * 1.7;
         const g = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, glow);
         g.addColorStop(0, `rgba(240, 233, 214, ${m.a})`);
-        g.addColorStop(0.35, `rgba(238, 230, 210, ${m.a * 0.45})`);
+        g.addColorStop(0.55, `rgba(238, 230, 210, ${m.a * 0.30})`);
         g.addColorStop(1, "rgba(238, 230, 210, 0)");
         ctx.beginPath();
         ctx.arc(m.x, m.y, glow, 0, Math.PI * 2);
