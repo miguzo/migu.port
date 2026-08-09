@@ -285,6 +285,30 @@ export default function Home() {
             />
           ))}
 
+          {/* Invisible tap target for the hub, top-left. The "i" shortcut is
+              keyboard-only, so phones had no way to reach the menu. It sits
+              above the overlays on purpose: the project page is open on load,
+              and a zone underneath it would be untappable. */}
+          {splashDone && (
+            <button
+              type="button"
+              onClick={openHub}
+              aria-label="Open menu"
+              tabIndex={-1}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: "16%",
+                height: "8%",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                zIndex: Z.hubButton,
+              }}
+            />
+          )}
+
           {/* --- Button hotzones --- */}
           {TOP_BUTTON_POSITIONS.map((pos, idx) => (
             <ButtonHotzone

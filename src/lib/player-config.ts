@@ -24,6 +24,8 @@ export const Z = {
   splash: 10000,
   mainPage: 10001,
   aboutMe: 10003,
+  /** Above every overlay, so the hub is always reachable by touch. */
+  hubButton: 10006,
   blackFade: 99999,
 } as const;
 
