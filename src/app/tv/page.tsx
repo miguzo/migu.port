@@ -18,28 +18,6 @@ export default function VideoPage() {
     >
       <BackToMenu />
 
-      {/* --- HOME ICON ONLY (visible) --- */}
-      <a
-        href="https://igordubreucq.com"
-        style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          top: "1%",
-          width: "12%",
-          aspectRatio: "1 / 1",
-          zIndex: 60,
-          cursor: "pointer",
-        }}
-      >
-        <Image
-          src="/next/image/home2.png"
-          alt="Home"
-          fill
-          style={{ objectFit: "contain", pointerEvents: "none" }}
-        />
-      </a>
-
       {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
       <div
         style={{

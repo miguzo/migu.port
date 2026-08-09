@@ -1,8 +1,11 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { HUB_SIZES } from "@/lib/player-config";
+
+/** Remembers that the ambient bed has already been unlocked this session. */
+const ENTERED_KEY = "hub:entered";
 
 export default function HomeMenu() {
   const router = useRouter();
@@ -98,8 +101,23 @@ export default function HomeMenu() {
     };
   }, []);
 
+  // ---------- SHOULD THE ENTER GATE APPEAR AT ALL? ----------
+  // It only exists to obtain the user gesture that lets an AudioContext start.
+  // Coming from the player via "i", or back from /tv and /cv, is a client-side
+  // navigation: the document already has user activation, so no gesture is
+  // needed and the gate is pure friction. Same once this session has entered.
+  useEffect(() => {
+    const enteredBefore = sessionStorage.getItem(ENTERED_KEY) === "1";
+    const alreadyActivated = navigator.userActivation?.hasBeenActive ?? false;
+    if (enteredBefore || alreadyActivated) setHasEntered(true);
+  }, []);
+
+  useEffect(() => {
+    if (hasEntered) sessionStorage.setItem(ENTERED_KEY, "1");
+  }, [hasEntered]);
+
   // ---------- START AMBIENT ----------
-  const startAmbientSound = () => {
+  const startAmbientSound = useCallback(() => {
     if (
       !audioCtx.current ||
       !ambientBuffer.current ||
@@ -126,18 +144,40 @@ export default function HomeMenu() {
     source.start();
     ambientSource.current = source;
     ambientStarted.current = true;
-  };
+  }, []);
 
-  // ---------- ENTER BUTTON ----------
-  const handleEnter = async () => {
+  // ---------- START THE BED ONCE WE ARE PAST THE GATE ----------
+  // If the context cannot resume yet (a cold load straight to /hub, where no
+  // gesture has happened), wait silently for the first click or key rather
+  // than putting the ENTER screen back up.
+  useEffect(() => {
+    if (!hasEntered || !audioReady) return;
+    let cancelled = false;
+
+    const tryStart = async () => {
+      if (cancelled || ambientStarted.current) return;
+      try {
+        if (audioCtx.current?.state === "suspended") await audioCtx.current.resume();
+      } catch { /* needs a gesture; the listeners below will retry */ }
+      if (audioCtx.current?.state === "running") {
+        startAmbientSound();
+        detach();
+      }
+    };
+    const detach = () => {
+      window.removeEventListener("pointerdown", tryStart);
+      window.removeEventListener("keydown", tryStart);
+    };
+
+    tryStart();
+    window.addEventListener("pointerdown", tryStart);
+    window.addEventListener("keydown", tryStart);
+    return () => { cancelled = true; detach(); };
+  }, [hasEntered, audioReady, startAmbientSound]);
+
+  const handleEnter = () => {
     if (!audioReady) return;
-
-    if (audioCtx.current?.state === "suspended") {
-      await audioCtx.current.resume();
-    }
-
-    startAmbientSound();
-    setHasEntered(true);
+    setHasEntered(true); // the effect above resumes and starts the bed
   };
 
   // ---------- HOVER ----------
@@ -210,9 +250,14 @@ export default function HomeMenu() {
     <>
       {/* ===================== ENTER OVERLAY ===================== */}
       {!hasEntered && (
-        <div
-          onClick={audioReady ? handleEnter : undefined}
+        <button
+          type="button"
+          onClick={handleEnter}
+          disabled={!audioReady}
+          aria-label={audioReady ? "Enter" : "Loading"}
           style={{
+            border: "none",
+            font: "inherit",
             position: "fixed",
             inset: 0,
             background: "black",
@@ -228,7 +273,7 @@ export default function HomeMenu() {
           }}
         >
           {audioReady ? "ENTER" : "LOADING..."}
-        </div>
+        </button>
       )}
 
       {/* ===================== MAIN PAGE ===================== */}
