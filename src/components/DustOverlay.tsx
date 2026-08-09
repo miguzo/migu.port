@@ -13,7 +13,7 @@ import { useEffect, useRef } from "react";
  * dust behaves.
  */
 export function DustOverlay({
-  count = 55,
+  count = 90,
   /** Aspect ratio of the artwork, so motes stay inside the letterboxed picture. */
   aspect = 2127 / 1619,
   zIndex = 15,
@@ -74,8 +74,8 @@ export function DustOverlay({
       x: art.x + Math.random() * art.w,
       y: seedY ?? art.y + Math.random() * art.h,
       // A spread of sizes: mostly tiny, a few nearer/larger ones.
-      r: 0.4 + Math.random() * Math.random() * 2.2,
-      a: 0.06 + Math.random() * 0.24,
+      r: 0.7 + Math.random() * Math.random() * 3.0,
+      a: 0.12 + Math.random() * 0.38,
       vx: (Math.random() - 0.5) * 0.10,
       vy: -0.02 - Math.random() * 0.08,
       phase: Math.random() * Math.PI * 2,
@@ -107,9 +107,17 @@ export function DustOverlay({
         if (m.x < art.x - 6) m.x = art.x + art.w + 6;
         if (m.x > art.x + art.w + 6) m.x = art.x - 6;
 
+        // A soft halo rather than a hard dot: a 1px circle is invisible at
+        // these alphas, and the glow is what makes a mote read as catching
+        // the light instead of looking like a dead pixel.
+        const glow = m.r * 3;
+        const g = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, glow);
+        g.addColorStop(0, `rgba(240, 233, 214, ${m.a})`);
+        g.addColorStop(0.35, `rgba(238, 230, 210, ${m.a * 0.45})`);
+        g.addColorStop(1, "rgba(238, 230, 210, 0)");
         ctx.beginPath();
-        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(238, 230, 210, ${m.a})`;
+        ctx.arc(m.x, m.y, glow, 0, Math.PI * 2);
+        ctx.fillStyle = g;
         ctx.fill();
       }
 
