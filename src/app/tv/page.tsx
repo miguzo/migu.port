@@ -27,37 +27,36 @@ const MAX_STATIC_MS = 10000;
 const GLYPH_HOLD_MS = 3600;
 
 /**
- * The sound is handed over while the snow is still up rather than as it lifts,
- * and the handover is a crossfade rather than a switch: over this window the
- * noise ducks away and the channel comes up under it.
+ * The length of the handover at the end of the snow: the noise ducking away
+ * and the channel opening up under it, both at once, with the snow held over
+ * the top for the whole of it.
  */
-const UNMUTE_LEAD_MS = 900;
-
-/**
- * The set starts unmuted — the press of the play ball is a real gesture, and
- * spending it at the moment it happens is the only way a phone ever grants
- * sound. So the channel is audible from the first frame and the noise is what
- * covers it, sitting loud over the top and ducking away as the picture clears.
- *
- * The channel's own audio can only be held down through the player's volume
- * control: it lives in another origin, where nothing of ours can reach it.
- */
-const NOISE_GAIN = 0.22;
-const VIDEO_VOLUME_UNDER_SNOW = 12;
-const VIDEO_VOLUME_FULL = 100;
-/** The player takes a number, not a curve, so the ramp is walked in steps. */
-const VOLUME_STEPS = 12;
-
-/**
- * If unmuted autoplay is refused outright the player never wakes at all, and
- * what stands on screen once the snow lifts is YouTube's own play button. So
- * the attempt is given this long, and then the set is retuned muted — back to
- * a silent picture, which is a poor result but not a broken one.
- */
-const SOUND_GRACE_MS = 3000;
+const HANDOVER_MS = 900;
 
 /** The snow does not cut, it dissolves. */
 const SNOW_FADE_MS = 500;
+
+/**
+ * The embed is muted for its whole life and the sound comes from a file we
+ * serve ourselves, decoded into the same AudioContext the noise runs through.
+ *
+ * That single decision is what makes the rest of this page simple. A muted
+ * embed is the one thing every browser will autoplay, so the picture is never
+ * in doubt; and the track, being ours, is an ordinary node in our own graph —
+ * so it can be filtered, ducked and crossfaded like anything else, instead of
+ * being shouted at through postMessage and hoping.
+ *
+ * The context is opened by the press of the play ball, and a context opened by
+ * a gesture stays open. Nothing afterwards needs permission again — which is
+ * the whole reason the snow can be heard on a phone at all.
+ */
+const MUSIC_GAIN = 0.9;
+/** Under the snow the track is not just quiet, it is behind the glass. */
+const MUSIC_SNOW_GAIN = 0.1;
+const MUSIC_SNOW_HZ = 620;
+const MUSIC_OPEN_HZ = 20000;
+
+const NOISE_GAIN = 0.22;
 
 /**
  * Desktop starts the muted embed on its own and the nudge below never fires.
@@ -69,8 +68,23 @@ const SNOW_FADE_MS = 500;
 const NUDGE_TRIES = 8;
 const NUDGE_EVERY_MS = 600;
 
-/** How long to watch, after unmuting, for the phone to take playback back. */
-const UNMUTE_WATCH_MS = 2500;
+/**
+ * Two clocks running side by side drift for one reason worth correcting: the
+ * video stalls to buffer and the track plays on through it. Past this much
+ * daylight the track is restarted at the picture's own time.
+ */
+const SYNC_TOLERANCE_S = 0.35;
+
+type Channel = {
+  id: string;
+  label: string;
+  /**
+   * The track as it is cut for the video, which is not always the track as it
+   * appears on the record. Null until the file exists: a channel with no audio
+   * plays its picture in silence rather than breaking.
+   */
+  audio: string | null;
+};
 
 /**
  * The dial cycles through these in order and wraps. There is deliberately no
@@ -79,9 +93,9 @@ const UNMUTE_WATCH_MS = 2500;
  *
  * `id` is the YouTube video id — the part after `v=` in a watch URL.
  */
-const CHANNELS = [
-  { id: "rTYdjkZaPh0", label: "Channel 1" },
-  { id: "9vqVzGTkRU4", label: "Channel 2" }, // Fallcore — Velith
+const CHANNELS: Channel[] = [
+  { id: "rTYdjkZaPh0", label: "Channel 1", audio: "/music/TV/Channel1.mp3" },
+  { id: "9vqVzGTkRU4", label: "Channel 2", audio: "/music/TV/Channel2.mp3" },
 ];
 
 /**
@@ -132,15 +146,16 @@ export default function VideoPage() {
   const [timedOut, setTimedOut] = useState(false);
 
   const [channel, setChannel] = useState(0);
+  const current = CHANNELS[channel];
+
   /** True while the screen is showing snow. */
   const [tuning, setTuning] = useState(false);
   /** True for the moment the snow spends dissolving into the picture. */
   const [fading, setFading] = useState(false);
   /**
-   * The set is off until the play ball is pressed. That press is not only
-   * staging: an unmuted embed will not start without a real user gesture, so
-   * the dark screen is what buys the right to autoplay — and the visitor
-   * never sees YouTube's red play button.
+   * The set is off until the play ball is pressed. That press is what opens
+   * the AudioContext — everything this page makes a sound with descends from
+   * it — and it also means the visitor never sees YouTube's red play button.
    */
   const [on, setOn] = useState(false);
 
@@ -153,18 +168,28 @@ export default function VideoPage() {
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
 
-  /**
-   * Set when an unmuted start was refused and the set has to be retuned with
-   * the sound off. It is part of the embed's key, so raising it remounts the
-   * player — which happens under the snow, where nothing of it shows.
-   */
-  const [forceMuted, setForceMuted] = useState(false);
-
   const staticCanvas = useRef<HTMLCanvasElement | null>(null);
   const embed = useRef<HTMLIFrameElement | null>(null);
 
   const audioCtx = useRef<AudioContext | null>(null);
   const noise = useRef<{ src: AudioBufferSourceNode; gain: GainNode } | null>(null);
+
+  /** The decoded track for the channel now showing, once it has arrived. */
+  const musicBuffer = useRef<AudioBuffer | null>(null);
+  const music = useRef<{
+    src: AudioBufferSourceNode;
+    gain: GainNode;
+    filter: BiquadFilterNode;
+    /** Context clock when it started, and how far into the track that was. */
+    startedAt: number;
+    startOffset: number;
+  } | null>(null);
+  /** True from the moment the picture starts until the set is retuned. */
+  const musicWanted = useRef(false);
+  /** True once the handover has run, so a late track starts already open. */
+  const handedOver = useRef(false);
+  /** Where the picture says it is, straight from the player. */
+  const videoTime = useRef(0);
 
   const minTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,35 +198,14 @@ export default function VideoPage() {
   const nudges = useRef(0);
   /** Runs from PLAYING to the moment the start-up glyph has faded. */
   const glyphTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const unmuteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Runs from the start of the crossfade to the moment the snow may lift. */
+  /** Runs from the start of the handover to the moment the snow may lift. */
   const leadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Walks the channel's volume up under the ducking noise. */
-  const volumeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  /** How long an unmuted start is given before the set retunes itself muted. */
-  const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** True while we wait to see whether unmuting cost us the playback. */
-  const watchingUnmute = useRef(false);
-  /**
-   * Whether the player is muted, as reported by the player itself rather than
-   * assumed from the commands we sent it — the whole difficulty here is that
-   * those commands are not always obeyed.
-   */
-  const muted = useRef(true);
-  /** The armed one-shot that turns the next touch into permission for sound. */
-  const touchUnmute = useRef<(() => void) | null>(null);
   /**
    * The player is doing something of its own — buffering or playing. Nudging
    * one that is already under way is what makes it flash its glyph, so this is
    * a wider stop signal than PLAYING alone.
    */
   const awake = useRef(false);
-  /**
-   * The browser turned down an audible start. Mirrors `forceMuted`, but as a
-   * ref, because the timers that need to consult it were scheduled before it
-   * was set and hold a closure from back then.
-   */
-  const soundRefused = useRef(false);
   /** The floor has passed, so the snow may end as soon as the picture is up. */
   const minElapsed = useRef(false);
   /** The player has reported PLAYING for the channel now being tuned. */
@@ -237,16 +241,132 @@ export default function VideoPage() {
     );
   }, []);
 
+  // ---------- THE AUDIO CONTEXT ----------
+
+  // Built at mount rather than on the first press, so the track can be fetched
+  // and decoded while the visitor is still looking at a dark screen. It starts
+  // suspended — that is all a context may do before it has been asked for —
+  // and the play ball resumes it.
+  useEffect(() => {
+    type WithWebkit = typeof window & { webkitAudioContext?: typeof AudioContext };
+    const Ctx = window.AudioContext ?? (window as WithWebkit).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    audioCtx.current = ctx;
+    return () => {
+      audioCtx.current = null;
+      ctx.close().catch(() => {});
+    };
+  }, []);
+
+  // ---------- THE CHANNEL'S OWN SOUND ----------
+
+  const stopMusic = useCallback(() => {
+    const m = music.current;
+    if (!m) return;
+    music.current = null;
+    try {
+      m.src.stop();
+    } catch {
+      // Already stopped, or never started. Nothing to do.
+    }
+  }, []);
+
+  /**
+   * Starts the track at `offset` seconds, which is wherever the picture has
+   * got to. Under the snow it comes up quiet and steeply filtered — present,
+   * but heard through the noise rather than beside it.
+   */
+  const startMusic = useCallback(
+    (offset: number) => {
+      const ctx = audioCtx.current;
+      const buf = musicBuffer.current;
+      if (!ctx || !buf) return;
+      stopMusic();
+
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      const gain = ctx.createGain();
+
+      const t = ctx.currentTime;
+      const open = handedOver.current;
+      filter.frequency.setValueAtTime(open ? MUSIC_OPEN_HZ : MUSIC_SNOW_HZ, t);
+      gain.gain.setValueAtTime(open ? MUSIC_GAIN : MUSIC_SNOW_GAIN, t);
+
+      src.connect(filter).connect(gain).connect(ctx.destination);
+      // Past the end of the track the picture simply runs on in silence, which
+      // is a good deal less strange than the track starting over.
+      const at = Math.max(0, offset);
+      if (at >= buf.duration) return;
+      src.start(0, at);
+
+      music.current = { src, gain, filter, startedAt: t, startOffset: at };
+    },
+    [stopMusic]
+  );
+
+  /** The handover: the filter opens and the level comes up to meet the picture. */
+  const openMusic = useCallback(() => {
+    handedOver.current = true;
+    const ctx = audioCtx.current;
+    const m = music.current;
+    if (!ctx || !m) return;
+
+    const t = ctx.currentTime;
+    const d = HANDOVER_MS / 1000;
+
+    m.gain.gain.cancelScheduledValues(t);
+    m.gain.gain.setValueAtTime(m.gain.gain.value, t);
+    m.gain.gain.linearRampToValueAtTime(MUSIC_GAIN, t + d);
+
+    // Exponential, because a filter sweep is heard by octave: a linear one
+    // spends nearly all its travel in the top of the range, where there is
+    // little left to uncover.
+    m.filter.frequency.cancelScheduledValues(t);
+    m.filter.frequency.setValueAtTime(m.filter.frequency.value, t);
+    m.filter.frequency.exponentialRampToValueAtTime(MUSIC_OPEN_HZ, t + d);
+  }, []);
+
+  // One track per channel, re-fetched when the dial turns. Failure is quiet on
+  // purpose: a missing or unplayable file leaves that channel silent, and the
+  // picture carries on regardless — which is also what holds the page up while
+  // a track that has not been cut yet is still missing.
+  useEffect(() => {
+    musicBuffer.current = null;
+    const src = current.audio;
+    const ctx = audioCtx.current;
+    if (!src || !ctx) return;
+
+    let cancelled = false;
+    fetch(src)
+      .then(res => (res.ok ? res.arrayBuffer() : Promise.reject(new Error("missing"))))
+      .then(data => ctx.decodeAudioData(data))
+      .then(decoded => {
+        if (cancelled) return;
+        musicBuffer.current = decoded;
+        // The picture may already be running: on a slow connection a track can
+        // lose the race to its own video. Join at the picture's time rather
+        // than from the top, so it arrives in step rather than behind.
+        if (musicWanted.current && !music.current) startMusic(videoTime.current);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [current.audio, startMusic]);
+
   // ---------- SNOW, THE SOUND ----------
 
   /** A bed of filtered white noise, held for as long as the snow is up. */
   const startNoise = useCallback(() => {
-    type WithWebkit = typeof window & { webkitAudioContext?: typeof AudioContext };
-    const Ctx = window.AudioContext ?? (window as WithWebkit).webkitAudioContext;
-    if (!Ctx) return;
-
-    if (!audioCtx.current) audioCtx.current = new Ctx();
     const ctx = audioCtx.current;
+    if (!ctx) return;
+    // The gesture that got us here is what makes this legal. Everything else
+    // this page plays rides on the context staying open afterwards.
     if (ctx.state === "suspended") void ctx.resume();
 
     // One second of noise, looped — cheaper than generating the whole bed, and
@@ -291,64 +411,7 @@ export default function VideoPage() {
     n.src.stop(t + seconds + 0.03);
   }, []);
 
-  /**
-   * Walks the channel's volume from where the snow held it up to full. The
-   * player has no ramp of its own, so this is a series of small steps — close
-   * enough to a fade at this length that the join cannot be heard.
-   */
-  const rampVideoVolume = useCallback(() => {
-    if (volumeTimer.current) clearInterval(volumeTimer.current);
-    let step = 0;
-    volumeTimer.current = setInterval(() => {
-      step += 1;
-      const t = step / VOLUME_STEPS;
-      const v = Math.round(
-        VIDEO_VOLUME_UNDER_SNOW + (VIDEO_VOLUME_FULL - VIDEO_VOLUME_UNDER_SNOW) * t
-      );
-      post("setVolume", [v]);
-      if (step >= VOLUME_STEPS) {
-        if (volumeTimer.current) clearInterval(volumeTimer.current);
-        volumeTimer.current = null;
-      }
-    }, Math.round(UNMUTE_LEAD_MS / VOLUME_STEPS));
-  }, [post]);
-
   // ---------- SNOW, THE SEQUENCE ----------
-
-  /** Takes the armed touch back down, whether or not it was ever used. */
-  const disarmTouch = useCallback(() => {
-    if (!touchUnmute.current) return;
-    window.removeEventListener("pointerdown", touchUnmute.current);
-    touchUnmute.current = null;
-  }, []);
-
-  /**
-   * A phone will not hand a cross-origin embed the right to make noise on the
-   * word of a message posted to it — that is not a gesture, and the gesture
-   * that opened the set is long spent by the time the snow clears. So the next
-   * touch anywhere becomes the ask, and it stays armed until it is taken.
-   *
-   * Nothing is drawn to say so. Touching the screen of a television that is
-   * playing silently is what a person does anyway, and the set answering is
-   * the whole point.
-   */
-  const armTouchUnmute = useCallback(() => {
-    disarmTouch();
-    const hand = () => {
-      if (!muted.current) {
-        disarmTouch();
-        return;
-      }
-      // This one is asked for, so it must not be second-guessed by the pause
-      // watch — a sound the visitor reached for is worth losing a frame over.
-      watchingUnmute.current = false;
-      post("unMute");
-      post("playVideo");
-      disarmTouch();
-    };
-    touchUnmute.current = hand;
-    window.addEventListener("pointerdown", hand);
-  }, [post, disarmTouch]);
 
   /** The snow actually lifting. The noise is already gone by now. */
   const liftSnow = useCallback(() => {
@@ -356,41 +419,24 @@ export default function VideoPage() {
     setFading(true);
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
-
-    // Only reachable when the set had to fall back to a muted start. When the
-    // channel came up unmuted there is nothing left to ask for.
-    armTouchUnmute();
-  }, [armTouchUnmute]);
+  }, []);
 
   /**
-   * Begins the end of the snow. Both sides of the crossfade start together —
-   * the bed ducking away, the channel climbing out from under it — and the
-   * snow is held for the length of it, so the handover happens behind the
-   * picture rather than in front of it.
+   * Begins the end of the snow. Both sides of the handover start together —
+   * the bed ducking away, the channel opening out from under it — and the snow
+   * is held for the length of it, so the join happens behind the picture
+   * rather than in front of it.
    */
   const endTuning = useCallback(() => {
     if (minTimer.current) clearTimeout(minTimer.current);
     if (maxTimer.current) clearTimeout(maxTimer.current);
     if (leadTimer.current) clearTimeout(leadTimer.current);
 
-    stopNoise(UNMUTE_LEAD_MS / 1000);
-    rampVideoVolume();
+    stopNoise(HANDOVER_MS / 1000);
+    openMusic();
 
-    // Where the sound was refused outright there is no point asking again by
-    // the same means that failed — and a refused unmute can cost the picture
-    // too, since the phone answers it by pausing. That set stays quiet until
-    // it is touched, which is a thing it can never be refused.
-    if (!soundRefused.current && muted.current) {
-      post("unMute");
-      watchingUnmute.current = true;
-      if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
-      unmuteTimer.current = setTimeout(() => {
-        watchingUnmute.current = false;
-      }, UNMUTE_WATCH_MS);
-    }
-
-    leadTimer.current = setTimeout(liftSnow, UNMUTE_LEAD_MS);
-  }, [post, liftSnow, stopNoise, rampVideoVolume]);
+    leadTimer.current = setTimeout(liftSnow, HANDOVER_MS);
+  }, [liftSnow, stopNoise, openMusic]);
 
   /** Ends the snow once both the floor has passed and the picture is up. */
   const maybeEnd = useCallback(() => {
@@ -406,19 +452,14 @@ export default function VideoPage() {
       pictureUp.current = false;
       awake.current = false;
       awaitingPicture.current = waitForPicture;
-      watchingUnmute.current = false;
-      muted.current = false;
-      soundRefused.current = false;
-      disarmTouch();
-      setForceMuted(false);
+      musicWanted.current = false;
+      handedOver.current = false;
+      videoTime.current = 0;
+      stopMusic();
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       glyphTimer.current = null;
       if (leadTimer.current) clearTimeout(leadTimer.current);
       leadTimer.current = null;
-      if (volumeTimer.current) clearInterval(volumeTimer.current);
-      volumeTimer.current = null;
-      if (graceTimer.current) clearTimeout(graceTimer.current);
-      graceTimer.current = null;
 
       setTuning(true);
       startNoise();
@@ -439,13 +480,13 @@ export default function VideoPage() {
         endTuning();
       }, MAX_STATIC_MS);
     },
-    [startNoise, maybeEnd, endTuning, disarmTouch]
+    [startNoise, maybeEnd, endTuning, stopMusic]
   );
 
   /**
    * The play ball. Warms the set up on whatever channel it was left on, and
    * kills it again on a second press — unmounting the embed is also the only
-   * reliable way to stop its sound.
+   * reliable way to stop its picture.
    */
   const togglePower = useCallback(() => {
     if (tuning) return;
@@ -470,7 +511,8 @@ export default function VideoPage() {
 
   // With `enablejsapi=1` the player answers a "listening" handshake with state
   // updates. That is how the snow knows the picture is actually up, rather
-  // than guessing with a fixed delay.
+  // than guessing with a fixed delay — and now also how the track knows where
+  // the picture has got to.
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (typeof e.data !== "string") return;
@@ -479,57 +521,75 @@ export default function VideoPage() {
         const msg = JSON.parse(e.data);
         const state = msg?.info?.playerState;
 
-        // The player volunteers its own volume state, which is the only honest
-        // answer to "did that unmute take?" — on a phone, frequently not.
-        if (typeof msg?.info?.muted === "boolean") muted.current = msg.info.muted;
+        if (typeof msg?.info?.currentTime === "number") {
+          videoTime.current = msg.info.currentTime;
+        }
 
         // 3 is BUFFERING: not a picture yet, but the player is on its way and
-        // must not be prodded again.
+        // must not be prodded again. It is also the picture stalling mid-play,
+        // which the track would otherwise sail straight past — so it stops and
+        // waits to be restarted at wherever the picture resumes.
         if (state === 1 || state === 3) awake.current = true;
+        if (state === 3 && musicWanted.current) stopMusic();
 
         // 1 is PLAYING in the IFrame API's state enum.
-        if (state === 1 && !glyphTimer.current) {
-          playingSeen.current = true;
-          glyphTimer.current = setTimeout(() => {
-            pictureUp.current = true;
-            maybeEnd();
-          }, GLYPH_HOLD_MS);
+        if (state === 1) {
+          musicWanted.current = true;
+          if (!music.current) startMusic(videoTime.current);
+
+          if (!glyphTimer.current) {
+            playingSeen.current = true;
+            glyphTimer.current = setTimeout(() => {
+              pictureUp.current = true;
+              maybeEnd();
+            }, GLYPH_HOLD_MS);
+          }
         }
 
-        // 2 is PAUSED. Arriving in the moments after the unmute, it is not the
-        // visitor pausing anything — there is nothing to press — it is the
-        // phone taking the sound back. Give it up and keep the picture.
-        if (state === 2 && watchingUnmute.current) {
-          watchingUnmute.current = false;
-          post("mute");
-          post("playVideo");
-        }
+        // 2 is PAUSED, which with no controls and the glass on top can only be
+        // the player pausing itself. Whatever the reason, the track does not
+        // play on over a still picture.
+        if (state === 2) stopMusic();
       } catch {
         // The player also sends things that are not JSON. Nothing to do.
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [maybeEnd, post]);
+  }, [maybeEnd, startMusic, stopMusic]);
+
+  // Two clocks, one of which we cannot drive. They are started together and
+  // both run at 1×, so they only part company when the picture stalls — and
+  // then only until this notices.
+  useEffect(() => {
+    if (!on) return;
+    const t = setInterval(() => {
+      const ctx = audioCtx.current;
+      const m = music.current;
+      const buf = musicBuffer.current;
+      if (!ctx || !m || !buf || !musicWanted.current) return;
+      if (videoTime.current >= buf.duration) return;
+
+      const at = m.startOffset + (ctx.currentTime - m.startedAt);
+      if (Math.abs(videoTime.current - at) > SYNC_TOLERANCE_S) {
+        startMusic(videoTime.current);
+      }
+    }, 2000);
+    return () => clearInterval(t);
+  }, [on, startMusic]);
 
   const onEmbedLoad = useCallback(() => {
-    // A fresh frame has reported nothing yet, and on the fallback path it is
-    // standing in for one that buffered and died. Whatever that one said about
+    // A fresh frame has reported nothing yet. Whatever the last one said about
     // itself does not describe this one.
     awake.current = false;
     playingSeen.current = false;
 
     listen();
-    // Held down for as long as the snow lasts. This is a race against the first
-    // frame of audio and it cannot be won outright — the player is not
-    // listening until it is listening — but it is repeated below with every
-    // nudge, so the channel is buried within a beat of waking up.
-    post("setVolume", [VIDEO_VOLUME_UNDER_SNOW]);
 
-    // The autoplay is honoured almost everywhere, but nudge anything that still
-    // has not started. Only a player that has not reported for itself: calling
-    // playVideo on one that is already running makes it flash its own play
-    // glyph, which is exactly what the snow is there to hide.
+    // The muted autoplay is honoured almost everywhere, but nudge anything that
+    // still has not started. Only a player that has not reported for itself:
+    // calling playVideo on one that is already running makes it flash its own
+    // play glyph, which is exactly what the snow is there to hide.
     //
     // The handshake goes out again with every nudge, because `onLoad` means the
     // frame arrived, not that the player inside it is awake — on a phone it
@@ -544,29 +604,12 @@ export default function VideoPage() {
       }
       nudges.current += 1;
       listen();
-      post("setVolume", [VIDEO_VOLUME_UNDER_SNOW]);
       post("playVideo");
     }, NUDGE_EVERY_MS);
+  }, [listen, post]);
 
-    // The unmuted start is the whole gamble: spend the play ball's gesture on
-    // sound, and if the browser will not have it, nothing plays at all. So give
-    // it a moment, and if no picture has arrived, retune muted — still deep
-    // under the snow, so all the visitor ever sees is a little more noise.
-    //
-    // The test is PLAYING and nothing weaker. A refused start is not a still
-    // one: the player accepts the command, reaches BUFFERING, and is stopped
-    // there. Anything that treats buffering as success reads that as a set
-    // warming up and waits out a video that is never coming.
-    if (graceTimer.current) clearTimeout(graceTimer.current);
-    graceTimer.current = setTimeout(() => {
-      if (playingSeen.current || forceMuted) return;
-      soundRefused.current = true;
-      setForceMuted(true);
-    }, SOUND_GRACE_MS);
-  }, [listen, post, forceMuted]);
-
-  // Closing the context on unmount, for the same reason the hub does: a bed
-  // left running keeps playing over the next page.
+  // A bed or a track left running keeps playing over the next page, which is
+  // the same reason the hub tears its own context down.
   useEffect(() => {
     return () => {
       if (minTimer.current) clearTimeout(minTimer.current);
@@ -574,16 +617,7 @@ export default function VideoPage() {
       if (fadeTimer.current) clearTimeout(fadeTimer.current);
       if (nudgeTimer.current) clearInterval(nudgeTimer.current);
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
-      if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
       if (leadTimer.current) clearTimeout(leadTimer.current);
-      if (volumeTimer.current) clearInterval(volumeTimer.current);
-      if (graceTimer.current) clearTimeout(graceTimer.current);
-      if (touchUnmute.current) {
-        window.removeEventListener("pointerdown", touchUnmute.current);
-        touchUnmute.current = null;
-      }
-      audioCtx.current?.close();
-      audioCtx.current = null;
     };
   }, []);
 
@@ -617,21 +651,16 @@ export default function VideoPage() {
     return () => cancelAnimationFrame(frame);
   }, [tuning, fading]);
 
-  const current = CHANNELS[channel];
-  // `enablejsapi` exists only so the handshake above can be received. The
-  // embed starts muted and is unmuted when the snow clears: nothing but noise
-  // should be audible while the set is tuning, and a muted start is also the
-  // one form of autoplay every browser allows.
-  // `playsinline` is what stops a phone from tearing the video out into its own
-  // fullscreen player the instant it starts, and `origin` is what makes the
-  // player answer the handshake at all rather than dropping it on the floor.
+  // `enablejsapi` exists only so the handshake above can be received, and
+  // `origin` is what makes the player answer it rather than dropping it on the
+  // floor. `playsinline` stops a phone tearing the video out into its own
+  // fullscreen player the instant it starts.
   //
-  // `mute` is the gamble described above: off by default, so the set speaks
-  // from the first frame on the strength of the press that opened it, and on
-  // only where that was refused.
+  // `mute` is now permanent. The embed is a picture and nothing else — the
+  // sound it would have made is served from our own files instead — and a
+  // muted embed is the one form of autoplay no browser has ever refused.
   const params =
-    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&enablejsapi=1" +
-    `&mute=${forceMuted ? 1 : 0}` +
+    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&mute=1&enablejsapi=1" +
     (origin ? `&origin=${encodeURIComponent(origin)}` : "");
 
   return (
@@ -687,7 +716,7 @@ export default function VideoPage() {
             <div style={SCREEN}>
               <iframe
                 ref={embed}
-                key={`${current.id}:${forceMuted ? "muted" : "loud"}`}
+                key={current.id}
                 src={`https://www.youtube.com/embed/${current.id}?${params}`}
                 title={current.label}
                 onLoad={onEmbedLoad}
