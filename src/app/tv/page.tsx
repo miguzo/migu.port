@@ -178,6 +178,13 @@ export default function VideoPage() {
   const leadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Walks the channel's volume up under the ducking noise. */
   const volumeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  /**
+   * Where the channel's volume is meant to be right now. An unmute restores
+   * whatever level the player was at before it was muted, which is full — so
+   * anything that unmutes has to say the level in the same breath, or a touch
+   * during the snow lets the channel out at full blast under the noise.
+   */
+  const volumeTarget = useRef(VIDEO_VOLUME_UNDER_SNOW);
   /** How long an unmuted start is given before the set retunes itself muted. */
   const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** True while we wait to see whether unmuting cost us the playback. */
@@ -305,6 +312,7 @@ export default function VideoPage() {
       const v = Math.round(
         VIDEO_VOLUME_UNDER_SNOW + (VIDEO_VOLUME_FULL - VIDEO_VOLUME_UNDER_SNOW) * t
       );
+      volumeTarget.current = v;
       post("setVolume", [v]);
       if (step >= VOLUME_STEPS) {
         if (volumeTimer.current) clearInterval(volumeTimer.current);
@@ -325,30 +333,34 @@ export default function VideoPage() {
   /**
    * A phone will not hand a cross-origin embed the right to make noise on the
    * word of a message posted to it — that is not a gesture, and the gesture
-   * that opened the set is long spent by the time the snow clears. So the next
-   * touch anywhere becomes the ask, and it stays armed until it is taken.
+   * that opened the set is long spent by the time the snow clears. So every
+   * touch anywhere is offered as the ask, until one of them is accepted.
+   *
+   * This is armed the moment sound is known to be refused, which is while the
+   * snow is still up. A visitor who touches the glass during the wait — and
+   * people do, waiting — has already paid for the sound by the time the
+   * picture arrives, and the set comes up speaking.
    *
    * Nothing is drawn to say so. Touching the screen of a television that is
    * playing silently is what a person does anyway, and the set answering is
    * the whole point.
    */
   const armTouchUnmute = useCallback(() => {
-    disarmTouch();
+    if (touchUnmute.current) return;
     const hand = () => {
-      if (!muted.current) {
-        disarmTouch();
-        return;
-      }
-      // This one is asked for, so it must not be second-guessed by the pause
-      // watch — a sound the visitor reached for is worth losing a frame over.
-      watchingUnmute.current = false;
+      // Sent whether or not the player has admitted to being muted: it does not
+      // always say, and a set left silent because we took its word for it is
+      // the worse failure. Asking one that is already unmuted costs nothing.
+      //
+      // Deliberately no playVideo. The picture is already running — it is only
+      // the sound that was withheld — and prodding a running player is what
+      // makes it flash its glyph, with no snow left to hide it.
       post("unMute");
-      post("playVideo");
-      disarmTouch();
+      post("setVolume", [volumeTarget.current]);
     };
     touchUnmute.current = hand;
     window.addEventListener("pointerdown", hand);
-  }, [post, disarmTouch]);
+  }, [post]);
 
   /** The snow actually lifting. The noise is already gone by now. */
   const liftSnow = useCallback(() => {
@@ -357,8 +369,11 @@ export default function VideoPage() {
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
 
-    // Only reachable when the set had to fall back to a muted start. When the
-    // channel came up unmuted there is nothing left to ask for.
+    // Usually already armed, from the moment sound was refused. This catches
+    // the quieter case: a player that was never refused outright but has not
+    // confirmed it is speaking either. It takes itself back down the instant
+    // the set reports sound, so on a machine that was never muted it costs one
+    // listener and no touches.
     armTouchUnmute();
   }, [armTouchUnmute]);
 
@@ -382,6 +397,9 @@ export default function VideoPage() {
     // it is touched, which is a thing it can never be refused.
     if (!soundRefused.current && muted.current) {
       post("unMute");
+      // In the same breath, because an unmute restores the level the player
+      // held before it was muted, and that is full.
+      post("setVolume", [VIDEO_VOLUME_UNDER_SNOW]);
       watchingUnmute.current = true;
       if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
       unmuteTimer.current = setTimeout(() => {
@@ -407,7 +425,12 @@ export default function VideoPage() {
       awake.current = false;
       awaitingPicture.current = waitForPicture;
       watchingUnmute.current = false;
-      muted.current = false;
+      // Pessimistic on purpose. The player is asked to start unmuted but does
+      // not always report back on whether it did, and assuming the best means
+      // never sending the unmute that would have fixed it — a set that plays
+      // in silence until something happens to be clicked.
+      muted.current = true;
+      volumeTarget.current = VIDEO_VOLUME_UNDER_SNOW;
       soundRefused.current = false;
       disarmTouch();
       setForceMuted(false);
@@ -480,8 +503,13 @@ export default function VideoPage() {
         const state = msg?.info?.playerState;
 
         // The player volunteers its own volume state, which is the only honest
-        // answer to "did that unmute take?" — on a phone, frequently not.
-        if (typeof msg?.info?.muted === "boolean") muted.current = msg.info.muted;
+        // answer to "did that unmute take?" — on a phone, frequently not. This
+        // is also the only thing that takes the touch back down: until the set
+        // says it is speaking, every touch is another chance to ask.
+        if (typeof msg?.info?.muted === "boolean") {
+          muted.current = msg.info.muted;
+          if (!muted.current) disarmTouch();
+        }
 
         // 3 is BUFFERING: not a picture yet, but the player is on its way and
         // must not be prodded again.
@@ -510,7 +538,7 @@ export default function VideoPage() {
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [maybeEnd, post]);
+  }, [maybeEnd, post, disarmTouch]);
 
   const onEmbedLoad = useCallback(() => {
     // A fresh frame has reported nothing yet, and on the fallback path it is
@@ -562,8 +590,11 @@ export default function VideoPage() {
       if (playingSeen.current || forceMuted) return;
       soundRefused.current = true;
       setForceMuted(true);
+      // While the snow is still up, so a touch during the wait buys the sound
+      // in time for the picture rather than a few seconds after it.
+      armTouchUnmute();
     }, SOUND_GRACE_MS);
-  }, [listen, post, forceMuted]);
+  }, [listen, post, forceMuted, armTouchUnmute]);
 
   // Closing the context on unmount, for the same reason the hub does: a bed
   // left running keeps playing over the next page.
