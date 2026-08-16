@@ -24,7 +24,16 @@ const MAX_STATIC_MS = 10000;
  * measured rather than assumed: the icon outlives the first frame by about a
  * second, so ending the snow the instant the picture arrives shows it.
  */
-const GLYPH_HOLD_MS = 1400;
+const GLYPH_HOLD_MS = 2600;
+
+/**
+ * The sound is handed over while the snow is still up rather than as it lifts.
+ * Two reasons, and both are glyphs: unmuting is itself a state change the
+ * player likes to announce, and a phone can answer an unmute by pausing, whose
+ * recovery announces itself again. Neither should happen in the open, so the
+ * snow is held this long after the unmute goes out.
+ */
+const UNMUTE_LEAD_MS = 900;
 
 /** The snow does not cut, it dissolves. */
 const SNOW_FADE_MS = 500;
@@ -137,8 +146,16 @@ export default function VideoPage() {
   /** Runs from PLAYING to the moment the start-up glyph has faded. */
   const glyphTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmuteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Runs from the unmute to the moment the snow may actually lift. */
+  const leadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** True while we wait to see whether unmuting cost us the playback. */
   const watchingUnmute = useRef(false);
+  /**
+   * The player is doing something of its own — buffering or playing. Nudging
+   * one that is already under way is what makes it flash its glyph, so this is
+   * a wider stop signal than PLAYING alone.
+   */
+  const awake = useRef(false);
   /** The floor has passed, so the snow may end as soon as the picture is up. */
   const minElapsed = useRef(false);
   /** The player has reported PLAYING for the channel now being tuned. */
@@ -225,11 +242,24 @@ export default function VideoPage() {
 
   // ---------- SNOW, THE SEQUENCE ----------
 
+  /** The snow actually lifting. Nothing is said to the player from here on. */
+  const liftSnow = useCallback(() => {
+    stopNoise();
+    setTuning(false);
+    setFading(true);
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
+  }, [stopNoise]);
+
+  /**
+   * Begins the end of the snow: hands the sound over, then holds the noise a
+   * moment longer so that handover — and anything the player has to say about
+   * it — happens behind the picture rather than in front of it.
+   */
   const endTuning = useCallback(() => {
     if (minTimer.current) clearTimeout(minTimer.current);
     if (maxTimer.current) clearTimeout(maxTimer.current);
-    stopNoise();
-    setTuning(false);
+    if (leadTimer.current) clearTimeout(leadTimer.current);
 
     // The picture is clear, so let it be heard. A no-op when the set is being
     // switched off, since the embed is already gone by then.
@@ -245,10 +275,8 @@ export default function VideoPage() {
       watchingUnmute.current = false;
     }, UNMUTE_WATCH_MS);
 
-    setFading(true);
-    if (fadeTimer.current) clearTimeout(fadeTimer.current);
-    fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
-  }, [stopNoise, post]);
+    leadTimer.current = setTimeout(liftSnow, UNMUTE_LEAD_MS);
+  }, [post, liftSnow]);
 
   /** Ends the snow once both the floor has passed and the picture is up. */
   const maybeEnd = useCallback(() => {
@@ -276,7 +304,15 @@ export default function VideoPage() {
         minElapsed.current = true;
         maybeEnd();
       }, MIN_STATIC_MS);
-      maxTimer.current = setTimeout(endTuning, MAX_STATIC_MS);
+      maxTimer.current = setTimeout(() => {
+        // The ceiling exists for a video that never starts. One that started
+        // late is a different case, and obeying the ceiling there cuts the snow
+        // in the middle of the glyph — precisely the flash the snow is for. So
+        // if the picture is on its way, stand down and let the glyph timer say
+        // when. It will: the floor is long past by now.
+        if (playingSeen.current && !pictureUp.current) return;
+        endTuning();
+      }, MAX_STATIC_MS);
     },
     [startNoise, maybeEnd, endTuning]
   );
