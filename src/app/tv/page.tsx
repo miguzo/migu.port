@@ -27,13 +27,34 @@ const MAX_STATIC_MS = 10000;
 const GLYPH_HOLD_MS = 3600;
 
 /**
- * The sound is handed over while the snow is still up rather than as it lifts.
- * Two reasons, and both are glyphs: unmuting is itself a state change the
- * player likes to announce, and a phone can answer an unmute by pausing, whose
- * recovery announces itself again. Neither should happen in the open, so the
- * snow is held this long after the unmute goes out.
+ * The sound is handed over while the snow is still up rather than as it lifts,
+ * and the handover is a crossfade rather than a switch: over this window the
+ * noise ducks away and the channel comes up under it.
  */
 const UNMUTE_LEAD_MS = 900;
+
+/**
+ * The set starts unmuted — the press of the play ball is a real gesture, and
+ * spending it at the moment it happens is the only way a phone ever grants
+ * sound. So the channel is audible from the first frame and the noise is what
+ * covers it, sitting loud over the top and ducking away as the picture clears.
+ *
+ * The channel's own audio can only be held down through the player's volume
+ * control: it lives in another origin, where nothing of ours can reach it.
+ */
+const NOISE_GAIN = 0.22;
+const VIDEO_VOLUME_UNDER_SNOW = 12;
+const VIDEO_VOLUME_FULL = 100;
+/** The player takes a number, not a curve, so the ramp is walked in steps. */
+const VOLUME_STEPS = 12;
+
+/**
+ * If unmuted autoplay is refused outright the player never wakes at all, and
+ * what stands on screen once the snow lifts is YouTube's own play button. So
+ * the attempt is given this long, and then the set is retuned muted — back to
+ * a silent picture, which is a poor result but not a broken one.
+ */
+const SOUND_GRACE_MS = 3000;
 
 /** The snow does not cut, it dissolves. */
 const SNOW_FADE_MS = 500;
@@ -132,6 +153,13 @@ export default function VideoPage() {
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
 
+  /**
+   * Set when an unmuted start was refused and the set has to be retuned with
+   * the sound off. It is part of the embed's key, so raising it remounts the
+   * player — which happens under the snow, where nothing of it shows.
+   */
+  const [forceMuted, setForceMuted] = useState(false);
+
   const staticCanvas = useRef<HTMLCanvasElement | null>(null);
   const embed = useRef<HTMLIFrameElement | null>(null);
 
@@ -146,8 +174,12 @@ export default function VideoPage() {
   /** Runs from PLAYING to the moment the start-up glyph has faded. */
   const glyphTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmuteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Runs from the unmute to the moment the snow may actually lift. */
+  /** Runs from the start of the crossfade to the moment the snow may lift. */
   const leadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Walks the channel's volume up under the ducking noise. */
+  const volumeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** How long an unmuted start is given before the set retunes itself muted. */
+  const graceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** True while we wait to see whether unmuting cost us the playback. */
   const watchingUnmute = useRef(false);
   /**
@@ -184,9 +216,9 @@ export default function VideoPage() {
   const ready = frameLoaded || timedOut;
 
   /** One command to the player. A no-op when the set is off: there is no embed. */
-  const post = useCallback((func: string) => {
+  const post = useCallback((func: string, args: unknown[] = []) => {
     embed.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func, args: [] }),
+      JSON.stringify({ event: "command", func, args }),
       "*"
     );
   }, []);
@@ -228,14 +260,19 @@ export default function VideoPage() {
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(NOISE_GAIN, ctx.currentTime + 0.05);
 
     src.connect(lp).connect(gain).connect(ctx.destination);
     src.start();
     noise.current = { src, gain };
   }, []);
 
-  const stopNoise = useCallback(() => {
+  /**
+   * Takes the bed down over `seconds` and stops it. Long for a handover to a
+   * channel that is already playing underneath, short for switching the set
+   * off, where there is nothing to hand over to.
+   */
+  const stopNoise = useCallback((seconds = 0.12) => {
     const ctx = audioCtx.current;
     const n = noise.current;
     if (!ctx || !n) return;
@@ -244,9 +281,31 @@ export default function VideoPage() {
     const t = ctx.currentTime;
     n.gain.gain.cancelScheduledValues(t);
     n.gain.gain.setValueAtTime(n.gain.gain.value, t);
-    n.gain.gain.linearRampToValueAtTime(0, t + 0.12);
-    n.src.stop(t + 0.15);
+    n.gain.gain.linearRampToValueAtTime(0, t + seconds);
+    n.src.stop(t + seconds + 0.03);
   }, []);
+
+  /**
+   * Walks the channel's volume from where the snow held it up to full. The
+   * player has no ramp of its own, so this is a series of small steps — close
+   * enough to a fade at this length that the join cannot be heard.
+   */
+  const rampVideoVolume = useCallback(() => {
+    if (volumeTimer.current) clearInterval(volumeTimer.current);
+    let step = 0;
+    volumeTimer.current = setInterval(() => {
+      step += 1;
+      const t = step / VOLUME_STEPS;
+      const v = Math.round(
+        VIDEO_VOLUME_UNDER_SNOW + (VIDEO_VOLUME_FULL - VIDEO_VOLUME_UNDER_SNOW) * t
+      );
+      post("setVolume", [v]);
+      if (step >= VOLUME_STEPS) {
+        if (volumeTimer.current) clearInterval(volumeTimer.current);
+        volumeTimer.current = null;
+      }
+    }, Math.round(UNMUTE_LEAD_MS / VOLUME_STEPS));
+  }, [post]);
 
   // ---------- SNOW, THE SEQUENCE ----------
 
@@ -285,45 +344,46 @@ export default function VideoPage() {
     window.addEventListener("pointerdown", hand);
   }, [post, disarmTouch]);
 
-  /** The snow actually lifting. Nothing is said to the player from here on. */
+  /** The snow actually lifting. The noise is already gone by now. */
   const liftSnow = useCallback(() => {
-    stopNoise();
     setTuning(false);
     setFading(true);
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
 
-    // Desktop is unmuted by now and this arms nothing that will ever fire, so
-    // it costs a listener that removes itself on the first touch.
+    // Only reachable when the set had to fall back to a muted start. When the
+    // channel came up unmuted there is nothing left to ask for.
     armTouchUnmute();
-  }, [stopNoise, armTouchUnmute]);
+  }, [armTouchUnmute]);
 
   /**
-   * Begins the end of the snow: hands the sound over, then holds the noise a
-   * moment longer so that handover — and anything the player has to say about
-   * it — happens behind the picture rather than in front of it.
+   * Begins the end of the snow. Both sides of the crossfade start together —
+   * the bed ducking away, the channel climbing out from under it — and the
+   * snow is held for the length of it, so the handover happens behind the
+   * picture rather than in front of it.
    */
   const endTuning = useCallback(() => {
     if (minTimer.current) clearTimeout(minTimer.current);
     if (maxTimer.current) clearTimeout(maxTimer.current);
     if (leadTimer.current) clearTimeout(leadTimer.current);
 
-    // The picture is clear, so let it be heard. A no-op when the set is being
-    // switched off, since the embed is already gone by then.
-    post("unMute");
+    stopNoise(UNMUTE_LEAD_MS / 1000);
+    rampVideoVolume();
 
-    // A phone lends a muted embed the right to play and takes it straight back
-    // when the sound comes on: unmuting without a gesture of its own pauses the
-    // video. So watch for that pause, and if it comes, put the sound away again
-    // and start it back up. A silent picture is still a picture.
-    watchingUnmute.current = true;
-    if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
-    unmuteTimer.current = setTimeout(() => {
-      watchingUnmute.current = false;
-    }, UNMUTE_WATCH_MS);
+    // Only matters on the fallback path, where the set had to start muted and
+    // the sound is still owed. A phone can answer that unmute by pausing, so
+    // the pause watch stays armed to catch it.
+    if (muted.current) {
+      post("unMute");
+      watchingUnmute.current = true;
+      if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
+      unmuteTimer.current = setTimeout(() => {
+        watchingUnmute.current = false;
+      }, UNMUTE_WATCH_MS);
+    }
 
     leadTimer.current = setTimeout(liftSnow, UNMUTE_LEAD_MS);
-  }, [post, liftSnow]);
+  }, [post, liftSnow, stopNoise, rampVideoVolume]);
 
   /** Ends the snow once both the floor has passed and the picture is up. */
   const maybeEnd = useCallback(() => {
@@ -340,12 +400,17 @@ export default function VideoPage() {
       awake.current = false;
       awaitingPicture.current = waitForPicture;
       watchingUnmute.current = false;
-      muted.current = true;
+      muted.current = false;
       disarmTouch();
+      setForceMuted(false);
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       glyphTimer.current = null;
       if (leadTimer.current) clearTimeout(leadTimer.current);
       leadTimer.current = null;
+      if (volumeTimer.current) clearInterval(volumeTimer.current);
+      volumeTimer.current = null;
+      if (graceTimer.current) clearTimeout(graceTimer.current);
+      graceTimer.current = null;
 
       setTuning(true);
       startNoise();
@@ -441,12 +506,16 @@ export default function VideoPage() {
 
   const onEmbedLoad = useCallback(() => {
     listen();
+    // Held down for as long as the snow lasts. This is a race against the first
+    // frame of audio and it cannot be won outright — the player is not
+    // listening until it is listening — but it is repeated below with every
+    // nudge, so the channel is buried within a beat of waking up.
+    post("setVolume", [VIDEO_VOLUME_UNDER_SNOW]);
 
-    // A muted autoplay is honoured almost everywhere, but nudge anything that
-    // still has not started. Only a player that has not reported PLAYING:
-    // calling playVideo on one that is already running makes it flash its own
-    // play glyph, which is exactly what the snow is there to hide. Unmuting is
-    // left to the end of the snow.
+    // The autoplay is honoured almost everywhere, but nudge anything that still
+    // has not started. Only a player that has not reported for itself: calling
+    // playVideo on one that is already running makes it flash its own play
+    // glyph, which is exactly what the snow is there to hide.
     //
     // The handshake goes out again with every nudge, because `onLoad` means the
     // frame arrived, not that the player inside it is awake — on a phone it
@@ -461,9 +530,20 @@ export default function VideoPage() {
       }
       nudges.current += 1;
       listen();
+      post("setVolume", [VIDEO_VOLUME_UNDER_SNOW]);
       post("playVideo");
     }, NUDGE_EVERY_MS);
-  }, [listen, post]);
+
+    // The unmuted start is the whole gamble: spend the play ball's gesture on
+    // sound, and if the browser will not have it, nothing plays at all. So give
+    // it a moment, and if the player has not stirred, retune muted — still deep
+    // under the snow, so all the visitor ever sees is a little more noise.
+    if (graceTimer.current) clearTimeout(graceTimer.current);
+    graceTimer.current = setTimeout(() => {
+      if (awake.current || forceMuted) return;
+      setForceMuted(true);
+    }, SOUND_GRACE_MS);
+  }, [listen, post, forceMuted]);
 
   // Closing the context on unmount, for the same reason the hub does: a bed
   // left running keeps playing over the next page.
@@ -476,6 +556,8 @@ export default function VideoPage() {
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
       if (leadTimer.current) clearTimeout(leadTimer.current);
+      if (volumeTimer.current) clearInterval(volumeTimer.current);
+      if (graceTimer.current) clearTimeout(graceTimer.current);
       if (touchUnmute.current) {
         window.removeEventListener("pointerdown", touchUnmute.current);
         touchUnmute.current = null;
@@ -523,8 +605,13 @@ export default function VideoPage() {
   // `playsinline` is what stops a phone from tearing the video out into its own
   // fullscreen player the instant it starts, and `origin` is what makes the
   // player answer the handshake at all rather than dropping it on the floor.
+  //
+  // `mute` is the gamble described above: off by default, so the set speaks
+  // from the first frame on the strength of the press that opened it, and on
+  // only where that was refused.
   const params =
-    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&mute=1&enablejsapi=1" +
+    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&enablejsapi=1" +
+    `&mute=${forceMuted ? 1 : 0}` +
     (origin ? `&origin=${encodeURIComponent(origin)}` : "");
 
   return (
@@ -580,7 +667,7 @@ export default function VideoPage() {
             <div style={SCREEN}>
               <iframe
                 ref={embed}
-                key={current.id}
+                key={`${current.id}:${forceMuted ? "muted" : "loud"}`}
                 src={`https://www.youtube.com/embed/${current.id}?${params}`}
                 title={current.label}
                 onLoad={onEmbedLoad}
