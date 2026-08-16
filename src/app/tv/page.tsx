@@ -196,6 +196,12 @@ export default function VideoPage() {
    * a wider stop signal than PLAYING alone.
    */
   const awake = useRef(false);
+  /**
+   * The browser turned down an audible start. Mirrors `forceMuted`, but as a
+   * ref, because the timers that need to consult it were scheduled before it
+   * was set and hold a closure from back then.
+   */
+  const soundRefused = useRef(false);
   /** The floor has passed, so the snow may end as soon as the picture is up. */
   const minElapsed = useRef(false);
   /** The player has reported PLAYING for the channel now being tuned. */
@@ -370,10 +376,11 @@ export default function VideoPage() {
     stopNoise(UNMUTE_LEAD_MS / 1000);
     rampVideoVolume();
 
-    // Only matters on the fallback path, where the set had to start muted and
-    // the sound is still owed. A phone can answer that unmute by pausing, so
-    // the pause watch stays armed to catch it.
-    if (muted.current) {
+    // Where the sound was refused outright there is no point asking again by
+    // the same means that failed — and a refused unmute can cost the picture
+    // too, since the phone answers it by pausing. That set stays quiet until
+    // it is touched, which is a thing it can never be refused.
+    if (!soundRefused.current && muted.current) {
       post("unMute");
       watchingUnmute.current = true;
       if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
@@ -401,6 +408,7 @@ export default function VideoPage() {
       awaitingPicture.current = waitForPicture;
       watchingUnmute.current = false;
       muted.current = false;
+      soundRefused.current = false;
       disarmTouch();
       setForceMuted(false);
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
@@ -505,6 +513,12 @@ export default function VideoPage() {
   }, [maybeEnd, post]);
 
   const onEmbedLoad = useCallback(() => {
+    // A fresh frame has reported nothing yet, and on the fallback path it is
+    // standing in for one that buffered and died. Whatever that one said about
+    // itself does not describe this one.
+    awake.current = false;
+    playingSeen.current = false;
+
     listen();
     // Held down for as long as the snow lasts. This is a race against the first
     // frame of audio and it cannot be won outright — the player is not
@@ -536,11 +550,17 @@ export default function VideoPage() {
 
     // The unmuted start is the whole gamble: spend the play ball's gesture on
     // sound, and if the browser will not have it, nothing plays at all. So give
-    // it a moment, and if the player has not stirred, retune muted — still deep
+    // it a moment, and if no picture has arrived, retune muted — still deep
     // under the snow, so all the visitor ever sees is a little more noise.
+    //
+    // The test is PLAYING and nothing weaker. A refused start is not a still
+    // one: the player accepts the command, reaches BUFFERING, and is stopped
+    // there. Anything that treats buffering as success reads that as a set
+    // warming up and waits out a video that is never coming.
     if (graceTimer.current) clearTimeout(graceTimer.current);
     graceTimer.current = setTimeout(() => {
-      if (awake.current || forceMuted) return;
+      if (playingSeen.current || forceMuted) return;
+      soundRefused.current = true;
       setForceMuted(true);
     }, SOUND_GRACE_MS);
   }, [listen, post, forceMuted]);
