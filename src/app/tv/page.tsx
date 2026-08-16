@@ -30,6 +30,19 @@ const GLYPH_HOLD_MS = 1400;
 const SNOW_FADE_MS = 500;
 
 /**
+ * Desktop starts the muted embed on its own and the nudge below never fires.
+ * Phones are less reliable — and worse, `onLoad` fires well before the player
+ * inside is listening, so a single shot at it is often shouted into a closed
+ * door. So the nudge is a short series instead, abandoned the moment the
+ * player reports PLAYING.
+ */
+const NUDGE_TRIES = 8;
+const NUDGE_EVERY_MS = 600;
+
+/** How long to watch, after unmuting, for the phone to take playback back. */
+const UNMUTE_WATCH_MS = 2500;
+
+/**
  * The dial cycles through these in order and wraps. There is deliberately no
  * channel number on screen: the only way to know what is on is to turn the
  * knob and watch.
@@ -101,6 +114,15 @@ export default function VideoPage() {
    */
   const [on, setOn] = useState(false);
 
+  /**
+   * The player refuses postMessage commands unless the embed URL names the
+   * page they will come from. Read on the client, since there is no window to
+   * ask on the server — and only ever used for an iframe that mounts after a
+   * click, so it is always filled in by the time it matters.
+   */
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+
   const staticCanvas = useRef<HTMLCanvasElement | null>(null);
   const embed = useRef<HTMLIFrameElement | null>(null);
 
@@ -110,9 +132,13 @@ export default function VideoPage() {
   const minTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const nudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nudgeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nudges = useRef(0);
   /** Runs from PLAYING to the moment the start-up glyph has faded. */
   const glyphTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unmuteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** True while we wait to see whether unmuting cost us the playback. */
+  const watchingUnmute = useRef(false);
   /** The floor has passed, so the snow may end as soon as the picture is up. */
   const minElapsed = useRef(false);
   /** The player has reported PLAYING for the channel now being tuned. */
@@ -131,6 +157,22 @@ export default function VideoPage() {
   }, []);
 
   const ready = frameLoaded || timedOut;
+
+  /** One command to the player. A no-op when the set is off: there is no embed. */
+  const post = useCallback((func: string) => {
+    embed.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func, args: [] }),
+      "*"
+    );
+  }, []);
+
+  /** Opens the event channel the state listener depends on. */
+  const listen = useCallback(() => {
+    embed.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "listening", id: 1, channel: "widget" }),
+      "*"
+    );
+  }, []);
 
   // ---------- SNOW, THE SOUND ----------
 
@@ -191,15 +233,22 @@ export default function VideoPage() {
 
     // The picture is clear, so let it be heard. A no-op when the set is being
     // switched off, since the embed is already gone by then.
-    embed.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func: "unMute", args: [] }),
-      "*"
-    );
+    post("unMute");
+
+    // A phone lends a muted embed the right to play and takes it straight back
+    // when the sound comes on: unmuting without a gesture of its own pauses the
+    // video. So watch for that pause, and if it comes, put the sound away again
+    // and start it back up. A silent picture is still a picture.
+    watchingUnmute.current = true;
+    if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
+    unmuteTimer.current = setTimeout(() => {
+      watchingUnmute.current = false;
+    }, UNMUTE_WATCH_MS);
 
     setFading(true);
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
-  }, [stopNoise]);
+  }, [stopNoise, post]);
 
   /** Ends the snow once both the floor has passed and the picture is up. */
   const maybeEnd = useCallback(() => {
@@ -214,6 +263,7 @@ export default function VideoPage() {
       playingSeen.current = false;
       pictureUp.current = false;
       awaitingPicture.current = waitForPicture;
+      watchingUnmute.current = false;
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       glyphTimer.current = null;
 
@@ -266,13 +316,24 @@ export default function VideoPage() {
       if (!e.origin.includes("youtube.com")) return;
       try {
         const msg = JSON.parse(e.data);
+        const state = msg?.info?.playerState;
+
         // 1 is PLAYING in the IFrame API's state enum.
-        if (msg?.info?.playerState === 1 && !glyphTimer.current) {
+        if (state === 1 && !glyphTimer.current) {
           playingSeen.current = true;
           glyphTimer.current = setTimeout(() => {
             pictureUp.current = true;
             maybeEnd();
           }, GLYPH_HOLD_MS);
+        }
+
+        // 2 is PAUSED. Arriving in the moments after the unmute, it is not the
+        // visitor pausing anything — there is nothing to press — it is the
+        // phone taking the sound back. Give it up and keep the picture.
+        if (state === 2 && watchingUnmute.current) {
+          watchingUnmute.current = false;
+          post("mute");
+          post("playVideo");
         }
       } catch {
         // The player also sends things that are not JSON. Nothing to do.
@@ -280,31 +341,33 @@ export default function VideoPage() {
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [maybeEnd]);
-
-  const post = (func: string) =>
-    embed.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func, args: [] }),
-      "*"
-    );
+  }, [maybeEnd, post]);
 
   const onEmbedLoad = useCallback(() => {
-    // Opens the event channel the listener above depends on.
-    embed.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "listening", id: 1, channel: "widget" }),
-      "*"
-    );
+    listen();
+
     // A muted autoplay is honoured almost everywhere, but nudge anything that
     // still has not started. Only a player that has not reported PLAYING:
     // calling playVideo on one that is already running makes it flash its own
     // play glyph, which is exactly what the snow is there to hide. Unmuting is
     // left to the end of the snow.
-    if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
-    nudgeTimer.current = setTimeout(() => {
-      if (playingSeen.current) return;
+    //
+    // The handshake goes out again with every nudge, because `onLoad` means the
+    // frame arrived, not that the player inside it is awake — on a phone it
+    // frequently is not, and the first handshake is simply lost.
+    if (nudgeTimer.current) clearInterval(nudgeTimer.current);
+    nudges.current = 0;
+    nudgeTimer.current = setInterval(() => {
+      if (playingSeen.current || nudges.current >= NUDGE_TRIES) {
+        if (nudgeTimer.current) clearInterval(nudgeTimer.current);
+        nudgeTimer.current = null;
+        return;
+      }
+      nudges.current += 1;
+      listen();
       post("playVideo");
-    }, 1200);
-  }, []);
+    }, NUDGE_EVERY_MS);
+  }, [listen, post]);
 
   // Closing the context on unmount, for the same reason the hub does: a bed
   // left running keeps playing over the next page.
@@ -313,8 +376,9 @@ export default function VideoPage() {
       if (minTimer.current) clearTimeout(minTimer.current);
       if (maxTimer.current) clearTimeout(maxTimer.current);
       if (fadeTimer.current) clearTimeout(fadeTimer.current);
-      if (nudgeTimer.current) clearTimeout(nudgeTimer.current);
+      if (nudgeTimer.current) clearInterval(nudgeTimer.current);
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
+      if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
       audioCtx.current?.close();
       audioCtx.current = null;
     };
@@ -355,8 +419,12 @@ export default function VideoPage() {
   // embed starts muted and is unmuted when the snow clears: nothing but noise
   // should be audible while the set is tuning, and a muted start is also the
   // one form of autoplay every browser allows.
+  // `playsinline` is what stops a phone from tearing the video out into its own
+  // fullscreen player the instant it starts, and `origin` is what makes the
+  // player answer the handshake at all rather than dropping it on the floor.
   const params =
-    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&mute=1&enablejsapi=1";
+    "controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1&autoplay=1&mute=1&enablejsapi=1" +
+    (origin ? `&origin=${encodeURIComponent(origin)}` : "");
 
   return (
     <main
@@ -403,16 +471,23 @@ export default function VideoPage() {
               moment the set is switched on — i.e. behind the snow — so the
               load happens during the noise instead of after it. */}
           {on && (
-            <iframe
-              ref={embed}
-              key={current.id}
-              src={`https://www.youtube.com/embed/${current.id}?${params}`}
-              title={current.label}
-              onLoad={onEmbedLoad}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              style={{ ...SCREEN, border: "none" }}
-              allowFullScreen
-            ></iframe>
+            /* The screen's tilt lives on this box, not on the iframe. Mobile
+               WebKit will not paint a cross-origin iframe that is itself
+               3D-transformed — the picture comes up blank, or comes up once and
+               then never repaints — but it has no trouble with a flat iframe
+               sitting inside a transformed box. */
+            <div style={SCREEN}>
+              <iframe
+                ref={embed}
+                key={current.id}
+                src={`https://www.youtube.com/embed/${current.id}?${params}`}
+                title={current.label}
+                onLoad={onEmbedLoad}
+                allow="autoplay; encrypted-media; picture-in-picture"
+                style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+                allowFullScreen
+              ></iframe>
+            </div>
           )}
         </div>
 
