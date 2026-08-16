@@ -93,9 +93,15 @@ type Channel = {
  *
  * `id` is the YouTube video id — the part after `v=` in a watch URL.
  */
+/**
+ * The `.m4a` files are 128k AAC re-encodes of the 320k masters that sit beside
+ * them, written with the index at the front so playback can start before the
+ * download finishes. Between them they weigh a third of what the masters do,
+ * which matters when one of them is nearly twelve minutes long.
+ */
 const CHANNELS: Channel[] = [
-  { id: "rTYdjkZaPh0", label: "Channel 1", audio: "/music/TV/Melody_TV.mp3" },
-  { id: "9vqVzGTkRU4", label: "Channel 2", audio: "/music/TV/Velith_TV.mp3" },
+  { id: "rTYdjkZaPh0", label: "Channel 1", audio: "/music/TV/Melody_TV.m4a" },
+  { id: "9vqVzGTkRU4", label: "Channel 2", audio: "/music/TV/Velith_TV.m4a" },
 ];
 
 /**
