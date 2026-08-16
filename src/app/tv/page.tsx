@@ -290,10 +290,13 @@ export default function VideoPage() {
       minElapsed.current = false;
       playingSeen.current = false;
       pictureUp.current = false;
+      awake.current = false;
       awaitingPicture.current = waitForPicture;
       watchingUnmute.current = false;
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       glyphTimer.current = null;
+      if (leadTimer.current) clearTimeout(leadTimer.current);
+      leadTimer.current = null;
 
       setTuning(true);
       startNoise();
@@ -354,6 +357,10 @@ export default function VideoPage() {
         const msg = JSON.parse(e.data);
         const state = msg?.info?.playerState;
 
+        // 3 is BUFFERING: not a picture yet, but the player is on its way and
+        // must not be prodded again.
+        if (state === 1 || state === 3) awake.current = true;
+
         // 1 is PLAYING in the IFrame API's state enum.
         if (state === 1 && !glyphTimer.current) {
           playingSeen.current = true;
@@ -394,7 +401,7 @@ export default function VideoPage() {
     if (nudgeTimer.current) clearInterval(nudgeTimer.current);
     nudges.current = 0;
     nudgeTimer.current = setInterval(() => {
-      if (playingSeen.current || nudges.current >= NUDGE_TRIES) {
+      if (awake.current || nudges.current >= NUDGE_TRIES) {
         if (nudgeTimer.current) clearInterval(nudgeTimer.current);
         nudgeTimer.current = null;
         return;
@@ -415,6 +422,7 @@ export default function VideoPage() {
       if (nudgeTimer.current) clearInterval(nudgeTimer.current);
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
+      if (leadTimer.current) clearTimeout(leadTimer.current);
       audioCtx.current?.close();
       audioCtx.current = null;
     };
