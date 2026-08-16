@@ -94,8 +94,8 @@ type Channel = {
  * `id` is the YouTube video id — the part after `v=` in a watch URL.
  */
 const CHANNELS: Channel[] = [
-  { id: "rTYdjkZaPh0", label: "Channel 1", audio: "/music/TV/Channel1.mp3" },
-  { id: "9vqVzGTkRU4", label: "Channel 2", audio: "/music/TV/Channel2.mp3" },
+  { id: "rTYdjkZaPh0", label: "Channel 1", audio: "/music/TV/Melody_TV.mp3" },
+  { id: "9vqVzGTkRU4", label: "Channel 2", audio: "/music/TV/Velith_TV.mp3" },
 ];
 
 /**
@@ -174,16 +174,18 @@ export default function VideoPage() {
   const audioCtx = useRef<AudioContext | null>(null);
   const noise = useRef<{ src: AudioBufferSourceNode; gain: GainNode } | null>(null);
 
-  /** The decoded track for the channel now showing, once it has arrived. */
-  const musicBuffer = useRef<AudioBuffer | null>(null);
-  const music = useRef<{
-    src: AudioBufferSourceNode;
-    gain: GainNode;
-    filter: BiquadFilterNode;
-    /** Context clock when it started, and how far into the track that was. */
-    startedAt: number;
-    startOffset: number;
-  } | null>(null);
+  /**
+   * The track streams from an ordinary audio element rather than a decoded
+   * buffer. A twelve-minute master decodes to something like a quarter of a
+   * gigabyte of raw samples, which a phone will not survive — and the element
+   * brings two things the buffer could not: it plays before it has finished
+   * downloading, and it can be seeked, which is what keeps it with the picture.
+   *
+   * The element is only a source. Everything audible about it happens in the
+   * graph below, so the snow's filter and the handover work exactly as before.
+   */
+  const musicEl = useRef<HTMLAudioElement | null>(null);
+  const musicChain = useRef<{ gain: GainNode; filter: BiquadFilterNode } | null>(null);
   /** True from the moment the picture starts until the set is retuned. */
   const musicWanted = useRef(false);
   /** True once the handover has run, so a late track starts already open. */
@@ -261,103 +263,106 @@ export default function VideoPage() {
 
   // ---------- THE CHANNEL'S OWN SOUND ----------
 
+  // The element is wired into the graph exactly once. `createMediaElementSource`
+  // may only be called once per element, and after it has been the element no
+  // longer reaches the speakers by itself — everything it makes now arrives
+  // through this chain, which is precisely what we want.
+  useEffect(() => {
+    const ctx = audioCtx.current;
+    const el = musicEl.current;
+    if (!ctx || !el || musicChain.current) return;
+
+    const source = ctx.createMediaElementSource(el);
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = MUSIC_SNOW_HZ;
+    const gain = ctx.createGain();
+    gain.gain.value = MUSIC_SNOW_GAIN;
+
+    source.connect(filter).connect(gain).connect(ctx.destination);
+    musicChain.current = { gain, filter };
+  }, []);
+
+  // React writes the new src onto the element, but an <audio> already holding a
+  // track ignores it until it is told to load again.
+  useEffect(() => {
+    const el = musicEl.current;
+    if (!el) return;
+    el.load();
+  }, [current.audio]);
+
+  /** Silences the track without tearing the graph down. */
   const stopMusic = useCallback(() => {
-    const m = music.current;
-    if (!m) return;
-    music.current = null;
-    try {
-      m.src.stop();
-    } catch {
-      // Already stopped, or never started. Nothing to do.
-    }
+    const el = musicEl.current;
+    if (!el) return;
+    el.pause();
   }, []);
 
   /**
-   * Starts the track at `offset` seconds, which is wherever the picture has
-   * got to. Under the snow it comes up quiet and steeply filtered — present,
-   * but heard through the noise rather than beside it.
+   * Puts the track at `offset` — wherever the picture has got to — and lets it
+   * run. Under the snow it comes up quiet and steeply filtered: present, but
+   * heard through the noise rather than beside it.
    */
-  const startMusic = useCallback(
-    (offset: number) => {
-      const ctx = audioCtx.current;
-      const buf = musicBuffer.current;
-      if (!ctx || !buf) return;
-      stopMusic();
+  const startMusic = useCallback((offset: number) => {
+    const el = musicEl.current;
+    const chain = musicChain.current;
+    const ctx = audioCtx.current;
+    if (!el || !chain || !ctx || !el.currentSrc) return;
 
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
+    const t = ctx.currentTime;
+    const open = handedOver.current;
+    chain.filter.frequency.cancelScheduledValues(t);
+    chain.filter.frequency.setValueAtTime(open ? MUSIC_OPEN_HZ : MUSIC_SNOW_HZ, t);
+    chain.gain.gain.cancelScheduledValues(t);
+    chain.gain.gain.setValueAtTime(open ? MUSIC_GAIN : MUSIC_SNOW_GAIN, t);
 
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      const gain = ctx.createGain();
+    // Past the end of the track the picture simply runs on in silence, which
+    // is a good deal less strange than the track starting over.
+    const at = Math.max(0, offset);
+    if (el.duration && at >= el.duration) return;
+    // Seeking an element that has not buffered that far yet is allowed — it
+    // simply waits — which is the other half of why this streams.
+    if (Math.abs(el.currentTime - at) > SYNC_TOLERANCE_S) el.currentTime = at;
+    void el.play().catch(() => {});
+  }, []);
 
-      const t = ctx.currentTime;
-      const open = handedOver.current;
-      filter.frequency.setValueAtTime(open ? MUSIC_OPEN_HZ : MUSIC_SNOW_HZ, t);
-      gain.gain.setValueAtTime(open ? MUSIC_GAIN : MUSIC_SNOW_GAIN, t);
-
-      src.connect(filter).connect(gain).connect(ctx.destination);
-      // Past the end of the track the picture simply runs on in silence, which
-      // is a good deal less strange than the track starting over.
-      const at = Math.max(0, offset);
-      if (at >= buf.duration) return;
-      src.start(0, at);
-
-      music.current = { src, gain, filter, startedAt: t, startOffset: at };
-    },
-    [stopMusic]
-  );
+  /**
+   * Called from inside the press of the play ball, and only for that. A phone
+   * will not let an element play unless a gesture asked it to, but it counts
+   * the element as asked-for ever after — so this spends the gesture at the
+   * moment it exists, on a track that is immediately stopped again. What it
+   * buys is the right to start it later, when the picture is ready.
+   */
+  const unlockMusic = useCallback(() => {
+    const el = musicEl.current;
+    if (!el) return;
+    void el
+      .play()
+      .then(() => el.pause())
+      .catch(() => {});
+  }, []);
 
   /** The handover: the filter opens and the level comes up to meet the picture. */
   const openMusic = useCallback(() => {
     handedOver.current = true;
     const ctx = audioCtx.current;
-    const m = music.current;
-    if (!ctx || !m) return;
+    const chain = musicChain.current;
+    if (!ctx || !chain) return;
 
     const t = ctx.currentTime;
     const d = HANDOVER_MS / 1000;
 
-    m.gain.gain.cancelScheduledValues(t);
-    m.gain.gain.setValueAtTime(m.gain.gain.value, t);
-    m.gain.gain.linearRampToValueAtTime(MUSIC_GAIN, t + d);
+    chain.gain.gain.cancelScheduledValues(t);
+    chain.gain.gain.setValueAtTime(chain.gain.gain.value, t);
+    chain.gain.gain.linearRampToValueAtTime(MUSIC_GAIN, t + d);
 
     // Exponential, because a filter sweep is heard by octave: a linear one
     // spends nearly all its travel in the top of the range, where there is
     // little left to uncover.
-    m.filter.frequency.cancelScheduledValues(t);
-    m.filter.frequency.setValueAtTime(m.filter.frequency.value, t);
-    m.filter.frequency.exponentialRampToValueAtTime(MUSIC_OPEN_HZ, t + d);
+    chain.filter.frequency.cancelScheduledValues(t);
+    chain.filter.frequency.setValueAtTime(chain.filter.frequency.value, t);
+    chain.filter.frequency.exponentialRampToValueAtTime(MUSIC_OPEN_HZ, t + d);
   }, []);
-
-  // One track per channel, re-fetched when the dial turns. Failure is quiet on
-  // purpose: a missing or unplayable file leaves that channel silent, and the
-  // picture carries on regardless — which is also what holds the page up while
-  // a track that has not been cut yet is still missing.
-  useEffect(() => {
-    musicBuffer.current = null;
-    const src = current.audio;
-    const ctx = audioCtx.current;
-    if (!src || !ctx) return;
-
-    let cancelled = false;
-    fetch(src)
-      .then(res => (res.ok ? res.arrayBuffer() : Promise.reject(new Error("missing"))))
-      .then(data => ctx.decodeAudioData(data))
-      .then(decoded => {
-        if (cancelled) return;
-        musicBuffer.current = decoded;
-        // The picture may already be running: on a slow connection a track can
-        // lose the race to its own video. Join at the picture's time rather
-        // than from the top, so it arrives in step rather than behind.
-        if (musicWanted.current && !music.current) startMusic(videoTime.current);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [current.audio, startMusic]);
 
   // ---------- SNOW, THE SOUND ----------
 
@@ -456,6 +461,9 @@ export default function VideoPage() {
       handedOver.current = false;
       videoTime.current = 0;
       stopMusic();
+      // Spends the press that got us here on the track as well as on the
+      // context. Both need a gesture, and this is the only one there will be.
+      unlockMusic();
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       glyphTimer.current = null;
       if (leadTimer.current) clearTimeout(leadTimer.current);
@@ -480,7 +488,7 @@ export default function VideoPage() {
         endTuning();
       }, MAX_STATIC_MS);
     },
-    [startNoise, maybeEnd, endTuning, stopMusic]
+    [startNoise, maybeEnd, endTuning, stopMusic, unlockMusic]
   );
 
   /**
@@ -535,7 +543,7 @@ export default function VideoPage() {
         // 1 is PLAYING in the IFrame API's state enum.
         if (state === 1) {
           musicWanted.current = true;
-          if (!music.current) startMusic(videoTime.current);
+          if (musicEl.current?.paused) startMusic(videoTime.current);
 
           if (!glyphTimer.current) {
             playingSeen.current = true;
@@ -564,19 +572,15 @@ export default function VideoPage() {
   useEffect(() => {
     if (!on) return;
     const t = setInterval(() => {
-      const ctx = audioCtx.current;
-      const m = music.current;
-      const buf = musicBuffer.current;
-      if (!ctx || !m || !buf || !musicWanted.current) return;
-      if (videoTime.current >= buf.duration) return;
-
-      const at = m.startOffset + (ctx.currentTime - m.startedAt);
-      if (Math.abs(videoTime.current - at) > SYNC_TOLERANCE_S) {
-        startMusic(videoTime.current);
+      const el = musicEl.current;
+      if (!el || !musicWanted.current || el.paused) return;
+      if (el.duration && videoTime.current >= el.duration) return;
+      if (Math.abs(videoTime.current - el.currentTime) > SYNC_TOLERANCE_S) {
+        el.currentTime = videoTime.current;
       }
     }, 2000);
     return () => clearInterval(t);
-  }, [on, startMusic]);
+  }, [on]);
 
   const onEmbedLoad = useCallback(() => {
     // A fresh frame has reported nothing yet. Whatever the last one said about
@@ -690,6 +694,23 @@ export default function VideoPage() {
       />
 
       <BackToMenu />
+
+      {/* The channel's sound. Never seen and never controlled directly: it is
+          wired into the AudioContext at mount, and from then on it is the
+          filter and the gain that decide what any of it means.
+
+          Deliberately no `key`. This element must outlive every channel change:
+          `createMediaElementSource` may only be called on it once, and a
+          remounted replacement would be a stranger to the graph — playing
+          unfiltered, at full level, straight past everything below. The dial
+          changes its src and reloads it in place instead. */}
+      <audio
+        ref={musicEl}
+        src={current.audio ?? undefined}
+        preload="auto"
+        aria-hidden
+        style={{ display: "none" }}
+      />
 
       {/* === SIZE LIKE THE MENU BACKGROUND (same logic) === */}
       <div
