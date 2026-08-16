@@ -24,7 +24,7 @@ const MAX_STATIC_MS = 10000;
  * measured rather than assumed: the icon outlives the first frame by about a
  * second, so ending the snow the instant the picture arrives shows it.
  */
-const GLYPH_HOLD_MS = 2600;
+const GLYPH_HOLD_MS = 3600;
 
 /**
  * The sound is handed over while the snow is still up rather than as it lifts.
@@ -151,6 +151,14 @@ export default function VideoPage() {
   /** True while we wait to see whether unmuting cost us the playback. */
   const watchingUnmute = useRef(false);
   /**
+   * Whether the player is muted, as reported by the player itself rather than
+   * assumed from the commands we sent it — the whole difficulty here is that
+   * those commands are not always obeyed.
+   */
+  const muted = useRef(true);
+  /** The armed one-shot that turns the next touch into permission for sound. */
+  const touchUnmute = useRef<(() => void) | null>(null);
+  /**
    * The player is doing something of its own — buffering or playing. Nudging
    * one that is already under way is what makes it flash its glyph, so this is
    * a wider stop signal than PLAYING alone.
@@ -242,6 +250,41 @@ export default function VideoPage() {
 
   // ---------- SNOW, THE SEQUENCE ----------
 
+  /** Takes the armed touch back down, whether or not it was ever used. */
+  const disarmTouch = useCallback(() => {
+    if (!touchUnmute.current) return;
+    window.removeEventListener("pointerdown", touchUnmute.current);
+    touchUnmute.current = null;
+  }, []);
+
+  /**
+   * A phone will not hand a cross-origin embed the right to make noise on the
+   * word of a message posted to it — that is not a gesture, and the gesture
+   * that opened the set is long spent by the time the snow clears. So the next
+   * touch anywhere becomes the ask, and it stays armed until it is taken.
+   *
+   * Nothing is drawn to say so. Touching the screen of a television that is
+   * playing silently is what a person does anyway, and the set answering is
+   * the whole point.
+   */
+  const armTouchUnmute = useCallback(() => {
+    disarmTouch();
+    const hand = () => {
+      if (!muted.current) {
+        disarmTouch();
+        return;
+      }
+      // This one is asked for, so it must not be second-guessed by the pause
+      // watch — a sound the visitor reached for is worth losing a frame over.
+      watchingUnmute.current = false;
+      post("unMute");
+      post("playVideo");
+      disarmTouch();
+    };
+    touchUnmute.current = hand;
+    window.addEventListener("pointerdown", hand);
+  }, [post, disarmTouch]);
+
   /** The snow actually lifting. Nothing is said to the player from here on. */
   const liftSnow = useCallback(() => {
     stopNoise();
@@ -249,7 +292,11 @@ export default function VideoPage() {
     setFading(true);
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     fadeTimer.current = setTimeout(() => setFading(false), SNOW_FADE_MS);
-  }, [stopNoise]);
+
+    // Desktop is unmuted by now and this arms nothing that will ever fire, so
+    // it costs a listener that removes itself on the first touch.
+    armTouchUnmute();
+  }, [stopNoise, armTouchUnmute]);
 
   /**
    * Begins the end of the snow: hands the sound over, then holds the noise a
@@ -293,6 +340,8 @@ export default function VideoPage() {
       awake.current = false;
       awaitingPicture.current = waitForPicture;
       watchingUnmute.current = false;
+      muted.current = true;
+      disarmTouch();
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       glyphTimer.current = null;
       if (leadTimer.current) clearTimeout(leadTimer.current);
@@ -317,7 +366,7 @@ export default function VideoPage() {
         endTuning();
       }, MAX_STATIC_MS);
     },
-    [startNoise, maybeEnd, endTuning]
+    [startNoise, maybeEnd, endTuning, disarmTouch]
   );
 
   /**
@@ -356,6 +405,10 @@ export default function VideoPage() {
       try {
         const msg = JSON.parse(e.data);
         const state = msg?.info?.playerState;
+
+        // The player volunteers its own volume state, which is the only honest
+        // answer to "did that unmute take?" — on a phone, frequently not.
+        if (typeof msg?.info?.muted === "boolean") muted.current = msg.info.muted;
 
         // 3 is BUFFERING: not a picture yet, but the player is on its way and
         // must not be prodded again.
@@ -423,6 +476,10 @@ export default function VideoPage() {
       if (glyphTimer.current) clearTimeout(glyphTimer.current);
       if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
       if (leadTimer.current) clearTimeout(leadTimer.current);
+      if (touchUnmute.current) {
+        window.removeEventListener("pointerdown", touchUnmute.current);
+        touchUnmute.current = null;
+      }
       audioCtx.current?.close();
       audioCtx.current = null;
     };
